@@ -1,8 +1,13 @@
 import os
+from collections.abc import AsyncIterator
 
 import pytest
+import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
+
+from assistant.conversation.store import Store
+from assistant.db.session import create_engine, session_factory
 
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
@@ -19,3 +24,17 @@ def database_url() -> str:
     config.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
     command.upgrade(config, "head")
     return TEST_DATABASE_URL
+
+
+@pytest.fixture
+async def store(database_url: str) -> AsyncIterator[Store]:
+    engine = create_engine(database_url)
+    async with engine.begin() as connection:
+        await connection.execute(
+            sa.text(
+                "TRUNCATE conversations, messages, pending_approvals, agent_runs "
+                "RESTART IDENTITY CASCADE"
+            )
+        )
+    yield Store(session_factory(engine))
+    await engine.dispose()
