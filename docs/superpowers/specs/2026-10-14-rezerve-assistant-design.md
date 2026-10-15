@@ -1,10 +1,10 @@
-# Rezerve Asistan — design
+# Rezerve Assistant — design
 
 **Date:** 2026-10-14 · **Status:** draft for review
 
 ## 1. What this is
 
-**Rezerve Asistan** is an AI receptionist for Turkish local businesses (salons, barbers, clinics) that take bookings on [Rezerve](https://github.com/Olbioss/rezerve).
+**Rezerve Assistant** is an AI receptionist for Turkish local businesses (salons, barbers, clinics) that take bookings on [Rezerve](https://github.com/Olbioss/rezerve).
 
 A customer writes in Turkish in a chat widget on the business's booking page or on Telegram, with WhatsApp to follow. The assistant:
 - finds a free time and books it, taking a kapora when the service asks for one;
@@ -45,7 +45,7 @@ Its purpose is a portfolio project aimed at AI product and AI engineer roles. It
 
 ```
 Telegram ─┐  webhook: signature checked, message stored once (dedupe) → 2xx
-WhatsApp ─┼─► Cloud Run "asistan" (FastAPI in Docker, scales to zero)
+WhatsApp ─┼─► Cloud Run "assistant" (FastAPI in Docker, scales to zero)
 Widget  ──┘       │ enqueue a named task
 (on Rezerve)      ▼
              Cloud Tasks "turns" — rate-limited to protect the free LLM quota,
@@ -68,7 +68,7 @@ Widget  ──┘       │ enqueue a named task
 
 Two repositories:
 - **`rezerve`** (TypeScript) gains booking cores callable outside server actions, a schema migration, the MCP endpoint, the chat widget and a "kapora received" event.
-- **`rezerve-asistan`** (this repo, Python) is the agent service and the eval harness.
+- **`rezerve-assistant`** (this repo, Python) is the agent service and the eval harness.
 
 ## 5. Trust model
 
@@ -189,7 +189,7 @@ This is best-effort: one attempt, and its failure is logged and swallowed. The c
 Verify package extras and API names against current docs at scaffold time.
 
 ```
-src/asistan/
+src/assistant/
   main.py              app factory, routers, lifespan
   config.py            settings; in production read from one mounted JSON secret
   channels/            base.py (Channel protocol) · telegram.py · whatsapp.py · web.py
@@ -311,7 +311,7 @@ The canned reply is always: "Şu an yanıt veremiyorum — randevunuzu buradan a
   - the last few messages;
   - instructions: reply to this message to answer, reply `/bitir` to hand back.
 - The owner's replies are relayed to the customer's channel as "İşletme: …". `/bitir`, or 24 hours, returns the conversation to `active`.
-- Owner chats are linked by an admin command (`uv run asistan owners link <slug> <telegram_chat_id>`). A self-service pairing flow in the Rezerve panel is v2.
+- Owner chats are linked by an admin command (`uv run assistant owners link <slug> <telegram_chat_id>`). A self-service pairing flow in the Rezerve panel is v2.
 - With no owner chat linked, the customer gets the business's phone number from `get_business_info` instead.
 
 ### 7.7 Reminders
@@ -479,7 +479,7 @@ If date resolution misses its target with only the calendar block in the instruc
 
 **Cloud Run:**
 - A GCP project with a billing budget alert at $1. The card stays on file, but usage stays inside the free tier.
-- Cloud Run service `asistan` in europe-west3 (Frankfurt, next to Neon's eu-central-1). Confirm the free tier applies there; otherwise use europe-west1.
+- Cloud Run service `assistant` in europe-west3 (Frankfurt, next to Neon's eu-central-1). Confirm the free tier applies there; otherwise use europe-west1.
 - Request-based billing, min 0 / max 2 instances, concurrency 20, 512Mi.
 - The image is a multi-stage uv build on `python:3.13-slim`.
 

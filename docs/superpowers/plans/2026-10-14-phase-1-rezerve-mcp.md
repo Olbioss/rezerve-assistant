@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Give Rezerve an authenticated MCP endpoint (`/api/mcp`). Through it, the rezerve-asistan agent can read a business's services and free slots, and book, move and cancel a chat customer's appointments. Every write goes through the same booking rules the public booking page uses.
+**Goal:** Give Rezerve an authenticated MCP endpoint (`/api/mcp`). Through it, the rezerve-assistant agent can read a business's services and free slots, and book, move and cancel a chat customer's appointments. Every write goes through the same booking rules the public booking page uses.
 
 **Architecture:** Each booking rule in today's server actions moves into a plain "core" function that returns a result object: create, customer cancel, and a new customer reschedule. The server actions become thin wrappers, and the existing tests pin their behaviour unchanged.
 
@@ -15,7 +15,7 @@ A schema migration adds `bookings.source` / `customer_ref` and `business_profile
 
 **Tech Stack:** Next.js 16 (App Router, Cache Components), TypeScript 5.9, Drizzle ORM 0.45 on Postgres, zod 4.4, Vitest, Bun 1.3.1, `mcp-handler` 2.3.0 + `@modelcontextprotocol/server` 2.3.1 (MCP SDK v2, spec 2026-07-28), `@modelcontextprotocol/client` 2.3.1 (tests only).
 
-**Spec:** `/Users/olbios/repos/deploys/rezerve-asistan/docs/superpowers/specs/2026-10-14-rezerve-asistan-design.md`, sections §5, §6.1–6.3, §10 (Rezerve) and the `seed:eval` / `mcp:schema` parts of §6.2 and §10. The widget (§6.4) and the kapora event (§6.5) are later phases.
+**Spec:** `/Users/olbios/repos/deploys/rezerve-assistant/docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md`, sections §5, §6.1–6.3, §10 (Rezerve) and the `seed:eval` / `mcp:schema` parts of §6.2 and §10. The widget (§6.4) and the kapora event (§6.5) are later phases.
 
 ## Global Constraints
 
@@ -2314,7 +2314,7 @@ git commit -m "feat: let a customer move their own booking, held to the slot gri
   export type AssistantIdentity = { business: BusinessContext; customerRef: string };
   export function identityFrom(authInfo: AuthInfo | undefined): AssistantIdentity; // throws without one
   // lib/assistant/request-auth.ts
-  export const ASSISTANT_CLIENT_ID = "rezerve-asistan";
+  export const ASSISTANT_CLIENT_ID = "rezerve-assistant";
   export type AssistantAuth = { ok: true; authInfo: AuthInfo } | { ok: false; response: Response };
   export function authenticateAssistant(req: Request, secret: string | undefined): Promise<AssistantAuth>;
   ```
@@ -2580,7 +2580,7 @@ import {
   isCustomerRef,
 } from "./identity";
 
-export const ASSISTANT_CLIENT_ID = "rezerve-asistan";
+export const ASSISTANT_CLIENT_ID = "rezerve-assistant";
 
 export type AssistantAuth =
   | { ok: true; authInfo: AuthInfo }
@@ -2593,7 +2593,7 @@ function deny(status: number, error: string): AssistantAuth {
 /**
  * The door in front of /api/mcp, checked on every request.
  *
- * One service holds the token — rezerve-asistan — so this is a shared secret
+ * One service holds the token — rezerve-assistant — so this is a shared secret
  * rather than OAuth: there is no third party to delegate to. What the token
  * does not settle, the headers do: which business, and which of its chat
  * customers. Both are checked here, before any tool can run.
@@ -2638,7 +2638,7 @@ Append to `.env.example`:
 
 ```bash
 
-# Shared secret the chat assistant (rezerve-asistan) sends as a bearer token
+# Shared secret the chat assistant (rezerve-assistant) sends as a bearer token
 # on /api/mcp. Unset, the endpoint refuses every request — it fails closed.
 # Generate with: openssl rand -base64 32
 ASSISTANT_MCP_TOKEN=
@@ -2822,7 +2822,7 @@ import { z } from "zod";
 
 /**
  * The assistant's tools as schemas — the contract between Rezerve and the
- * rezerve-asistan service. /api/mcp registers them, `bun run mcp:schema`
+ * rezerve-assistant service. /api/mcp registers them, `bun run mcp:schema`
  * prints them as JSON Schema for the other repository's contract test, and
  * the tool functions return exactly these shapes.
  *
@@ -4456,7 +4456,7 @@ import { authenticateAssistant } from "@/lib/assistant/request-auth";
 
 /**
  * The chat assistant's way into Rezerve: a Model Context Protocol endpoint
- * (Streamable HTTP, stateless), used by rezerve-asistan.
+ * (Streamable HTTP, stateless), used by rezerve-assistant.
  *
  * Every request passes the door first — token, business, customer
  * (lib/assistant/request-auth.ts) — and the identity it settles rides along
@@ -4505,7 +4505,7 @@ In `README.md`, inside the `<details>` engineering notes and directly after the 
 ````markdown
 ### The assistant's endpoint: /api/mcp
 
-Rezerve Asistan, a chat receptionist (in progress), books through a Model
+Rezerve Assistant, a chat receptionist (in progress), books through a Model
 Context Protocol endpoint rather than the database. It runs the same booking
 rules the booking page does — `lib/booking/create-booking-core.ts`,
 `customer-cancel-core.ts` and `customer-reschedule-core.ts`, which the
@@ -4664,7 +4664,7 @@ import { z } from "zod";
 import { TOOL_DEFINITIONS } from "./tool-definitions";
 
 /**
- * The assistant's tools as JSON Schema — the contract rezerve-asistan keeps a
+ * The assistant's tools as JSON Schema — the contract rezerve-assistant keeps a
  * copy of and tests itself against, so the two repositories cannot drift
  * apart unnoticed. Pure: no database, no request.
  */
@@ -4687,10 +4687,10 @@ Create `scripts/export-mcp-schema.ts`:
 
 ```ts
 /**
- * Print the assistant tools' JSON Schemas — the contract the rezerve-asistan
+ * Print the assistant tools' JSON Schemas — the contract the rezerve-assistant
  * repository keeps a copy of, and fails its tests against when they drift.
  *
- *   bun run mcp:schema > ../rezerve-asistan/contract/rezerve-mcp-tools.json
+ *   bun run mcp:schema > ../rezerve-assistant/contract/rezerve-mcp-tools.json
  */
 import { toolSchemaDocument } from "@/lib/assistant/tool-schema";
 
@@ -4881,7 +4881,7 @@ In `lib/demo/credentials.ts`, after `DEMO_FREE` and before `DEMO_ACCOUNTS`, add:
 
 ```ts
 /**
- * The rezerve-asistan eval harness's business: the Pro demo's plan, services
+ * The rezerve-assistant eval harness's business: the Pro demo's plan, services
  * and hours, but no booking history, so a scripted conversation knows which
  * times are free. Seeded only into local databases (`bun run seed:eval`) —
  * deliberately not in DEMO_ACCOUNTS, so it is never published and the
@@ -4917,7 +4917,7 @@ In `lib/demo/reset.ts`:
     phone: "0212 000 00 01",
     address: "Örnek Sk. No:3, Kadıköy / İstanbul",
     description:
-      "rezerve-asistan değerlendirmelerinin örnek işletmesi — burada alınan randevular gerçek değildir.",
+      "rezerve-assistant değerlendirmelerinin örnek işletmesi — burada alınan randevular gerçek değildir.",
   },
 ```
 
@@ -4943,7 +4943,7 @@ export async function resetDemo({
 }
 
 /**
- * The rezerve-asistan eval business: the Pro demo's setup with no history.
+ * The rezerve-assistant eval business: the Pro demo's setup with no history.
  * Not part of the nightly reset — see DEMO_EVAL.
  */
 export function resetEvalBusiness({
@@ -5022,7 +5022,7 @@ Create `scripts/seed-eval.ts`:
 
 ```ts
 /**
- * Create the rezerve-asistan eval business, or put it back exactly as seeded:
+ * Create the rezerve-assistant eval business, or put it back exactly as seeded:
  * /r/eval, with the Pro demo's services and hours and no bookings.
  *
  * Local databases only — it refuses a DATABASE_URL that is not on this
@@ -5088,7 +5088,7 @@ In `README.md`, in the `### Development` paragraph that lists "Useful scripts", 
 
 ```markdown
 `bun run seed:eval` creates or resets `/r/eval` — the Pro demo's services
-and hours with no bookings, for the rezerve-asistan eval harness; it refuses
+and hours with no bookings, for the rezerve-assistant eval harness; it refuses
 any `DATABASE_URL` not on this machine. `bun run mcp:schema` prints the
 assistant's tools as JSON Schema.
 ```

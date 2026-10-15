@@ -6,7 +6,7 @@
 
 **Architecture:**
 - **Rezerve side:** Rezerve gets a few contract fixes and a chat widget.
-- **The new service:** a Python service, `rezerve-asistan`, does the rest:
+- **The new service:** a Python service, `rezerve-assistant`, does the rest:
   - FastAPI endpoints store each widget message once and queue a turn;
   - the turn claims the conversation's lease (a row, renewed while it works);
   - it answers everything written since the last answer in one Pydantic AI run, with Rezerve's tools reached over MCP;
@@ -23,7 +23,7 @@
   - Postgres 17 in Docker Compose.
 - **Rezerve:** as in phase 1 — Next.js 16, zod 4.4, MCP SDK v2 2.3.1, Vitest, Playwright 1.63, Biome.
 
-**Spec:** `/Users/olbios/repos/deploys/rezerve-asistan/docs/superpowers/specs/2026-10-14-rezerve-asistan-design.md`, phase 2 of §11:
+**Spec:** `/Users/olbios/repos/deploys/rezerve-assistant/docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md`, phase 2 of §11:
 - §5 (the trust model);
 - §6.4 (widget);
 - §7.1–7.5;
@@ -45,9 +45,10 @@ It also takes the phase-1 follow-ups: `service_id` in the booking view, `find_sl
 - **`rezerve`** (`/Users/olbios/repos/deploys/rezerve`), Tasks 1 and 13:
   - a new branch `feat/assistant-widget`, made from `feat/assistant-mcp` (phase 1, unmerged);
   - `feat/assistant-mcp` itself gets no commits.
-- **`rezerve-asistan`** (`/Users/olbios/repos/deploys/rezerve-asistan`), Tasks 2–12: a new branch `feat/agent-core`, from `main`.
+- **`rezerve-assistant`** (`/Users/olbios/repos/deploys/rezerve-assistant`), Tasks 2–12: a new branch `feat/agent-core`, from `main`.
 - **Task 14** runs both together and needs the user's API keys.
 - **Nothing is pushed:** no PR, no merge.
+- **Renamed:** on 2026-10-15 the agent project went from `rezerve-asistan` to `rezerve-assistant`. That covers the folder, the distribution, the Python module `assistant`, the Compose names and the docs. The customer-facing Turkish words ("Asistan", "Asistana yazın") are not its name and stay.
 
 **Databases (critical)**
 - **Never touch Neon.** Rezerve's `.env` points `DATABASE_URL` at **Neon**. Every Rezerve command that touches a database is prefixed with a local URL:
@@ -55,14 +56,14 @@ It also takes the phase-1 follow-ups: `service_id` in the booking view, `find_sl
   - `DATABASE_URL=postgresql://olbios@localhost:5432/rezerve_e2e` for the build, `seed:demo` and Playwright.
 
   Both are the Homebrew Postgres 17. A command-line `DATABASE_URL` overrides Bun's and Next's `.env` loading (verified).
-- **The agent's Postgres:** Docker Compose, on **localhost:5433** (`docker compose up -d db` in rezerve-asistan):
-  - `asistan`, for the service;
-  - `asistan_test`, the tests' default (`TEST_DATABASE_URL`);
+- **The agent's Postgres:** Docker Compose, on **localhost:5433** (`docker compose up -d db` in rezerve-assistant):
+  - `assistant`, for the service;
+  - `assistant_test`, the tests' default (`TEST_DATABASE_URL`);
   - `rezerve`, for Rezerve's local demo in Task 14.
 
   The Homebrew Postgres on 5432 is left alone.
 - **Production is not this plan's job:** no Neon migration, no Vercel environment, no GCP.
-- **API keys:** the user puts them in `rezerve-asistan/.env` (git-ignored). Only Task 14 uses them; no step prints them.
+- **API keys:** the user puts them in `rezerve-assistant/.env` (git-ignored). Only Task 14 uses them; no step prints them.
 
 **Toolchain and style**
 - **Python:** 3.13 (`.python-version`; uv installs it). Dependencies resolve as of `exclude-newer = "2026-10-15T00:00:00Z"` and lock in `uv.lock` — the versions this plan was verified against.
@@ -432,7 +433,7 @@ import { TOOL_DEFINITIONS, toolConfig } from "./tool-definitions";
 
 /**
  * The assistant's tools exactly as /api/mcp lists them — the contract
- * rezerve-asistan keeps a copy of and tests itself against, so the two
+ * rezerve-assistant keeps a copy of and tests itself against, so the two
  * repositories cannot drift apart unnoticed.
  *
  * The list comes from a real MCP server and client talking in memory, so the
@@ -465,10 +466,10 @@ Replace `scripts/export-mcp-schema.ts` with:
 ```ts
 /**
  * Print the assistant's tools exactly as /api/mcp lists them — the contract
- * the rezerve-asistan repository keeps a copy of, and fails its tests against
+ * the rezerve-assistant repository keeps a copy of, and fails its tests against
  * when they drift.
  *
- *   bun run mcp:schema > ../rezerve-asistan/contract/rezerve-mcp-tools.json
+ *   bun run mcp:schema > ../rezerve-assistant/contract/rezerve-mcp-tools.json
  */
 import { toolSchemaDocument } from "@/lib/assistant/tool-schema";
 
@@ -504,7 +505,7 @@ In `README.md`:
 
 ```markdown
 `bun run mcp:schema` prints the assistant's tools exactly as `/api/mcp` lists
-them — the contract rezerve-asistan keeps a copy of and tests itself against.
+them — the contract rezerve-assistant keeps a copy of and tests itself against.
 ```
 
 - [ ] **Step 8: Commit**
@@ -514,11 +515,32 @@ git add lib/assistant scripts/export-mcp-schema.ts README.md
 git commit -m "feat: the assistant's tools name a booking's service, leave its own time out, and export as served" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
+- [ ] **Step 9: The other repository's new name**
+
+Phase 1's comments and README, the eval business's description, and the MCP client id still call the agent project `rezerve-asistan`:
+
+```bash
+git grep -l -e "rezerve-asistan" -e "Rezerve Asistan" -- . | xargs sed -i '' -e 's/rezerve-asistan/rezerve-assistant/g' -e 's/Rezerve Asistan/Rezerve Assistant/g'
+git grep -n -i "asistan" -- . ':!*.lock'
+bun run check && bun run typecheck
+DATABASE_URL=postgresql://olbios@localhost:5432/rezerve_assistant_test bun run test
+```
+
+Expected:
+- the second command prints nothing (Task 13 adds the Turkish UI words "Asistan" and "Asistana yazın" later);
+- Biome shows only its existing warning, and `tsc` is clean;
+- `Tests 419 passed`.
+
+```bash
+git add -u
+git commit -m "chore: the assistant's repository is now rezerve-assistant" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+```
+
 ### Task 2: The agent repository — scaffold, settings, customer ref
 
-**Files** (all in `/Users/olbios/repos/deploys/rezerve-asistan`):
+**Files** (all in `/Users/olbios/repos/deploys/rezerve-assistant`):
 - Create: `pyproject.toml`, `.python-version`, `.gitignore`, `.env.example`, `README.md` (a stub; Task 12 writes the real one), `uv.lock` (generated).
-- Create: `src/asistan/__init__.py`, `src/asistan/config.py`, `src/asistan/identity.py`.
+- Create: `src/assistant/__init__.py`, `src/assistant/config.py`, `src/assistant/identity.py`.
 - Test: `tests/__init__.py`, `tests/unit/__init__.py`, `tests/unit/test_identity.py`, `tests/unit/test_config.py`.
 
 **Interfaces:**
@@ -530,16 +552,16 @@ git commit -m "feat: the assistant's tools name a booking's service, leave its o
 - [ ] **Step 1: Branch, and the project files**
 
 ```bash
-cd /Users/olbios/repos/deploys/rezerve-asistan
+cd /Users/olbios/repos/deploys/rezerve-assistant
 git switch -c feat/agent-core
-mkdir -p src/asistan tests/unit
+mkdir -p src/assistant tests/unit
 ```
 
 `pyproject.toml`:
 
 ```toml
 [project]
-name = "rezerve-asistan"
+name = "rezerve-assistant"
 version = "0.1.0"
 description = "An AI receptionist for Turkish local businesses, booking through Rezerve's MCP server."
 readme = "README.md"
@@ -574,7 +596,7 @@ build-backend = "uv_build"
 exclude-newer = "2026-10-15T00:00:00Z"
 
 [tool.uv.build-backend]
-module-name = "asistan"
+module-name = "assistant"
 
 [tool.ruff]
 line-length = 100
@@ -636,23 +658,23 @@ GROQ_API_KEY=
 # MODEL_FALLBACKS=groq:openai/gpt-oss-120b
 # ALLOWED_WEB_ORIGINS=http://localhost:3000
 # REZERVE_MCP_URL=http://localhost:3000/api/mcp
-# DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/asistan
+# DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/assistant
 ```
 
 `README.md` (stub):
 
 ```markdown
-# Rezerve Asistan
+# Rezerve Assistant
 
 An AI receptionist for Turkish local businesses, booking through
 [Rezerve](https://github.com/Olbioss/rezerve)'s MCP server. In progress; the
-design is in `docs/superpowers/specs/2026-10-14-rezerve-asistan-design.md`.
+design is in `docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md`.
 ```
 
-`src/asistan/__init__.py`:
+`src/assistant/__init__.py`:
 
 ```python
-"""Rezerve Asistan: an AI receptionist that books through Rezerve's MCP server."""
+"""Rezerve Assistant: an AI receptionist that books through Rezerve's MCP server."""
 ```
 
 `tests/__init__.py` and `tests/unit/__init__.py`: empty files.
@@ -672,7 +694,7 @@ Expected:
 ```python
 import re
 
-from asistan.identity import customer_ref
+from assistant.identity import customer_ref
 
 # Rezerve's check (lib/assistant/identity.ts), verbatim.
 REZERVE_REF = re.compile(r"^(web|telegram|whatsapp|eval):[a-z2-7]{26}$")
@@ -706,7 +728,7 @@ def test_is_stable_and_differs_by_channel_user_and_secret() -> None:
 import pytest
 from pydantic import ValidationError
 
-from asistan.config import Settings
+from assistant.config import Settings
 
 
 @pytest.fixture(autouse=True)
@@ -736,11 +758,11 @@ def test_the_secrets_have_no_defaults() -> None:
 - [ ] **Step 3: Run them to watch them fail**
 
 Run: `uv run pytest tests/unit -q`
-Expected: two collection errors: `ModuleNotFoundError: No module named 'asistan.identity'` and `… 'asistan.config'`.
+Expected: two collection errors: `ModuleNotFoundError: No module named 'assistant.identity'` and `… 'assistant.config'`.
 
 - [ ] **Step 4: Implement**
 
-`src/asistan/config.py`:
+`src/assistant/config.py`:
 
 ```python
 """Settings, read from the environment (and from `.env` in development).
@@ -760,7 +782,7 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/asistan"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/assistant"
 
 
 class Settings(DatabaseSettings):
@@ -795,7 +817,7 @@ class Settings(DatabaseSettings):
         return value
 ```
 
-`src/asistan/identity.py`:
+`src/assistant/identity.py`:
 
 ```python
 """The customer ref: who a chat customer is, as Rezerve sees them.
@@ -841,15 +863,15 @@ git commit -m "feat: scaffold the agent service — settings and the customer re
 
 **Files:**
 - Create: `compose.yaml` (the database only; Task 12 adds the service), `docker/initdb/01-databases.sql`.
-- Create: `alembic.ini`, `src/asistan/db/__init__.py` (empty), `src/asistan/db/models.py`, `src/asistan/db/session.py`.
-- Create: `src/asistan/db/alembic/env.py`, `src/asistan/db/alembic/script.py.mako`, `src/asistan/db/alembic/versions/0001_initial.py`.
+- Create: `alembic.ini`, `src/assistant/db/__init__.py` (empty), `src/assistant/db/models.py`, `src/assistant/db/session.py`.
+- Create: `src/assistant/db/alembic/env.py`, `src/assistant/db/alembic/script.py.mako`, `src/assistant/db/alembic/versions/0001_initial.py`.
 - Test: `tests/conftest.py`, `tests/integration/__init__.py` (empty), `tests/integration/test_migrations.py`.
 
 **Interfaces:**
 - Consumes: `DatabaseSettings` (Task 2).
 - Produces:
   - the tables `conversations`, `messages`, `pending_approvals` and `agent_runs`;
-  - the models `Conversation`, `Message`, `PendingApproval` and `AgentRun` (`asistan.db.models`);
+  - the models `Conversation`, `Message`, `PendingApproval` and `AgentRun` (`assistant.db.models`);
   - `create_engine(url) -> AsyncEngine` and `session_factory(engine) -> async_sessionmaker[AsyncSession]`;
   - the pytest fixture `database_url` (session-scoped; migrated to head).
 
@@ -867,14 +889,14 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: asistan
+      POSTGRES_DB: assistant
     ports:
       - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d asistan"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d assistant"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -886,17 +908,17 @@ volumes:
 `docker/initdb/01-databases.sql`:
 
 ```sql
--- Runs once, when the volume is first created. `asistan` is POSTGRES_DB.
-CREATE DATABASE asistan_test;
+-- Runs once, when the volume is first created. `assistant` is POSTGRES_DB.
+CREATE DATABASE assistant_test;
 CREATE DATABASE rezerve;
 ```
 
 ```bash
 docker compose up -d --wait db
-docker compose exec -T db psql -U postgres -Atc "select datname from pg_database where datname in ('asistan','asistan_test','rezerve') order by 1"
+docker compose exec -T db psql -U postgres -Atc "select datname from pg_database where datname in ('assistant','assistant_test','rezerve') order by 1"
 ```
 
-Expected: `db` reports Healthy, and the query prints `asistan`, `asistan_test` and `rezerve`. If port 5433 is taken, stop and report; do not change the port without saying so.
+Expected: `db` reports Healthy, and the query prints `assistant`, `assistant_test` and `rezerve`. If port 5433 is taken, stop and report; do not change the port without saying so.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -913,7 +935,7 @@ os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 # The Compose database (docker compose up -d db); CI points this at its own.
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/asistan_test"
+    "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/assistant_test"
 )
 
 
@@ -952,7 +974,7 @@ Expected: the test errors in its fixture with Alembic's `CommandError: No 'scrip
 ```ini
 # The database URL comes from DATABASE_URL (or .env), never from this file.
 [alembic]
-script_location = %(here)s/src/asistan/db/alembic
+script_location = %(here)s/src/assistant/db/alembic
 prepend_sys_path = .
 path_separator = os
 
@@ -991,7 +1013,7 @@ format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 ```
 
-`src/asistan/db/models.py`:
+`src/assistant/db/models.py`:
 
 ```python
 """The agent's own tables (spec §7.8). Phase 2 needs these four; the owner
@@ -1146,7 +1168,7 @@ class AgentRun(Base):
     )
 ```
 
-`src/asistan/db/session.py`:
+`src/assistant/db/session.py`:
 
 ```python
 from sqlalchemy.ext.asyncio import (
@@ -1165,7 +1187,7 @@ def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(engine, expire_on_commit=False)
 ```
 
-`src/asistan/db/alembic/env.py`:
+`src/assistant/db/alembic/env.py`:
 
 ```python
 """Alembic, online and async only. The URL is the one a caller set on the
@@ -1179,8 +1201,8 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from asistan.config import DatabaseSettings
-from asistan.db.models import Base
+from assistant.config import DatabaseSettings
+from assistant.db.models import Base
 
 config = context.config
 if config.config_file_name is not None:
@@ -1204,7 +1226,7 @@ async def run_async_migrations() -> None:
 asyncio.run(run_async_migrations())
 ```
 
-`src/asistan/db/alembic/script.py.mako`:
+`src/assistant/db/alembic/script.py.mako`:
 
 ```mako
 """${message}
@@ -1234,7 +1256,7 @@ def downgrade() -> None:
     ${downgrades if downgrades else "pass"}
 ```
 
-`src/asistan/db/alembic/versions/0001_initial.py`:
+`src/assistant/db/alembic/versions/0001_initial.py`:
 
 ```python
 """Conversations, messages, pending approvals and run metrics.
@@ -1402,22 +1424,22 @@ uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run 
 
 Expected:
 - `1 passed`: the migration builds exactly the models;
-- `alembic upgrade head` runs `0001` on `asistan` (the default `DATABASE_URL`);
+- `alembic upgrade head` runs `0001` on `assistant` (the default `DATABASE_URL`);
 - `alembic check` prints `No new upgrade operations detected.`;
 - everything clean, and `6 passed`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add compose.yaml docker alembic.ini src/asistan/db tests/conftest.py tests/integration
+git add compose.yaml docker alembic.ini src/assistant/db tests/conftest.py tests/integration
 git commit -m "feat: the agent's tables, migrated by Alembic on Compose Postgres" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 4: The conversation store
 
 **Files:**
-- Create: `src/asistan/channels/__init__.py` (empty), `src/asistan/channels/base.py`.
-- Create: `src/asistan/conversation/__init__.py` (empty), `src/asistan/conversation/history.py`, `src/asistan/conversation/store.py`.
+- Create: `src/assistant/channels/__init__.py` (empty), `src/assistant/channels/base.py`.
+- Create: `src/assistant/conversation/__init__.py` (empty), `src/assistant/conversation/history.py`, `src/assistant/conversation/store.py`.
 - Modify: `tests/conftest.py` (adds the `store` fixture).
 - Test: `tests/unit/test_history.py`, `tests/integration/test_store.py`.
 
@@ -1451,14 +1473,14 @@ import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 
-from asistan.conversation.store import Store
-from asistan.db.session import create_engine, session_factory
+from assistant.conversation.store import Store
+from assistant.db.session import create_engine, session_factory
 
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 # The Compose database (docker compose up -d db); CI points this at its own.
 TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/asistan_test"
+    "TEST_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/assistant_test"
 )
 
 
@@ -1498,7 +1520,7 @@ from pydantic_ai import (
     UserPromptPart,
 )
 
-from asistan.conversation.history import close_open_calls, dump, load, trim
+from assistant.conversation.history import close_open_calls, dump, load, trim
 
 
 def ask(text: str) -> ModelRequest:
@@ -1588,8 +1610,8 @@ import pytest
 from pydantic_ai import ModelRequest, ModelResponse, ToolCallPart, UserPromptPart
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from asistan.channels.base import InboundMessage, LinkAction
-from asistan.conversation.store import NewApproval, Reply, Store, TurnResult
+from assistant.channels.base import InboundMessage, LinkAction
+from assistant.conversation.store import NewApproval, Reply, Store, TurnResult
 
 NOW = datetime.now(UTC)
 REF = "web:" + "a" * 26
@@ -1729,11 +1751,11 @@ async def test_a_conversation_holds_one_open_approval(store: Store) -> None:
 - [ ] **Step 2: Run them to watch them fail**
 
 Run: `uv run pytest tests/unit/test_history.py tests/integration/test_store.py -q`
-Expected: `ImportError while loading conftest` — `ModuleNotFoundError: No module named 'asistan.conversation'`. The new fixture imports the store.
+Expected: `ImportError while loading conftest` — `ModuleNotFoundError: No module named 'assistant.conversation'`. The new fixture imports the store.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/channels/base.py`:
+`src/assistant/channels/base.py`:
 
 ```python
 """What every channel shares: a message in, a message out, and how to send."""
@@ -1780,7 +1802,7 @@ class Channel(Protocol):
         ...
 ```
 
-`src/asistan/conversation/history.py`:
+`src/assistant/conversation/history.py`:
 
 ```python
 """A conversation's memory: Pydantic AI messages, stored as JSON and trimmed
@@ -1855,7 +1877,7 @@ def close_open_calls(messages: Sequence[ModelMessage]) -> list[ModelMessage]:
     return list(messages)
 ```
 
-`src/asistan/conversation/store.py`:
+`src/assistant/conversation/store.py`:
 
 ```python
 """Everything the service keeps about a conversation, one short transaction
@@ -1871,9 +1893,9 @@ from pydantic_ai import ModelMessage
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from asistan.channels.base import Action, ChannelName, InboundMessage, OutboundMessage
-from asistan.conversation import history
-from asistan.db.models import AgentRun, Conversation, Message, PendingApproval
+from assistant.channels.base import Action, ChannelName, InboundMessage, OutboundMessage
+from assistant.conversation import history
+from assistant.db.models import AgentRun, Conversation, Message, PendingApproval
 
 # A conversation idle this long is closed; the next message opens a new one.
 IDLE_CLOSE = timedelta(hours=24)
@@ -2313,14 +2335,14 @@ Expected: `15 passed` (8 + 7); everything clean, and `21 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/channels src/asistan/conversation tests
+git add src/assistant/channels src/assistant/conversation tests
 git commit -m "feat: the conversation store — messages stored once, one open conversation, KVKK pruning" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 5: The lease, and the local task queue
 
 **Files:**
-- Create: `src/asistan/conversation/lease.py`, `src/asistan/queue/__init__.py` (empty), `src/asistan/queue/base.py`, `src/asistan/queue/local.py`.
+- Create: `src/assistant/conversation/lease.py`, `src/assistant/queue/__init__.py` (empty), `src/assistant/queue/base.py`, `src/assistant/queue/local.py`.
 - Test: `tests/integration/test_lease.py`, `tests/unit/test_local_queue.py`.
 
 **Interfaces:**
@@ -2341,9 +2363,9 @@ from uuid import uuid4
 
 import pytest
 
-from asistan.channels.base import InboundMessage
-from asistan.conversation.lease import Lease, LeaseBusy, LeaseLost
-from asistan.conversation.store import Store
+from assistant.channels.base import InboundMessage
+from assistant.conversation.lease import Lease, LeaseBusy, LeaseLost
+from assistant.conversation.store import Store
 
 MINUTE = timedelta(minutes=1)
 
@@ -2410,8 +2432,8 @@ async def test_a_lapsed_lease_stops_its_handler_and_spares_the_new_one(store: St
 ```python
 import pytest
 
-from asistan.conversation.lease import LeaseBusy
-from asistan.queue.local import LocalTaskQueue
+from assistant.conversation.lease import LeaseBusy
+from assistant.queue.local import LocalTaskQueue
 
 
 class Handler:
@@ -2459,11 +2481,11 @@ async def test_a_failing_turn_is_retried_then_given_up(caplog: pytest.LogCapture
 - [ ] **Step 2: Run them to watch them fail**
 
 Run: `uv run pytest tests/integration/test_lease.py tests/unit/test_local_queue.py -q`
-Expected: two collection errors, both `ModuleNotFoundError: No module named 'asistan.conversation.lease'`.
+Expected: two collection errors, both `ModuleNotFoundError: No module named 'assistant.conversation.lease'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/conversation/lease.py`:
+`src/assistant/conversation/lease.py`:
 
 ```python
 """A conversation's lease: one handler at a time, and never a stale one.
@@ -2482,7 +2504,7 @@ from datetime import timedelta
 from types import TracebackType
 from typing import Self
 
-from asistan.conversation.store import Store
+from assistant.conversation.store import Store
 
 
 class LeaseBusy(Exception):
@@ -2535,7 +2557,7 @@ class Lease:
                 return
 ```
 
-`src/asistan/queue/base.py`:
+`src/assistant/queue/base.py`:
 
 ```python
 from typing import Protocol
@@ -2550,7 +2572,7 @@ class TaskQueue(Protocol):
         ...
 ```
 
-`src/asistan/queue/local.py`:
+`src/assistant/queue/local.py`:
 
 ```python
 """The in-process queue for development, tests and evals: Cloud Tasks'
@@ -2561,7 +2583,7 @@ import logging
 from collections import deque
 from collections.abc import Awaitable, Callable
 
-from asistan.conversation.lease import LeaseBusy
+from assistant.conversation.lease import LeaseBusy
 
 log = logging.getLogger(__name__)
 
@@ -2630,14 +2652,14 @@ Expected: `8 passed` (5 + 3; the lease tests take about two seconds, since they 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/conversation/lease.py src/asistan/queue tests
+git add src/assistant/conversation/lease.py src/assistant/queue tests
 git commit -m "feat: a renewed row lease per conversation, and the local task queue" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 6: Turkish dates and money, as Rezerve writes them
 
 **Files:**
-- Create: `src/asistan/agent/__init__.py` (empty), `src/asistan/agent/format.py`, `src/asistan/agent/calendar.py`.
+- Create: `src/assistant/agent/__init__.py` (empty), `src/assistant/agent/format.py`, `src/assistant/agent/calendar.py`.
 - Test: `tests/unit/test_format.py`.
 
 **Interfaces:**
@@ -2656,8 +2678,8 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from asistan.agent.calendar import calendar_block
-from asistan.agent.format import format_money, local_label
+from assistant.agent.calendar import calendar_block
+from assistant.agent.format import format_money, local_label
 
 
 def test_a_label_reads_like_rezerves() -> None:
@@ -2701,11 +2723,11 @@ def test_the_calendar_covers_two_weeks_from_today() -> None:
 - [ ] **Step 2: Run it to watch it fail**
 
 Run: `uv run pytest tests/unit/test_format.py -q`
-Expected: a collection error, `ModuleNotFoundError: No module named 'asistan.agent'`.
+Expected: a collection error, `ModuleNotFoundError: No module named 'assistant.agent'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/agent/format.py`:
+`src/assistant/agent/format.py`:
 
 ```python
 """Times and money written the way Rezerve writes them, so a confirmation
@@ -2748,7 +2770,7 @@ def format_money(cents: int, currency: str) -> str:
     return f"{symbol}{amount}"
 ```
 
-`src/asistan/agent/calendar.py`:
+`src/assistant/agent/calendar.py`:
 
 ```python
 """Fourteen dates with their Turkish weekdays, so "haftaya salı" is a
@@ -2756,7 +2778,7 @@ lookup for the model rather than arithmetic it may get wrong."""
 
 from datetime import date, timedelta
 
-from asistan.agent.format import WEEKDAYS
+from assistant.agent.format import WEEKDAYS
 
 CALENDAR_DAYS = 14
 
@@ -2782,21 +2804,21 @@ Expected: `9 passed`; everything clean, and `38 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/agent tests/unit/test_format.py
+git add src/assistant/agent tests/unit/test_format.py
 git commit -m "feat: Turkish dates, money and a two-week calendar, written the way Rezerve writes them" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 7: Rezerve over MCP — the session, the snapshot, the fake, the contract test
 
 **Files:**
-- Create: `src/asistan/mcp.py`.
+- Create: `src/assistant/mcp.py`.
 - Create: `contract/rezerve-mcp-tools.json` (copied from Task 1's export, never hand-edited).
 - Create: `tests/fakes/__init__.py` (empty), `tests/fakes/rezerve.py`.
 - Test: `tests/unit/test_mcp.py`, `tests/contract/__init__.py` (empty), `tests/contract/test_contract.py`.
 
 **Interfaces:**
 - Consumes: `local_label` (Task 6), used by the fake; Task 1's `bun run mcp:schema`.
-- Produces, in `asistan.mcp`:
+- Produces, in `assistant.mcp`:
   - `BUSINESS_HEADER` and `CUSTOMER_HEADER`;
   - the models `BusinessInfo`, `ServiceInfo` and `BookingView` (the snapshot's output fields);
   - `RezerveError(code, message)` with `from_failure(text)`;
@@ -2846,8 +2868,8 @@ from mcp.server.mcpserver import MCPServer
 from mcp.types import CallToolResult, TextContent, Tool
 from pydantic_ai.mcp import MCPToolset
 
-from asistan.agent.format import local_label
-from asistan.mcp import RezerveSession
+from assistant.agent.format import local_label
+from assistant.mcp import RezerveSession
 
 SNAPSHOT = Path(__file__).parents[2] / "contract" / "rezerve-mcp-tools.json"
 TIMEZONE = "Europe/Istanbul"
@@ -3085,7 +3107,7 @@ from typing import Any, cast
 
 from pydantic_ai import ToolDefinition
 
-from asistan.mcp import RezerveError, requires_approval, slim_schema
+from assistant.mcp import RezerveError, requires_approval, slim_schema
 
 NO_CONTEXT = cast(Any, None)
 
@@ -3166,7 +3188,7 @@ import pytest
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel
 
-from asistan.mcp import BookingView, BusinessInfo, ServiceInfo
+from assistant.mcp import BookingView, BusinessInfo, ServiceInfo
 from tests.fakes.rezerve import CILT, SAC, FakeBooking, FakeRezerve, snapshot_tools
 
 TOOLS = {tool["name"]: tool for tool in snapshot_tools()}
@@ -3278,11 +3300,11 @@ async def test_the_fake_answers_inside_the_contract(name: str, arguments: Argume
 - [ ] **Step 3: Run them to watch them fail**
 
 Run: `uv run pytest tests/unit/test_mcp.py tests/contract -q`
-Expected: collection errors, `ModuleNotFoundError: No module named 'asistan.mcp'`.
+Expected: collection errors, `ModuleNotFoundError: No module named 'assistant.mcp'`.
 
 - [ ] **Step 4: Implement**
 
-`src/asistan/mcp.py`:
+`src/assistant/mcp.py`:
 
 ```python
 """Rezerve, as this service reaches it: one MCP session per turn.
@@ -3474,14 +3496,14 @@ Expected: `21 passed` (6 + 15); everything clean, and `59 passed`. If a contract
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/asistan/mcp.py contract tests/fakes tests/unit/test_mcp.py tests/contract
+git add src/assistant/mcp.py contract tests/fakes tests/unit/test_mcp.py tests/contract
 git commit -m "feat: Rezerve over MCP — identity in headers, writes wait for approval, the contract pinned" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 8: The receptionist — instructions, outputs, the model chain
 
 **Files:**
-- Create: `src/asistan/agent/agent.py`.
+- Create: `src/assistant/agent/agent.py`.
 - Test: `tests/unit/test_agent.py`.
 
 **Interfaces:**
@@ -3509,9 +3531,9 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.models.groq import GroqModel
 
-from asistan.agent.agent import TurnDeps, build_agent, build_model
-from asistan.config import Settings
-from asistan.mcp import BookingView, BusinessInfo, ServiceInfo
+from assistant.agent.agent import TurnDeps, build_agent, build_model
+from assistant.config import Settings
+from assistant.mcp import BookingView, BusinessInfo, ServiceInfo
 
 BUSINESS = BusinessInfo(
     name="Rezerve Demo Salon",
@@ -3609,11 +3631,11 @@ def test_an_unknown_provider_is_refused() -> None:
 - [ ] **Step 2: Run it to watch it fail**
 
 Run: `uv run pytest tests/unit/test_agent.py -q`
-Expected: a collection error, `ModuleNotFoundError: No module named 'asistan.agent.agent'`.
+Expected: a collection error, `ModuleNotFoundError: No module named 'assistant.agent.agent'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/agent/agent.py`:
+`src/assistant/agent/agent.py`:
 
 ```python
 """The receptionist: its instructions, its outputs and its models.
@@ -3638,10 +3660,10 @@ from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.groq import GroqProvider
 
-from asistan.agent.calendar import calendar_block
-from asistan.agent.format import format_money
-from asistan.config import Settings
-from asistan.mcp import BookingView, BusinessInfo, ServiceInfo
+from assistant.agent.calendar import calendar_block
+from assistant.agent.format import format_money
+from assistant.config import Settings
+from assistant.mcp import BookingView, BusinessInfo, ServiceInfo
 
 log = logging.getLogger(__name__)
 
@@ -3791,14 +3813,14 @@ Expected: `5 passed`; everything clean, and `64 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/agent/agent.py tests/unit/test_agent.py
+git add src/assistant/agent/agent.py tests/unit/test_agent.py
 git commit -m "feat: the receptionist's instructions, its three ways to end a run, and the model chain" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 9: Confirm before every write
 
 **Files:**
-- Create: `src/asistan/agent/approvals.py`.
+- Create: `src/assistant/agent/approvals.py`.
 - Test: `tests/unit/test_approvals.py`.
 
 **Interfaces:**
@@ -3830,8 +3852,8 @@ import pytest
 from jsonschema import Draft202012Validator
 from pydantic_ai import ToolApproved, ToolCallPart, ToolDenied
 
-from asistan.agent.agent import TurnDeps
-from asistan.agent.approvals import (
+from assistant.agent.agent import TurnDeps
+from assistant.agent.approvals import (
     DENIED,
     EXPIRED,
     ONE_AT_A_TIME,
@@ -3842,9 +3864,9 @@ from asistan.agent.approvals import (
     propose,
     resolution,
 )
-from asistan.agent.format import local_label
-from asistan.conversation.store import OpenApproval
-from asistan.mcp import RezerveSession
+from assistant.agent.format import local_label
+from assistant.conversation.store import OpenApproval
+from assistant.mcp import RezerveSession
 from tests.fakes.rezerve import CILT, SAC, TIMEZONE, FakeRezerve, snapshot_tools
 
 NOW = datetime.now(UTC)
@@ -4090,11 +4112,11 @@ async def test_every_proposal_is_a_call_rezerve_accepts(
 - [ ] **Step 2: Run it to watch it fail**
 
 Run: `uv run pytest tests/unit/test_approvals.py -q`
-Expected: a collection error, `ModuleNotFoundError: No module named 'asistan.agent.approvals'`.
+Expected: a collection error, `ModuleNotFoundError: No module named 'assistant.agent.approvals'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/agent/approvals.py`:
+`src/assistant/agent/approvals.py`:
 
 ```python
 """Confirm before every write (spec §7.3).
@@ -4122,10 +4144,10 @@ from pydantic_ai import (
 )
 from pydantic_ai.models import Model
 
-from asistan.agent.agent import TurnDeps
-from asistan.agent.format import format_money, local_label
-from asistan.conversation.store import OpenApproval
-from asistan.mcp import BookingView, RezerveError, RezerveSession
+from assistant.agent.agent import TurnDeps
+from assistant.agent.format import format_money, local_label
+from assistant.conversation.store import OpenApproval
+from assistant.mcp import BookingView, RezerveError, RezerveSession
 
 type ReplyDecision = Literal["approve", "deny", "other"]
 type Resolution = Literal["approve", "deny", "other", "expired"]
@@ -4351,14 +4373,14 @@ Expected: `39 passed`; everything clean, and `103 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/agent/approvals.py tests/unit/test_approvals.py
+git add src/assistant/agent/approvals.py tests/unit/test_approvals.py
 git commit -m "feat: confirmations rendered by code from the exact arguments, and the customer's answer read" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 10: One turn — lease, batch, run, confirm, reply
 
 **Files:**
-- Create: `src/asistan/agent/handoff.py`, `src/asistan/conversation/turn.py`.
+- Create: `src/assistant/agent/handoff.py`, `src/assistant/conversation/turn.py`.
 - Create: `tests/fakes/models.py`.
 - Test: `tests/integration/test_turn.py`.
 
@@ -4458,13 +4480,13 @@ from pydantic_ai import (
 )
 from pydantic_ai.models.function import AgentInfo
 
-from asistan.agent.agent import build_agent
-from asistan.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
-from asistan.channels.base import ChannelName, InboundMessage, OutboundMessage
-from asistan.conversation.store import Reply, Store, TurnResult
-from asistan.conversation.turn import TurnProcessor, TurnSettings
-from asistan.identity import customer_ref
-from asistan.mcp import RezerveSession
+from assistant.agent.agent import build_agent
+from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
+from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
+from assistant.conversation.store import Reply, Store, TurnResult
+from assistant.conversation.turn import TurnProcessor, TurnSettings
+from assistant.identity import customer_ref
+from assistant.mcp import RezerveSession
 from tests.fakes.models import Script, calls, classifies, says
 from tests.fakes.rezerve import CHECKOUT_URL, CILT, SAC, FakeRezerve
 
@@ -4759,11 +4781,11 @@ async def test_a_failing_classifier_leaves_the_approval_to_the_next_message(
 - [ ] **Step 2: Run them to watch them fail**
 
 Run: `uv run pytest tests/integration/test_turn.py -q`
-Expected: a collection error, `ModuleNotFoundError: No module named 'asistan.conversation.turn'`.
+Expected: a collection error, `ModuleNotFoundError: No module named 'assistant.conversation.turn'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/agent/handoff.py`:
+`src/assistant/agent/handoff.py`:
 
 ```python
 """What the customer reads when the assistant steps aside.
@@ -4775,7 +4797,7 @@ no owner chat is linked.
 
 from urllib.parse import urljoin
 
-from asistan.mcp import BusinessInfo
+from assistant.mcp import BusinessInfo
 
 
 def handoff_reply(business: BusinessInfo) -> str:
@@ -4800,7 +4822,7 @@ def unavailable_reply(booking_page_url: str) -> str:
     return f"Şu an yanıt veremiyorum — randevunuzu buradan alabilirsiniz: {booking_page_url}"
 ```
 
-`src/asistan/conversation/turn.py`:
+`src/assistant/conversation/turn.py`:
 
 ```python
 """One turn: everything a customer wrote since the last answer, answered once.
@@ -4835,8 +4857,8 @@ from pydantic_ai import (
     UsageLimits,
 )
 
-from asistan.agent.agent import AgentOutput, Handoff, TurnDeps
-from asistan.agent.approvals import (
+from assistant.agent.agent import AgentOutput, Handoff, TurnDeps
+from assistant.agent.approvals import (
     Refusal,
     ReplyClassifier,
     Resolution,
@@ -4845,12 +4867,12 @@ from asistan.agent.approvals import (
     refusal,
     resolution,
 )
-from asistan.agent.handoff import booking_page, handoff_reply, unavailable_reply
-from asistan.channels.base import Action, Channel, ChannelName
-from asistan.config import Settings
-from asistan.conversation import history
-from asistan.conversation.lease import Lease
-from asistan.conversation.store import (
+from assistant.agent.handoff import booking_page, handoff_reply, unavailable_reply
+from assistant.channels.base import Action, Channel, ChannelName
+from assistant.config import Settings
+from assistant.conversation import history
+from assistant.conversation.lease import Lease
+from assistant.conversation.store import (
     ConversationRecord,
     Decision,
     NewApproval,
@@ -4862,7 +4884,7 @@ from asistan.conversation.store import (
     StoredInbound,
     TurnResult,
 )
-from asistan.mcp import BusinessInfo, RezerveSession
+from assistant.mcp import BusinessInfo, RezerveSession
 
 log = logging.getLogger(__name__)
 
@@ -5189,14 +5211,14 @@ Expected: `15 passed`; everything clean, and `118 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/agent/handoff.py src/asistan/conversation/turn.py tests/fakes/models.py tests/integration/test_turn.py
+git add src/assistant/agent/handoff.py src/assistant/conversation/turn.py tests/fakes/models.py tests/integration/test_turn.py
 git commit -m "feat: a turn answers a burst once, confirms every write, and always answers" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
 ### Task 11: The web channel, and the app
 
 **Files:**
-- Create: `src/asistan/services.py`, `src/asistan/channels/web.py`, `src/asistan/main.py`.
+- Create: `src/assistant/services.py`, `src/assistant/channels/web.py`, `src/assistant/main.py`.
 - Test: `tests/integration/test_web.py`.
 
 **Interfaces:**
@@ -5207,7 +5229,7 @@ git commit -m "feat: a turn answers a burst once, confirms every write, and alwa
   - `GET /web/{slug}/messages?visitor_id=&after=`, answering `{messages: [{seq, direction, text, actions, client_message_id}], pending}`;
   - `GET /health`, answering `{"status": "ok"}`;
   - `WebChannel`;
-  - `create_app(settings=None, *, model=None, open_rezerve=None) -> FastAPI`, which uvicorn runs with `asistan.main:create_app --factory`.
+  - `create_app(settings=None, *, model=None, open_rezerve=None) -> FastAPI`, which uvicorn runs with `assistant.main:create_app --factory`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -5225,11 +5247,11 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from asistan.config import Settings
-from asistan.conversation.store import Store
-from asistan.main import create_app
-from asistan.queue.local import LocalTaskQueue
-from asistan.services import AppServices
+from assistant.config import Settings
+from assistant.conversation.store import Store
+from assistant.main import create_app
+from assistant.queue.local import LocalTaskQueue
+from assistant.services import AppServices
 from tests.fakes.models import Script, says
 from tests.fakes.rezerve import FakeRezerve
 
@@ -5284,7 +5306,7 @@ async def widget(database_url: str, store: Store, script: Script) -> AsyncIterat
     app = create_app(settings, model=script.model, open_rezerve=lambda slug, ref: fake.session())
     async with app.router.lifespan_context(app):
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://asistan") as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://assistant") as client:
             yield Widget(app, client)
 
 
@@ -5369,11 +5391,11 @@ async def test_health(widget: Widget) -> None:
 - [ ] **Step 2: Run it to watch it fail**
 
 Run: `uv run pytest tests/integration/test_web.py -q`
-Expected: a collection error, `ModuleNotFoundError: No module named 'asistan.main'`.
+Expected: a collection error, `ModuleNotFoundError: No module named 'assistant.main'`.
 
 - [ ] **Step 3: Implement**
 
-`src/asistan/services.py`:
+`src/assistant/services.py`:
 
 ```python
 """What the HTTP layer reaches for: built once in the app's lifespan."""
@@ -5383,9 +5405,9 @@ from typing import cast
 
 from fastapi import Request
 
-from asistan.config import Settings
-from asistan.conversation.store import Store
-from asistan.queue.base import TaskQueue
+from assistant.config import Settings
+from assistant.conversation.store import Store
+from assistant.queue.base import TaskQueue
 
 
 @dataclass(frozen=True)
@@ -5399,7 +5421,7 @@ def app_services(request: Request) -> AppServices:
     return cast(AppServices, request.app.state.services)
 ```
 
-`src/asistan/channels/web.py`:
+`src/assistant/channels/web.py`:
 
 ```python
 """The chat widget on Rezerve's booking page (spec §6.4).
@@ -5417,9 +5439,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Path, Query
 from pydantic import BaseModel, StringConstraints
 
-from asistan.channels.base import ChannelName, InboundMessage, OutboundMessage
-from asistan.identity import customer_ref
-from asistan.services import AppServices, app_services
+from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
+from assistant.identity import customer_ref
+from assistant.services import AppServices, app_services
 
 # Rezerve's own slug rule (lib/slug.ts).
 type Slug = Annotated[str, Path(min_length=3, max_length=48, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
@@ -5507,10 +5529,10 @@ async def get_messages(
     )
 ```
 
-`src/asistan/main.py`:
+`src/assistant/main.py`:
 
 ```python
-"""The service: `uvicorn asistan.main:create_app --factory`."""
+"""The service: `uvicorn assistant.main:create_app --factory`."""
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -5520,16 +5542,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_ai.models import Model
 
-from asistan.agent.agent import build_agent, build_model
-from asistan.agent.approvals import ReplyClassifier
-from asistan.channels import web
-from asistan.config import Settings
-from asistan.conversation.store import Store
-from asistan.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
-from asistan.db.session import create_engine, session_factory
-from asistan.mcp import connect
-from asistan.queue.local import LocalTaskQueue
-from asistan.services import AppServices
+from assistant.agent.agent import build_agent, build_model
+from assistant.agent.approvals import ReplyClassifier
+from assistant.channels import web
+from assistant.config import Settings
+from assistant.conversation.store import Store
+from assistant.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
+from assistant.db.session import create_engine, session_factory
+from assistant.mcp import connect
+from assistant.queue.local import LocalTaskQueue
+from assistant.services import AppServices
 
 
 def create_app(
@@ -5566,7 +5588,7 @@ def create_app(
             await queue.aclose()
             await engine.dispose()
 
-    app = FastAPI(title="Rezerve Asistan", lifespan=lifespan)
+    app = FastAPI(title="Rezerve Assistant", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=config.allowed_web_origins,
@@ -5594,7 +5616,7 @@ Expected: `9 passed`; everything clean, and `127 passed`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/asistan/services.py src/asistan/channels/web.py src/asistan/main.py tests/integration/test_web.py
+git add src/assistant/services.py src/assistant/channels/web.py src/assistant/main.py tests/integration/test_web.py
 git commit -m "feat: the widget's endpoints and the app — stored once, answered in the background, polled back" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 
@@ -5602,13 +5624,13 @@ git commit -m "feat: the widget's endpoints and the app — stored once, answere
 
 **Files:**
 - Create: `Dockerfile`, `.dockerignore`.
-- Modify: `compose.yaml` (adds the `asistan` service).
+- Modify: `compose.yaml` (adds the `assistant` service).
 - Replace: `README.md`.
 
 **Interfaces:**
 - Produces:
-  - an image that runs `uvicorn asistan.main:create_app --factory` on `$PORT` (default 8000) as a non-root user;
-  - `docker compose up asistan`, which migrates, then serves on `localhost:8000`, reaching Rezerve's `bun dev` at `host.docker.internal:3000`.
+  - an image that runs `uvicorn assistant.main:create_app --factory` on `$PORT` (default 8000) as a non-root user;
+  - `docker compose up assistant`, which migrates, then serves on `localhost:8000`, reaching Rezerve's `bun dev` at `host.docker.internal:3000`.
 
 - [ ] **Step 1: The image**
 
@@ -5629,14 +5651,14 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
 
 FROM python:3.13-slim
-RUN useradd --system --uid 10001 asistan
+RUN useradd --system --uid 10001 assistant
 WORKDIR /app
 COPY --from=build /app /app
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYDANTIC_AI_NO_BANNER=1
-USER asistan
+USER assistant
 EXPOSE 8000
 # Cloud Run says which port in $PORT; locally it is 8000.
-CMD ["sh", "-c", "exec uvicorn asistan.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn assistant.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
 ```
 
 `.dockerignore`:
@@ -5668,25 +5690,25 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: asistan
+      POSTGRES_DB: assistant
     ports:
       - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d asistan"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d assistant"]
       interval: 2s
       timeout: 5s
       retries: 30
 
-  asistan:
+  assistant:
     build: .
     env_file:
       - path: .env
         required: false
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/asistan
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/assistant
       # Rezerve's `bun dev`, on the host.
       REZERVE_MCP_URL: http://host.docker.internal:3000/api/mcp
     ports:
@@ -5699,7 +5721,7 @@ services:
     command:
       - sh
       - -c
-      - alembic upgrade head && exec uvicorn asistan.main:create_app --factory --host 0.0.0.0 --port 8000
+      - alembic upgrade head && exec uvicorn assistant.main:create_app --factory --host 0.0.0.0 --port 8000
 
 volumes:
   db-data:
@@ -5711,10 +5733,10 @@ A throwaway `.env` lets the service start without real keys. It is git-ignored, 
 
 ```bash
 printf 'ASSISTANT_MCP_TOKEN=smoke-test-token\nCUSTOMER_REF_SECRET=smoke-test-secret\nGROQ_API_KEY=not-a-real-key\n' > .env
-docker compose up -d --build --wait asistan
+docker compose up -d --build --wait assistant
 curl -sS --retry 15 --retry-all-errors --retry-delay 1 http://localhost:8000/health
-docker compose logs asistan | tail -8
-docker compose stop asistan && rm .env
+docker compose logs assistant | tail -8
+docker compose stop assistant && rm .env
 ```
 
 Expected:
@@ -5728,7 +5750,7 @@ Expected:
 Replace `README.md` with:
 
 ````markdown
-# Rezerve Asistan
+# Rezerve Assistant
 
 An AI receptionist for Turkish local businesses. A customer writes in Turkish
 in the chat widget on a business's [Rezerve](https://github.com/Olbioss/rezerve)
@@ -5744,7 +5766,7 @@ from the exact arguments that will run.
 
 **Status:** phase 2 of 5. The agent core and the web channel run locally.
 The design is in
-[docs/superpowers/specs/2026-10-14-rezerve-asistan-design.md](docs/superpowers/specs/2026-10-14-rezerve-asistan-design.md).
+[docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md](docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md).
 
 ## How a message is answered
 
@@ -5768,7 +5790,7 @@ You need Docker, [uv](https://docs.astral.sh/uv/), a Rezerve checkout at
 
 ```bash
 cp .env.example .env    # set ASSISTANT_MCP_TOKEN, CUSTOMER_REF_SECRET and a model key
-docker compose up -d db # Postgres on localhost:5433: asistan, asistan_test, rezerve
+docker compose up -d db # Postgres on localhost:5433: assistant, assistant_test, rezerve
 
 # Rezerve, on the same Postgres, with its demo businesses (in ../rezerve):
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5433/rezerve
@@ -5777,12 +5799,12 @@ ASSISTANT_MCP_TOKEN=<the same token> ASSISTANT_URL=http://localhost:8000 \
   NEXT_PUBLIC_APP_URL=http://localhost:3000 BETTER_AUTH_URL=http://localhost:3000 \
   EMAIL_DELIVERY=off bun dev
 
-docker compose up asistan   # migrates, then serves on :8000
+docker compose up assistant   # migrates, then serves on :8000
 ```
 
 Then open <http://localhost:3000/r/demo> and write to the assistant. To run
 the service on the host instead:
-`uv run alembic upgrade head && uv run uvicorn asistan.main:create_app --factory --reload`.
+`uv run alembic upgrade head && uv run uvicorn assistant.main:create_app --factory --reload`.
 
 ## Tests
 
@@ -5826,7 +5848,7 @@ Expected: everything clean, `127 passed`, and a clean working tree after the com
 - Produces:
   - `ChatWidget({ slug, assistantUrl, businessName })`, rendered on `/r/[slug]` when `business.profile.assistantEnabled` and `process.env.ASSISTANT_URL` are both set;
   - `visitorId(storage, newId?)`, `mergeMessages(shown, incoming)`, `unconfirmedDrafts(drafts, messages)`, `sendMessage(...)` and `fetchMessages(...)`;
-  - `VISITOR_KEY = "rezerve-asistan:visitor"`.
+  - `VISITOR_KEY = "rezerve-assistant:visitor"`.
 
 - [ ] **Step 1: Write the failing unit test**
 
@@ -5934,7 +5956,7 @@ Expected: the file fails to load — `./chat-client` does not exist.
 
 ```ts
 /**
- * The chat widget's half of its conversation with rezerve-asistan (spec
+ * The chat widget's half of its conversation with rezerve-assistant (spec
  * §6.4): the visitor id, the two requests, and folding polled messages into
  * what the widget shows. Plain functions, so they are tested without a page.
  */
@@ -5955,7 +5977,7 @@ export type ChatPage = { messages: ChatMessage[]; pending: boolean };
 /** A message the widget shows before the service has stored it. */
 export type Draft = { clientMessageId: string; text: string };
 
-export const VISITOR_KEY = "rezerve-asistan:visitor";
+export const VISITOR_KEY = "rezerve-assistant:visitor";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type VisitorStorage = Pick<Storage, "getItem" | "setItem">;
@@ -6059,7 +6081,7 @@ In `playwright.config.ts`, add to `webServer.env`, after `EMAIL_DELIVERY: "off",
 import { expect, type Page, type Route, test } from "@playwright/test";
 
 // playwright.config.ts gives the server this ASSISTANT_URL. Nothing listens
-// there: each test answers for the assistant, the way rezerve-asistan does.
+// there: each test answers for the assistant, the way rezerve-assistant does.
 const ASSISTANT = "http://localhost:3999";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const CHECKOUT = "https://sandbox.example/odeme/1";
@@ -6231,7 +6253,7 @@ const POLL_FOR_MS = 60_000;
 /**
  * The chat assistant on a business's booking page (spec §6.4). Closed, it is
  * one button and has sent nothing anywhere; opened, it is a conversation with
- * rezerve-asistan, polled while an answer is on its way.
+ * rezerve-assistant, polled while an answer is on its way.
  */
 export function ChatWidget({
   slug,
@@ -6551,7 +6573,7 @@ In `README.md`, after the "**Off until switched on:** …" bullet of the assista
 ```markdown
 **The chat widget** (`components/assistant/chat-widget.tsx`) puts the
 assistant on `/r/[slug]` for a business with `assistant_enabled`, when
-`ASSISTANT_URL` says where rezerve-asistan runs; it is read per request, so one
+`ASSISTANT_URL` says where rezerve-assistant runs; it is read per request, so one
 build can point anywhere. Closed, the widget has sent nothing. Its visitor id,
 a random uuid kept in localStorage, is the conversation's only credential. It
 posts a message, then polls every second while an answer is coming, for at
@@ -6573,7 +6595,7 @@ This is the phase-2 deliverable from spec §11. It is the only task that calls r
 
 - [ ] **Step 1: The user's keys (stop and ask)**
 
-Ask the user to create `rezerve-asistan/.env` from `.env.example`, with:
+Ask the user to create `rezerve-assistant/.env` from `.env.example`, with:
 - `ASSISTANT_MCP_TOKEN`: any long random string, for example `openssl rand -hex 24`;
 - `CUSTOMER_REF_SECRET`: another one;
 - `GEMINI_API_KEY`: from a new Google AI Studio project of its own (free-tier quotas are per project);
@@ -6588,11 +6610,11 @@ Ask the user to look at AI Studio's rate-limit page. If `gemini-3.5-flash-lite` 
 - [ ] **Step 3: Rezerve on the Compose database, with its demos**
 
 ```bash
-cd /Users/olbios/repos/deploys/rezerve-asistan && docker compose up -d --wait db
+cd /Users/olbios/repos/deploys/rezerve-assistant && docker compose up -d --wait db
 cd /Users/olbios/repos/deploys/rezerve
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5433/rezerve
 bun run db:migrate && bun run seed:demo
-ASSISTANT_MCP_TOKEN="$(grep '^ASSISTANT_MCP_TOKEN=' ../rezerve-asistan/.env | cut -d= -f2-)" \
+ASSISTANT_MCP_TOKEN="$(grep '^ASSISTANT_MCP_TOKEN=' ../rezerve-assistant/.env | cut -d= -f2-)" \
   ASSISTANT_URL=http://localhost:8000 NEXT_PUBLIC_APP_URL=http://localhost:3000 \
   BETTER_AUTH_URL=http://localhost:3000 EMAIL_DELIVERY=off bun dev
 ```
@@ -6602,9 +6624,9 @@ Run `bun dev` in its own terminal or in the background. Expected: the seed repor
 - [ ] **Step 4: The service**
 
 ```bash
-cd /Users/olbios/repos/deploys/rezerve-asistan
-docker compose up -d --build --wait asistan
-docker compose logs -f asistan
+cd /Users/olbios/repos/deploys/rezerve-assistant
+docker compose up -d --build --wait assistant
+docker compose logs -f assistant
 ```
 
 Expected: the migration (or nothing to do), then `Uvicorn running on http://0.0.0.0:8000`, with no "Skipping" lines for models that have keys.
@@ -6622,9 +6644,9 @@ Customer details must be made up: the Gemini free tier's terms forbid personal d
 - [ ] **Step 6: What the service recorded**
 
 ```bash
-docker compose exec -T db psql -U postgres -d asistan -c "select outcome, model_used, models_tried, requests, input_tokens + output_tokens as tokens, duration_ms from agent_runs order by id"
-docker compose exec -T db psql -U postgres -d asistan -c "select tool_name, decision from pending_approvals order by id"
-docker compose logs asistan | grep -E " 4[0-9][0-9] |Every model failed|Turn failed" || echo "no provider errors"
+docker compose exec -T db psql -U postgres -d assistant -c "select outcome, model_used, models_tried, requests, input_tokens + output_tokens as tokens, duration_ms from agent_runs order by id"
+docker compose exec -T db psql -U postgres -d assistant -c "select tool_name, decision from pending_approvals order by id"
+docker compose logs assistant | grep -E " 4[0-9][0-9] |Every model failed|Turn failed" || echo "no provider errors"
 ```
 
 Expected:
@@ -6646,7 +6668,7 @@ Rezerve answered the handshake with 403, which surfaces as `MCPError`; the turn'
 
 - [ ] **Step 8: Wind down, and report**
 
-Stop `bun dev`, then `docker compose stop asistan`. Report to the user:
+Stop `bun dev`, then `docker compose stop assistant`. Report to the user:
 - what the customer saw at each step;
 - the `agent_runs` rows;
 - anything the real model did that the evals (phase 3) should cover.
