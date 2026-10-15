@@ -400,7 +400,7 @@ class Store:
                 return MessagesPage(messages=[], pending=False)
             # The page stops short of the first reply not yet sent: a reader's
             # cursor that moved past it would never see it once it was.
-            first_unsent = (
+            first_unsent: int | None = (
                 await session.execute(
                     sa.select(sa.func.min(Message.seq)).where(
                         Message.conversation_id == conversation_id,
