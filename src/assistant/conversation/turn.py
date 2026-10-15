@@ -112,6 +112,9 @@ class Meter:
         for message in messages:
             if isinstance(message, ModelResponse):
                 for attempt in message.failed_attempts or []:
+                    # Otherwise invisible: a model that rejects every request
+                    # looks like a healthy run on the next one in the chain.
+                    log.warning("Model %s failed, fell back: %s", attempt.model_name, attempt.error)
                     self._saw(attempt.model_name)
                 if message.model_name:
                     self._saw(message.model_name)

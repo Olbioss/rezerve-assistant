@@ -1,4 +1,5 @@
 import dataclasses
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -13,7 +14,9 @@ from pydantic_ai import (
     ToolReturnPart,
     UserPromptPart,
 )
-from pydantic_ai.models.function import AgentInfo
+from pydantic_ai.models import Model
+from pydantic_ai.models.fallback import FallbackModel
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
@@ -79,13 +82,15 @@ class Harness:
             rezerve_mcp_url="http://localhost:3000/api/mcp",
         )
         self.script = script
+        # A model of the test's own, such as a fallback chain; the script otherwise.
+        self.model: Model | None = None
         self.classifier = classifier or Script()
         self.conversation_id = 0
 
     def processor(self) -> TurnProcessor:
         return TurnProcessor(
             store=self.store,
-            agent=build_agent(self.script.model),
+            agent=build_agent(self.model or self.script.model),
             classifier=ReplyClassifier(self.classifier.model),
             open_rezerve=lambda slug, ref: self.open_rezerve(slug, ref),
             channels={"web": self.outbox},
@@ -347,3 +352,17 @@ async def test_a_failed_resume_after_a_mixed_proposal_does_not_wedge_the_convers
     await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
     await turn.say("evet")  # the write runs, then every model fails
     assert await turn.say("teşekkürler") == ["Rica ederim!"]
+
+
+async def test_a_fallback_is_logged_with_the_model_that_failed(
+    store: Store, caplog: pytest.LogCaptureFixture
+) -> None:
+    def quota(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        raise ModelHTTPError(status_code=429, model_name="gemini-x", body={"error": "quota"})
+
+    turn = Harness(store, Script(says("Merhaba!")))
+    turn.model = FallbackModel(FunctionModel(quota, model_name="gemini-x"), turn.script.model)
+    with caplog.at_level(logging.WARNING, logger="assistant.conversation.turn"):
+        assert await turn.say("merhaba") == ["Merhaba!"]
+    assert "gemini-x" in caplog.text
+    assert "fell back" in caplog.text
