@@ -141,3 +141,21 @@ async def test_a_conversation_holds_one_open_approval(store: Store) -> None:
     await store.commit_turn(recorded.conversation_id, result, NOW)
     with pytest.raises(IntegrityError):
         await store.commit_turn(recorded.conversation_id, result, NOW)
+
+
+async def test_the_page_never_moves_past_a_reply_not_yet_sent(store: Store) -> None:
+    recorded = await store.record_inbound(inbound("merhaba"), REF, NOW)
+    assert recorded.seq is not None
+    answered = TurnResult(processed=[recorded.seq], replies=[Reply("Merhaba!")])
+    await store.commit_turn(recorded.conversation_id, answered, NOW)
+    # The customer writes again after the reply is stored, before it is sent.
+    await store.record_inbound(inbound("yarın yer var mı?"), REF, NOW)
+
+    page = await store.messages_after("demo", "web", "visitor-1", 0)
+    assert [m.text for m in page.messages] == ["merhaba"]
+    cursor = page.messages[-1].seq
+
+    [reply] = await store.unsent(recorded.conversation_id)
+    await store.mark_sent(reply.seq, f"web:{reply.seq}", NOW)
+    page = await store.messages_after("demo", "web", "visitor-1", cursor)
+    assert [m.text for m in page.messages] == ["Merhaba!", "yarın yer var mı?"]
