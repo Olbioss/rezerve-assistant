@@ -8,6 +8,7 @@ those arguments, so if they changed meanwhile Rezerve refuses the write
 (`terms_changed`, `refund_window_closed`) instead of surprising anyone.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Literal
@@ -25,8 +26,9 @@ from pydantic_ai.models import Model
 
 from assistant.agent.agent import TurnDeps
 from assistant.agent.format import format_money, local_label
+from assistant.channels.base import Action
 from assistant.conversation.store import OpenApproval
-from assistant.mcp import BookingView, RezerveError, RezerveSession
+from assistant.mcp import BookingView, CompletedWrite, RezerveError, RezerveSession
 
 type ReplyDecision = Literal["approve", "deny", "other"]
 type Resolution = Literal["approve", "deny", "other", "expired"]
@@ -238,3 +240,45 @@ def refusal(requests: DeferredToolRequests, reason: str) -> DeferredToolResults:
     }
     approvals[first.tool_call_id] = ToolDenied(reason)
     return DeferredToolResults(approvals=approvals)
+
+
+def write_actions(writes: Sequence[CompletedWrite]) -> list[Action]:
+    """A payment button for every kapora checkout this turn's writes opened."""
+    actions: list[Action] = []
+    for write in writes:
+        url = (write.result or {}).get("checkout_url")
+        if write.tool_name == "create_booking" and isinstance(url, str) and url:
+            actions.append({"type": "link", "label": "Kaporayı öde", "url": url})
+    return actions
+
+
+def write_receipt(writes: Sequence[CompletedWrite]) -> str | None:
+    """What this turn's writes did, in code's own words: for when the turn
+    ends some other way than the model telling the customer itself."""
+    lines = [_receipt_line(write) for write in writes]
+    return " ".join(lines) if lines else None
+
+
+def _receipt_line(write: CompletedWrite) -> str:
+    if write.refusal is not None:
+        return f"İşlem yapılamadı: {write.refusal.message}"
+    result = write.result or {}
+    when = result.get("local_label")
+    if write.tool_name == "create_booking":
+        if result.get("status") == "pending":
+            return (
+                f"Randevunuz ayrıldı: {when}. "
+                "Kaporayı 30 dakika içinde ödediğinizde randevunuz kesinleşir."
+            )
+        return f"Randevunuz alındı: {when}."
+    if write.tool_name == "reschedule_booking":
+        return f"Randevunuz {when} olarak değiştirildi."
+    if write.tool_name == "cancel_booking":
+        if result.get("deposit_refunded"):
+            return "Randevunuz iptal edildi. Kaporanız iade edildi."
+        if result.get("refund_failed"):
+            return "Randevunuz iptal edildi. Kapora iadesi başlatılamadı; işletme ilgilenecek."
+        if result.get("deposit_kept"):
+            return "Randevunuz iptal edildi. Kapora işletmede kaldı."
+        return "Randevunuz iptal edildi."
+    return "İşleminiz yapıldı."

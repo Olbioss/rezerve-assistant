@@ -16,10 +16,12 @@ from assistant.agent.approvals import (
     normalise,
     propose,
     resolution,
+    write_actions,
+    write_receipt,
 )
 from assistant.agent.format import local_label
 from assistant.conversation.store import OpenApproval
-from assistant.mcp import RezerveSession
+from assistant.mcp import CompletedWrite, RezerveError, RezerveSession
 from tests.fakes.rezerve import CILT, SAC, TIMEZONE, FakeRezerve, snapshot_tools
 
 NOW = datetime.now(UTC)
@@ -260,3 +262,55 @@ async def test_every_proposal_is_a_call_rezerve_accepts(
         proposal = await propose(call, deps, rezerve, NOW)
         assert isinstance(proposal, Proposal), call.tool_name
         Draft202012Validator(inputs[call.tool_name]).validate(proposal.args)
+
+
+@pytest.mark.parametrize(
+    ("write", "receipt"),
+    [
+        (
+            CompletedWrite(
+                "create_booking",
+                result={"status": "confirmed", "local_label": "Cuma 16 Ekim 14:00"},
+            ),
+            "Randevunuz alındı: Cuma 16 Ekim 14:00.",
+        ),
+        (
+            CompletedWrite("reschedule_booking", result={"local_label": "Cuma 16 Ekim 16:00"}),
+            "Randevunuz Cuma 16 Ekim 16:00 olarak değiştirildi.",
+        ),
+        (
+            CompletedWrite("cancel_booking", result={"deposit_refunded": True}),
+            "Randevunuz iptal edildi. Kaporanız iade edildi.",
+        ),
+        (
+            CompletedWrite("cancel_booking", result={"deposit_kept": True}),
+            "Randevunuz iptal edildi. Kapora işletmede kaldı.",
+        ),
+        (
+            CompletedWrite("cancel_booking", result={"refund_failed": True}),
+            "Randevunuz iptal edildi. Kapora iadesi başlatılamadı; işletme ilgilenecek.",
+        ),
+        (
+            CompletedWrite(
+                "create_booking", refusal=RezerveError("slot_taken", "Bu saat az önce doldu.")
+            ),
+            "İşlem yapılamadı: Bu saat az önce doldu.",
+        ),
+    ],
+)
+def test_a_receipt_says_what_each_write_did(write: CompletedWrite, receipt: str) -> None:
+    assert write_receipt([write]) == receipt
+
+
+def test_no_write_no_receipt_and_only_a_checkout_makes_a_button() -> None:
+    assert write_receipt([]) is None
+    confirmed = CompletedWrite(
+        "create_booking", result={"status": "confirmed", "checkout_url": None}
+    )
+    held = CompletedWrite(
+        "create_booking", result={"status": "pending", "checkout_url": "https://pay.example/1"}
+    )
+    assert write_actions([confirmed]) == []
+    assert write_actions([confirmed, held]) == [
+        {"type": "link", "label": "Kaporayı öde", "url": "https://pay.example/1"}
+    ]

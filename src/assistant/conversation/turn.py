@@ -13,7 +13,6 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
 
 from pydantic_ai import (
     Agent,
@@ -22,10 +21,8 @@ from pydantic_ai import (
     FallbackExceptionGroup,
     ModelAPIError,
     ModelMessage,
-    ModelRequest,
     ModelResponse,
     RunUsage,
-    ToolReturnPart,
     UsageLimitExceeded,
     UsageLimits,
 )
@@ -39,9 +36,11 @@ from assistant.agent.approvals import (
     propose,
     refusal,
     resolution,
+    write_actions,
+    write_receipt,
 )
 from assistant.agent.handoff import booking_page, handoff_reply, unavailable_reply
-from assistant.channels.base import Action, Channel, ChannelName
+from assistant.channels.base import Channel, ChannelName
 from assistant.config import Settings
 from assistant.conversation import history
 from assistant.conversation.lease import Lease, LeaseLost
@@ -57,7 +56,7 @@ from assistant.conversation.store import (
     StoredInbound,
     TurnResult,
 )
-from assistant.mcp import BusinessInfo, RezerveSession
+from assistant.mcp import BusinessInfo, CompletedWrite, RezerveSession
 
 log = logging.getLogger(__name__)
 
@@ -140,6 +139,8 @@ class _Turn:
     meter: Meter = field(default_factory=Meter)
     resolved: tuple[int, Decision] | None = None
     business: BusinessInfo | None = None
+    # The session's record of the writes that ran this turn.
+    writes: list[CompletedWrite] = field(default_factory=list[CompletedWrite])
     _clock_start: float = field(default_factory=time.monotonic)
 
     def finish(
@@ -150,6 +151,12 @@ class _Turn:
         messages: list[ModelMessage] | None = None,
         approval: NewApproval | None = None,
     ) -> TurnResult:
+        receipt = write_receipt(self.writes)
+        if receipt is not None and outcome != "reply":
+            # The model's own reply tells of the writes it made; any other
+            # ending — a hand-off, a new proposal, a failure — would not, and
+            # a booking made must never go unsaid or lose its payment button.
+            replies = [Reply(receipt, write_actions(self.writes)), *replies]
         meter = self.meter
         run = RunRecord(
             started_at=self.started_at,
@@ -170,27 +177,6 @@ class _Turn:
             resolved=self.resolved,
             approval=approval,
         )
-
-
-def payment_actions(messages: Sequence[ModelMessage]) -> list[Action]:
-    """A payment button for every kapora checkout this turn's writes opened."""
-    actions: list[Action] = []
-    for message in messages:
-        if not isinstance(message, ModelRequest):
-            continue
-        for part in message.parts:
-            if not (
-                isinstance(part, ToolReturnPart)
-                and part.tool_name == "create_booking"
-                and part.outcome == "success"
-            ):
-                continue
-            content: object = part.content
-            if isinstance(content, dict):
-                url = cast(dict[str, Any], content).get("checkout_url")
-                if isinstance(url, str) and url:
-                    actions.append({"type": "link", "label": "Kaporayı öde", "url": url})
-    return actions
 
 
 def _decision(resolution: Resolution) -> Decision:
@@ -255,9 +241,11 @@ class TurnProcessor:
         turn = _Turn(processed=[message.seq for message in batch], started_at=self._clock())
         text = "\n".join(message.text for message in batch)
         try:
-            async with self._open_rezerve(
-                conversation.business_slug, conversation.customer_ref
-            ) as rezerve:
+            rezerve = self._open_rezerve(conversation.business_slug, conversation.customer_ref)
+            # The session records each write as it runs: kept on the turn, so
+            # even an ending by failure tells the customer what was done.
+            turn.writes = rezerve.completed_writes
+            async with rezerve:
                 turn.business = await rezerve.business_info()
                 deps = TurnDeps(
                     business=turn.business,
@@ -308,8 +296,6 @@ class TurnProcessor:
             run = await self._run(
                 deps, rezerve, turn, text, approval.history, resolution(approval, decision)
             )
-        new_messages = list(run.new_messages())
-
         for _ in range(MAX_REFUSALS + 1):
             output = run.output
             if isinstance(output, Handoff):
@@ -320,7 +306,7 @@ class TurnProcessor:
                     # An empty answer is no answer: send the booking page instead.
                     reply = Reply(self._unavailable(conversation, turn))
                     return turn.finish([reply], "degraded", messages=run.all_messages())
-                reply = Reply(output, payment_actions(new_messages))
+                reply = Reply(output, write_actions(turn.writes))
                 return turn.finish([reply], "reply", messages=run.all_messages())
             first, *others = output.approvals
             proposal = await propose(first, deps, rezerve, self._clock())
@@ -328,7 +314,6 @@ class TurnProcessor:
                 run = await self._run(
                     deps, rezerve, turn, None, run.all_messages(), refusal(output, proposal.reason)
                 )
-                new_messages.extend(run.new_messages())
                 continue
             return turn.finish(
                 [Reply(proposal.text)],

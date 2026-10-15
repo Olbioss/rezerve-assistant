@@ -8,6 +8,7 @@ same session to build the instructions and the confirmations.
 
 import dataclasses
 import json
+from dataclasses import dataclass, field
 from datetime import datetime
 from types import TracebackType
 from typing import Any, Literal, Self, cast
@@ -21,7 +22,7 @@ from pydantic_ai import (
     ToolFailed,
 )
 from pydantic_ai.mcp import MCPToolset
-from pydantic_ai.toolsets import AbstractToolset
+from pydantic_ai.toolsets import AbstractToolset, ToolsetTool, WrapperToolset
 
 BUSINESS_HEADER = "X-Rezerve-Business"
 CUSTOMER_HEADER = "X-Rezerve-Customer"
@@ -121,14 +122,57 @@ def _slim_tools(ctx: RunContext[Any], tool_defs: list[ToolDefinition]) -> list[T
     ]
 
 
+@dataclass(frozen=True)
+class CompletedWrite:
+    """A write that ran on Rezerve this turn: its result, or Rezerve's refusal."""
+
+    tool_name: str
+    result: dict[str, Any] | None = None
+    refusal: RezerveError | None = None
+
+
+@dataclass
+class _WriteRecorder(WrapperToolset[Any]):
+    """Keeps what each write did, so its outcome reaches the customer even
+    when no model is left to say it."""
+
+    writes: list[CompletedWrite] = field(default_factory=list[CompletedWrite])
+
+    async def call_tool(
+        self, name: str, tool_args: dict[str, Any], ctx: RunContext[Any], tool: ToolsetTool[Any]
+    ) -> Any:
+        if not requires_approval(ctx, tool.tool_def, tool_args):
+            return await super().call_tool(name, tool_args, ctx, tool)
+        try:
+            result: object = await super().call_tool(name, tool_args, ctx, tool)
+        except ToolFailed as failure:
+            self.writes.append(
+                CompletedWrite(name, refusal=RezerveError.from_failure(failure.message))
+            )
+            raise
+        self.writes.append(CompletedWrite(name, result=_as_object(result)))
+        return result
+
+
+def _as_object(value: object) -> dict[str, Any] | None:
+    return cast(dict[str, Any], value) if isinstance(value, dict) else None
+
+
 class RezerveSession:
     """One business, one customer, one turn."""
 
     def __init__(self, mcp: MCPToolset[Any]) -> None:
         self._mcp = mcp
+        self._recorder = _WriteRecorder(mcp)
         self.toolset: AbstractToolset[Any] = PreparedToolset(
-            ApprovalRequiredToolset(mcp, approval_required_func=requires_approval), _slim_tools
+            ApprovalRequiredToolset(self._recorder, approval_required_func=requires_approval),
+            _slim_tools,
         )
+
+    @property
+    def completed_writes(self) -> list[CompletedWrite]:
+        """The writes that ran in this session, in order."""
+        return self._recorder.writes
 
     async def __aenter__(self) -> Self:
         await self._mcp.__aenter__()

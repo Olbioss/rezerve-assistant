@@ -366,3 +366,39 @@ async def test_a_fallback_is_logged_with_the_model_that_failed(
         assert await turn.say("merhaba") == ["Merhaba!"]
     assert "gemini-x" in caplog.text
     assert "fell back" in caplog.text
+
+
+def _down(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+    raise ModelHTTPError(status_code=503, model_name="gemini", body=None)
+
+
+KAPORA_BUTTON = [{"type": "link", "label": "Kaporayı öde", "url": CHECKOUT_URL}]
+
+
+async def test_an_approved_write_is_reported_even_when_every_model_fails_after_it(
+    store: Store,
+) -> None:
+    turn = Harness(store, Script(calls("create_booking", BOOK_CILT), _down))
+    await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+    receipt, unavailable = await turn.say("evet")
+    assert receipt.startswith("Randevunuz ayrıldı: ")
+    assert receipt.endswith("Kaporayı 30 dakika içinde ödediğinizde randevunuz kesinleşir.")
+    assert turn.outbox.sent[-2].actions == KAPORA_BUTTON
+    assert unavailable.startswith("Şu an yanıt veremiyorum")
+
+
+async def test_a_handoff_right_after_a_write_still_carries_the_payment_button(
+    store: Store,
+) -> None:
+    turn = Harness(
+        store,
+        Script(
+            calls("create_booking", BOOK_CILT),
+            calls("handoff_to_owner", {"reason": "müşteri fatura istiyor"}, "h1"),
+        ),
+    )
+    await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+    receipt, handoff = await turn.say("evet")
+    assert receipt.startswith("Randevunuz ayrıldı: ")
+    assert turn.outbox.sent[-2].actions == KAPORA_BUTTON
+    assert "0212 000 00 00" in handoff
