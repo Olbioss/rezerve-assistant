@@ -1,6 +1,6 @@
 # Local development: Postgres for this service (and for Rezerve's demo and
-# eval businesses). It is published on 5433 so a Homebrew Postgres on 5432 is
-# left alone.
+# eval businesses), and the service itself. Postgres is published on 5433 so
+# a Homebrew Postgres on 5432 is left alone.
 services:
   db:
     image: postgres:17
@@ -18,6 +18,27 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+
+  assistant:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/assistant
+      # Rezerve's `bun dev`, on the host.
+      REZERVE_MCP_URL: http://host.docker.internal:3000/api/mcp
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && exec uvicorn assistant.main:create_app --factory --host 0.0.0.0 --port 8000
 
 volumes:
   db-data:
