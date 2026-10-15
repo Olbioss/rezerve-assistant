@@ -44,7 +44,7 @@ from assistant.agent.handoff import booking_page, handoff_reply, unavailable_rep
 from assistant.channels.base import Action, Channel, ChannelName
 from assistant.config import Settings
 from assistant.conversation import history
-from assistant.conversation.lease import Lease
+from assistant.conversation.lease import Lease, LeaseLost
 from assistant.conversation.store import (
     ConversationRecord,
     Decision,
@@ -231,7 +231,7 @@ class TurnProcessor:
             conversation = await self._store.conversation(conversation_id)
             await self._send_unsent(conversation)
             while batch := await self._store.unprocessed_inbound(conversation_id):
-                result = await self._answer(conversation, batch)
+                result = await self._answer(conversation, batch, lease.check)
                 lease.check()
                 await self._store.commit_turn(conversation_id, result, self._clock())
                 await self._send_unsent(conversation)
@@ -244,7 +244,10 @@ class TurnProcessor:
             await self._store.mark_sent(message.seq, sent_id, self._clock())
 
     async def _answer(
-        self, conversation: ConversationRecord, batch: list[StoredInbound]
+        self,
+        conversation: ConversationRecord,
+        batch: list[StoredInbound],
+        check_lease: Callable[[], None],
     ) -> TurnResult:
         turn = _Turn(processed=[message.seq for message in batch], started_at=self._clock())
         text = "\n".join(message.text for message in batch)
@@ -258,7 +261,9 @@ class TurnProcessor:
                     services=await rezerve.services(),
                     bookings=await rezerve.my_bookings(),
                 )
-                return await self._converse(conversation, text, deps, rezerve, turn)
+                return await self._converse(conversation, text, deps, rezerve, turn, check_lease)
+        except LeaseLost:
+            raise
         except UsageLimitExceeded:
             if turn.business is None:
                 raise
@@ -283,6 +288,7 @@ class TurnProcessor:
         deps: TurnDeps,
         rezerve: RezerveSession,
         turn: _Turn,
+        check_lease: Callable[[], None],
     ) -> TurnResult:
         approval = await self._store.open_approval(conversation.id)
         if approval is None:
@@ -291,6 +297,9 @@ class TurnProcessor:
             )
         else:
             decision = await self._decide(approval, text, turn)
+            if decision == "approve":
+                # The write runs inside the next call: never on a lapsed lease.
+                check_lease()
             # Spent from here on, whatever the run below does.
             turn.resolved = (approval.id, _decision(decision))
             run = await self._run(

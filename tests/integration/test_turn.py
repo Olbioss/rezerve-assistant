@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
+import pytest
 from pydantic_ai import (
     ModelHTTPError,
     ModelMessage,
@@ -17,6 +18,7 @@ from pydantic_ai.models.function import AgentInfo
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
+from assistant.conversation.lease import Lease, LeaseLost
 from assistant.conversation.store import Reply, Store, TurnResult
 from assistant.conversation.turn import TurnProcessor, TurnSettings
 from assistant.identity import customer_ref
@@ -310,3 +312,19 @@ async def test_a_failing_classifier_leaves_the_approval_to_the_next_message(
     assert await store.open_approval(turn.conversation_id) is not None
     assert await turn.say("evet") == ["Randevunuz ayrıldı."]
     assert [name for name, _ in turn.fake.writes()] == ["create_booking"]
+
+
+async def test_a_lapsed_lease_never_runs_an_approved_write(
+    store: Store, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    turn = Harness(store, Script(calls("create_booking", BOOK_CILT), says("Randevunuz ayrıldı.")))
+    await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+
+    def lapsed(self: Lease) -> None:
+        raise LeaseLost(0)
+
+    monkeypatch.setattr(Lease, "check", lapsed)
+    with pytest.raises(LeaseLost):
+        await turn.say("evet")
+    assert turn.fake.writes() == []
+    assert await store.open_approval(turn.conversation_id) is not None

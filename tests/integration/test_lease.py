@@ -66,3 +66,24 @@ async def test_a_lapsed_lease_stops_its_handler_and_spares_the_new_one(store: St
             lease.check()
     # Leaving released nothing: the successor still holds it.
     assert not await store.claim_lease(conversation_id, "third", MINUTE)
+
+
+async def test_a_renewal_that_errors_counts_as_lost_and_the_lease_is_still_released(
+    store: Store, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conversation_id = await conversation(store)
+
+    async def database_gone(*args: object) -> bool:
+        raise ConnectionError("the database went away")
+
+    lease = Lease(
+        store, conversation_id, ttl=timedelta(seconds=5), renew_every=timedelta(seconds=0.1)
+    )
+    async with lease:
+        monkeypatch.setattr(store, "renew_lease", database_gone)
+        await asyncio.sleep(0.3)
+        with pytest.raises(LeaseLost):
+            lease.check()
+    monkeypatch.undo()
+    # Leaving released it anyway, so the next handler need not wait out the TTL.
+    assert await store.claim_lease(conversation_id, "next", MINUTE)

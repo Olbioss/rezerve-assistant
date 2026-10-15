@@ -9,12 +9,15 @@ before it writes anything.
 
 import asyncio
 import contextlib
+import logging
 import uuid
 from datetime import timedelta
 from types import TracebackType
 from typing import Self
 
 from assistant.conversation.store import Store
+
+log = logging.getLogger(__name__)
 
 
 class LeaseBusy(Exception):
@@ -62,6 +65,15 @@ class Lease:
     async def _renew(self) -> None:
         while True:
             await asyncio.sleep(self._renew_every.total_seconds())
-            if not await self._store.renew_lease(self._conversation_id, self._owner, self._ttl):
+            try:
+                renewed = await self._store.renew_lease(
+                    self._conversation_id, self._owner, self._ttl
+                )
+            except Exception:
+                # A renewal that cannot say it succeeded did not: stop the
+                # handler rather than let it run on a lease that may lapse.
+                log.exception("Renewing the lease on conversation %s failed", self._conversation_id)
+                renewed = False
+            if not renewed:
                 self._lost = True
                 return
