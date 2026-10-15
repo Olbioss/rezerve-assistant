@@ -239,7 +239,6 @@ class TurnProcessor:
         check_lease: Callable[[], None],
     ) -> TurnResult:
         turn = _Turn(processed=[message.seq for message in batch], started_at=self._clock())
-        text = "\n".join(message.text for message in batch)
         try:
             rezerve = self._open_rezerve(conversation.business_slug, conversation.customer_ref)
             # The session records each write as it runs: kept on the turn, so
@@ -252,7 +251,7 @@ class TurnProcessor:
                     services=await rezerve.services(),
                     bookings=await rezerve.my_bookings(),
                 )
-                return await self._converse(conversation, text, deps, rezerve, turn, check_lease)
+                return await self._converse(conversation, batch, deps, rezerve, turn, check_lease)
         except LeaseLost:
             raise
         except UsageLimitExceeded:
@@ -275,19 +274,28 @@ class TurnProcessor:
     async def _converse(
         self,
         conversation: ConversationRecord,
-        text: str,
+        batch: list[StoredInbound],
         deps: TurnDeps,
         rezerve: RezerveSession,
         turn: _Turn,
         check_lease: Callable[[], None],
     ) -> TurnResult:
+        text = "\n".join(message.text for message in batch)
         approval = await self._store.open_approval(conversation.id)
         if approval is None:
             run = await self._run(
                 deps, rezerve, turn, text, history.close_open_calls(conversation.history)
             )
         else:
-            decision = await self._decide(approval, text, turn)
+            # Only what was written after the confirmation can answer it: a
+            # "tamam" typed while it was being prepared never saw what it
+            # would approve. (Rows older than migration 0002 have no boundary.)
+            boundary = approval.confirmation_seq
+            answers = [m.text for m in batch if boundary is None or m.seq > boundary]
+            if not answers:
+                # The confirmation stays open, still the latest thing on screen.
+                return turn.finish([], "confirmation")
+            decision = await self._decide(approval, "\n".join(answers), turn)
             if decision == "approve":
                 # The write runs inside the next call: never on a lapsed lease.
                 check_lease()

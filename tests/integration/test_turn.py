@@ -402,3 +402,27 @@ async def test_a_handoff_right_after_a_write_still_carries_the_payment_button(
     assert receipt.startswith("Randevunuz ayrıldı: ")
     assert turn.outbox.sent[-2].actions == KAPORA_BUTTON
     assert "0212 000 00 00" in handoff
+
+
+async def test_a_message_written_before_the_confirmation_cannot_approve_it(
+    store: Store,
+) -> None:
+    turn = Harness(store, Script())
+
+    async def proposes_while_the_customer_types(
+        messages: list[ModelMessage], info: AgentInfo
+    ) -> ModelResponse:
+        # The customer double-texts while the confirmation is being prepared.
+        await turn.receive("evet")
+        return calls("create_booking", BOOK_CILT)
+
+    turn.script.add(proposes_while_the_customer_types, says("Randevunuz ayrıldı."))
+    [confirmation] = await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+    assert confirmation.endswith("Onaylıyor musunuz? (evet / hayır)")
+    assert turn.fake.writes() == []
+    assert await store.open_approval(turn.conversation_id) is not None
+    assert await store.unprocessed_inbound(turn.conversation_id) == []
+
+    # Only a yes written after the confirmation was there to read approves it.
+    assert await turn.say("evet") == ["Randevunuz ayrıldı."]
+    assert [name for name, _ in turn.fake.writes()] == ["create_booking"]

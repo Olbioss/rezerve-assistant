@@ -103,6 +103,9 @@ class PendingApproval(Base):
         ARRAY(sa.Text), server_default=sa.text("'{}'")
     )
     rendered_text: Mapped[str] = mapped_column(sa.Text)
+    # The outbound message that showed it. Only what the customer wrote after
+    # that can answer it (null on rows older than migration 0002).
+    confirmation_seq: Mapped[int | None] = mapped_column(sa.BigInteger)
     history: Mapped[list[Any]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
     expires_at: Mapped[datetime]

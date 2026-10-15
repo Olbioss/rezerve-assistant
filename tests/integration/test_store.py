@@ -159,3 +159,21 @@ async def test_the_page_never_moves_past_a_reply_not_yet_sent(store: Store) -> N
     await store.mark_sent(reply.seq, f"web:{reply.seq}", NOW)
     page = await store.messages_after("demo", "web", "visitor-1", cursor)
     assert [m.text for m in page.messages] == ["Merhaba!", "yarın yer var mı?"]
+
+
+async def test_an_approval_remembers_the_confirmation_it_answers_to(store: Store) -> None:
+    recorded = await store.record_inbound(inbound("randevu"), REF, NOW)
+    assert recorded.seq is not None
+    approval = NewApproval(
+        "c1", "create_booking", {}, [], "Onaylıyor musunuz?", NOW + timedelta(minutes=10)
+    )
+    # A receipt for an earlier write can come first; the confirmation is the last reply.
+    replies = [Reply("Randevunuz ayrıldı: Cuma 16 Ekim 14:00."), Reply("Onaylıyor musunuz?")]
+    result = TurnResult(processed=[recorded.seq], replies=replies, history=[], approval=approval)
+    await store.commit_turn(recorded.conversation_id, result, NOW)
+
+    receipt, confirmation = await store.unsent(recorded.conversation_id)
+    opened = await store.open_approval(recorded.conversation_id)
+    assert opened is not None
+    assert opened.confirmation_seq == confirmation.seq
+    assert receipt.seq < confirmation.seq

@@ -59,6 +59,8 @@ class OpenApproval:
     rendered_text: str
     history: list[ModelMessage]
     expires_at: datetime
+    # The message that showed the confirmation: only later ones can answer it.
+    confirmation_seq: int | None = None
 
 
 @dataclass(frozen=True)
@@ -288,6 +290,7 @@ class Store:
                 rendered_text=row.rendered_text,
                 history=history.load(row.history),
                 expires_at=row.expires_at,
+                confirmation_seq=row.confirmation_seq,
             )
 
     async def commit_turn(self, conversation_id: int, result: TurnResult, now: datetime) -> None:
@@ -298,20 +301,6 @@ class Store:
                     sa.update(PendingApproval)
                     .where(PendingApproval.id == approval_id)
                     .values(resolved_at=now, decision=decision)
-                )
-            if result.approval is not None:
-                approval = result.approval
-                session.add(
-                    PendingApproval(
-                        conversation_id=conversation_id,
-                        tool_call_id=approval.tool_call_id,
-                        tool_name=approval.tool_name,
-                        args=approval.args,
-                        other_call_ids=approval.other_call_ids,
-                        rendered_text=approval.rendered_text,
-                        history=history.dump(result.history or []),
-                        expires_at=approval.expires_at,
-                    )
                 )
             if result.history is not None:
                 await session.execute(
@@ -324,14 +313,33 @@ class Store:
                     sa.select(Conversation.channel).where(Conversation.id == conversation_id)
                 )
             ).scalar_one()
-            for reply in result.replies:
+            replies = [
+                Message(
+                    conversation_id=conversation_id,
+                    channel=channel,
+                    direction="out",
+                    text=reply.text,
+                    actions=list(reply.actions) or None,
+                )
+                for reply in result.replies
+            ]
+            session.add_all(replies)
+            await session.flush()
+            if result.approval is not None:
+                approval = result.approval
                 session.add(
-                    Message(
+                    PendingApproval(
                         conversation_id=conversation_id,
-                        channel=channel,
-                        direction="out",
-                        text=reply.text,
-                        actions=list(reply.actions) or None,
+                        tool_call_id=approval.tool_call_id,
+                        tool_name=approval.tool_name,
+                        args=approval.args,
+                        other_call_ids=approval.other_call_ids,
+                        rendered_text=approval.rendered_text,
+                        # The confirmation is this turn's last reply; a receipt
+                        # for an earlier write may come before it.
+                        confirmation_seq=replies[-1].seq if replies else None,
+                        history=history.dump(result.history or []),
+                        expires_at=approval.expires_at,
                     )
                 )
             if result.run is not None:
