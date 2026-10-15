@@ -328,3 +328,22 @@ async def test_a_lapsed_lease_never_runs_an_approved_write(
         await turn.say("evet")
     assert turn.fake.writes() == []
     assert await store.open_approval(turn.conversation_id) is not None
+
+
+async def test_a_failed_resume_after_a_mixed_proposal_does_not_wedge_the_conversation(
+    store: Store,
+) -> None:
+    def down(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        raise ModelHTTPError(status_code=503, model_name="gemini", body=None)
+
+    slots = {"service_id": CILT, "from_date": "2026-10-16", "to_date": "2026-10-16"}
+    read_and_write = ModelResponse(
+        parts=[
+            ToolCallPart("find_slots", slots, tool_call_id="r1"),
+            ToolCallPart("create_booking", BOOK_CILT, tool_call_id="w1"),
+        ]
+    )
+    turn = Harness(store, Script(read_and_write, down, says("Rica ederim!")))
+    await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+    await turn.say("evet")  # the write runs, then every model fails
+    assert await turn.say("teşekkürler") == ["Rica ederim!"]
