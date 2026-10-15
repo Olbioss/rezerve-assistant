@@ -1,0 +1,61 @@
+[project]
+name = "rezerve-assistant"
+version = "0.1.0"
+description = "An AI receptionist for Turkish local businesses, booking through Rezerve's MCP server."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.0",
+    "asyncpg>=0.32.0",
+    "fastapi>=0.143.1",
+    "pydantic-ai-slim[google,groq,mcp]>=2.56.0",
+    "pydantic-settings>=2.16.0",
+    "sqlalchemy[asyncio]>=2.1.4",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "jsonschema>=4.25.0",
+    "pyright>=1.1.414",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+# The package versions this service was verified against. Move it forward on
+# purpose, with the whole suite run again: Pydantic AI and MCP change quickly.
+exclude-newer = "2026-10-15T00:00:00Z"
+
+[tool.uv.build-backend]
+module-name = "assistant"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC"]
+# Turkish text is full of letters ruff takes for look-alikes ("ı"), and of dashes.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.pyright]
+include = ["src", "tests"]
+typeCheckingMode = "standard"
+strict = ["src"]
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
