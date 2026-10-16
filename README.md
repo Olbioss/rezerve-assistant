@@ -26,10 +26,35 @@ The design is in
    handled in one Pydantic AI run with Rezerve's tools. Who the customer is
    travels in MCP headers, never in arguments the model writes.
 4. **Writes wait for a yes.** A write ends the run. Code shows the
-   confirmation, and the customer's next message approves it, denies it, or
-   changes the plan.
+   confirmation, and the customer's next message, written after the
+   confirmation appeared, approves it, denies it, or changes the plan.
 5. **Every customer gets an answer.** If every model fails, the reply is a
    link to the booking page.
+
+## The race the confirmation gate had
+
+The approval design exists so that nothing is written until the customer has
+read exactly what will happen. It had a race anyway, one that survived the
+design, the spec and the implementation, and an independent review of the
+whole branch found it.
+
+**The race.** A message that arrived while the assistant was still preparing a
+confirmation was answered in the next batch, against that confirmation. So a
+customer double-texting "tamam" while "Yazıyor…" showed approved a booking
+they had never seen. A pre-typed "evet" on a cancellation inside 24 hours gave
+the kapora away before the warning reached them.
+
+**The fix.** Each pending approval now records the message that showed it.
+Only what the customer writes after that message can answer it, and the
+widget sends one message at a time.
+
+**The test.**
+`test_a_message_written_before_the_confirmation_cannot_approve_it`
+(`tests/integration/test_turn.py`) types "evet" while the confirmation is
+being prepared:
+- **without the boundary,** that "evet" books the appointment before the
+  customer has seen it;
+- **with it,** nothing is written until an "evet" that came after.
 
 ## Run it locally
 
