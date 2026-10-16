@@ -2,15 +2,16 @@
 
 The widget keeps a random UUID in localStorage as its visitor id. That
 unguessable id is the credential — the same model as a booking's id on its
-page — so these endpoints take no other. The widget posts a message, then
-polls for the answer while `pending` is true.
+page — so these endpoints take no other, and it never travels in a URL: URLs
+end up in access logs. The widget posts a message (the id in the body), then
+polls for the answer while `pending` is true (the id in `X-Visitor-Id`).
 """
 
 from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Header, Path, Query
 from pydantic import BaseModel, StringConstraints
 
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
@@ -20,6 +21,7 @@ from assistant.services import AppServices, app_services
 # Rezerve's own slug rule (lib/slug.ts).
 type Slug = Annotated[str, Path(min_length=3, max_length=48, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
 type Services = Annotated[AppServices, Depends(app_services)]
+type VisitorId = Annotated[UUID, Header(alias="X-Visitor-Id")]
 
 router = APIRouter(prefix="/web", tags=["web"])
 
@@ -83,7 +85,7 @@ async def post_message(slug: Slug, body: PostedMessage, services: Services) -> A
 @router.get("/{slug}/messages")
 async def get_messages(
     slug: Slug,
-    visitor_id: UUID,
+    visitor_id: VisitorId,
     services: Services,
     after: Annotated[int, Query(ge=0)] = 0,
 ) -> MessagesOut:

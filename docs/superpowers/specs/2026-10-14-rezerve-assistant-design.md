@@ -167,7 +167,7 @@ A third, unlisted business `eval` is added for the eval harness. It has the same
 `components/assistant/chat-widget.tsx`, on `/r/[slug]` when `assistant_enabled` is set.
 - The visitor id is a random UUID in localStorage. That unguessable id is the credential, the same model as the booking page's booking id.
 - `POST {ASSISTANT_URL}/web/{slug}/messages` with `{ visitor_id, client_message_id, text }` → `202`.
-- `GET {ASSISTANT_URL}/web/{slug}/messages?visitor_id=…&after=<seq>` → `{ messages: [{ seq, direction, text, actions? }], pending }`. The widget polls it every second while `pending`, and stops after 60 seconds.
+- `GET {ASSISTANT_URL}/web/{slug}/messages?after=<seq>`, with the visitor id in an `X-Visitor-Id` header → `{ messages: [{ seq, direction, text, actions?, client_message_id }], pending }`. The visitor id never travels in a URL, since URLs land in access logs, proxy logs and analytics; the widget polls every second, so it would be in every line. The widget polls while `pending`, and stops after 60 seconds.
 - Replies are announced through `aria-live`. A kapora link arrives as an action and renders as a button.
 
 ### 6.5 "Kapora received" event

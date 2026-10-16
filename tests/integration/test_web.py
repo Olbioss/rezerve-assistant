@@ -39,8 +39,11 @@ class Widget:
         return await self.client.post(f"/web/{slug}/messages", json=body)
 
     async def poll(self, after: int = 0, slug: str = "demo") -> dict[str, Any]:
-        params = {"visitor_id": self.visitor_id, "after": str(after)}
-        response = await self.client.get(f"/web/{slug}/messages", params=params)
+        response = await self.client.get(
+            f"/web/{slug}/messages",
+            params={"after": str(after)},
+            headers={"X-Visitor-Id": self.visitor_id},
+        )
         assert response.status_code == 200
         return cast(dict[str, Any], response.json())
 
@@ -148,3 +151,23 @@ async def test_only_rezerves_origin_may_call_from_a_browser(widget: Widget) -> N
 
 async def test_health(widget: Widget) -> None:
     assert (await widget.client.get("/health")).json() == {"status": "ok"}
+
+
+async def test_the_visitor_id_never_travels_in_the_url(widget: Widget) -> None:
+    """It is the conversation's only credential, and URLs end up in access logs."""
+    in_the_url = await widget.client.get(
+        "/web/demo/messages", params={"visitor_id": widget.visitor_id, "after": "0"}
+    )
+    assert in_the_url.status_code == 422
+
+
+async def test_a_browser_may_send_the_visitor_header(widget: Widget) -> None:
+    preflight = {
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "x-visitor-id",
+    }
+    allowed = await widget.client.options(
+        "/web/demo/messages", headers={"Origin": ORIGIN, **preflight}
+    )
+    assert allowed.status_code == 200
+    assert "x-visitor-id" in allowed.headers["access-control-allow-headers"].lower()

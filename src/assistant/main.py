@@ -59,7 +59,9 @@ def create_app(
         CORSMiddleware,
         allow_origins=config.allowed_web_origins,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "X-Visitor-Id"],
+        # The widget polls every second; one preflight per ten minutes is plenty.
+        max_age=600,
     )
     app.include_router(web.router)
 
