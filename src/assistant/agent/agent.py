@@ -145,8 +145,8 @@ def build_agent(model: Model) -> Agent[TurnDeps, AgentOutput]:
     )
 
 
-def build_model(settings: Settings) -> Model:
-    """The configured chain, primary first, skipping any model without a key."""
+def build_models(settings: Settings) -> list[Model]:
+    """The configured models, primary first, skipping any without a key."""
     models: list[Model] = []
     for name in [settings.model_primary, *settings.model_fallbacks]:
         provider, _, model_name = name.partition(":")
@@ -166,4 +166,10 @@ def build_model(settings: Settings) -> Model:
             raise ValueError(f"Unknown model provider in {name!r}; use google:… or groq:…")
     if not models:
         raise ValueError("No model has an API key: set GEMINI_API_KEY or GROQ_API_KEY.")
+    return models
+
+
+def build_model(settings: Settings) -> Model:
+    """The configured chain: the primary, falling back through the rest."""
+    models = build_models(settings)
     return models[0] if len(models) == 1 else FallbackModel(*models)
