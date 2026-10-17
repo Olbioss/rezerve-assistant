@@ -2,10 +2,12 @@ id: book-weekend-manicure-noon
 tags: [booking, date]
 mode: scripted
 persona: "Seda — hafta sonu çalışmayan biri"
+# "haftaya cumartesi", not a bare "cumartesi": written on a Saturday, that may
+# mean today or a week later, and only one reading can be graded.
 turns:
-  - "hafta sonu manikür yaptırmak istiyorum, cumartesi öğlen 12:00 olur mu?"
+  - "hafta sonu manikür yaptırmak istiyorum, haftaya cumartesi öğlen 12:00 olur mu?"
   - "Seda Koç"
   - "evet"
 expect:
   bookings:
-    - { service: "Manikür", day: "next saturday", at: "12:00", name: "Seda Koç" }
+    - { service: "Manikür", day: "saturday next week", at: "12:00", name: "Seda Koç" }
