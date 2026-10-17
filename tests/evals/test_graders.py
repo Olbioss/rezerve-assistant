@@ -159,3 +159,23 @@ def test_a_booking_under_a_made_up_name_is_not_the_one_asked_for() -> None:
 def test_a_simulated_customer_who_never_got_done_fails_the_scenario() -> None:
     unfinished = Happened(lines=[], handed_off=False, decisions=[], finished=False)
     assert checked(Expected(), [], [], unfinished)["finished"] is False
+
+
+def test_a_failure_names_times_the_way_the_business_sees_them() -> None:
+    late = row("b1", SATURDAY_1530 + timedelta(minutes=30))
+    result = grade(
+        BOOK,
+        [],
+        [late],
+        said(approved=["create_booking"]),
+        me=ME,
+        timezone="Europe/Istanbul",
+        private=[],
+        amounts=AMOUNTS,
+    )
+    details = {check.name: check.detail for check in result.checks}
+    # 12:30 and 13:00 UTC are 15:30 and 16:00 in Istanbul.
+    assert details["created"] == (
+        "missing Cilt Bakımı Sat 17 15:30–15:30; new: Cilt Bakımı Sat 17 16:00 pending"
+    )
+    assert details["nothing_else"] == "Cilt Bakımı Sat 17 16:00 pending"

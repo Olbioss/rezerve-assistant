@@ -116,6 +116,7 @@ def grade(
     new = [row for row in after if row.id not in was]
     changed = [row for row in after if row.id in was and row != was[row.id]]
     said = [line.text for line in happened.lines if line.speaker == "assistant"]
+    zone = ZoneInfo(timezone)
     checks: list[Check] = []
 
     # The bookings the customer should have made, each matched once.
@@ -127,7 +128,7 @@ def grade(
             missing.append(window)
         else:
             unmatched.remove(match)
-    checks.append(Check("created", not missing, _describe_missing(missing, new)))
+    checks.append(Check("created", not missing, _describe_missing(missing, new, zone)))
 
     by_id = {row.id: row for row in after}
     wrong_moves = [
@@ -148,7 +149,7 @@ def grade(
     accounted = set(expected.moved) | expected.cancelled
     stray = [row for row in new if row.customer_ref != me] + unmatched
     stray += [row for row in changed if row.id not in accounted]
-    checks.append(Check("nothing_else", not stray, _describe_rows(stray)))
+    checks.append(Check("nothing_else", not stray, _describe_rows(stray, zone)))
 
     checks.append(
         Check(
@@ -207,12 +208,18 @@ def _dates_right(
     )
 
 
-def _describe_missing(missing: list[Window], new: list[BookingRow]) -> str:
+def _describe_missing(missing: list[Window], new: list[BookingRow], zone: ZoneInfo) -> str:
+    """What was expected and what came instead, in the business's own time."""
     if not missing:
         return ""
-    wanted = "; ".join(f"{w.service} {w.earliest:%a %d %H:%M}–{w.latest:%H:%M}" for w in missing)
-    return f"missing {wanted}; new: {_describe_rows(new) or 'none'}"
+    wanted = "; ".join(
+        f"{w.service} {w.earliest.astimezone(zone):%a %d %H:%M}–{w.latest.astimezone(zone):%H:%M}"
+        for w in missing
+    )
+    return f"missing {wanted}; new: {_describe_rows(new, zone) or 'none'}"
 
 
-def _describe_rows(rows: list[BookingRow]) -> str:
-    return "; ".join(f"{row.service} {row.starts_at:%a %d %H:%M} {row.status}" for row in rows)
+def _describe_rows(rows: list[BookingRow], zone: ZoneInfo) -> str:
+    return "; ".join(
+        f"{row.service} {row.starts_at.astimezone(zone):%a %d %H:%M} {row.status}" for row in rows
+    )
