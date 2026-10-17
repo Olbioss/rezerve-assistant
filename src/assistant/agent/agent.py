@@ -20,6 +20,7 @@ from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.groq import GroqProvider
 
+from assistant.agent import when
 from assistant.agent.calendar import calendar_block
 from assistant.agent.format import format_money
 from assistant.config import Settings
@@ -36,6 +37,8 @@ Sen bu işletmenin resepsiyonistisin. Müşterilerle Türkçe, kısa, sıcak ve 
 verilerden al; hiçbirini tahminle söyleme.
 - Her mesajda en fazla bir soru sor.
 - E-posta adresini yalnızca seçilen hizmet kapora alıyorsa iste.
+- Müşterinin söylediği günü ("yarın", "haftaya salı", "ayın 17'si") resolve_when ile çöz; \
+tarihi kendin hesaplama.
 - Boş saatleri find_slots ile bul; randevu için onun verdiği starts_at değerini aynen kullan.
 - Bir randevuyu taşırken find_slots'a o randevunun id'sini rescheduling_booking_id olarak ver.
 - Randevu oluşturmak, taşımak ya da iptal etmek için gereken bilgiler tamamlanınca ilgili \
@@ -136,12 +139,27 @@ def turn_context(ctx: RunContext[TurnDeps]) -> str:
 """
 
 
+async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, str | None]:
+    """Göreli bir tarih ifadesinin ("yarın akşam", "haftaya salı", "ayın 17'si",
+    "28 Ekim") tarihini, gününü ve söylendiyse gün parçasının saat aralığını verir."""
+    found = when.resolve_when(expression, date.fromisoformat(ctx.deps.business.today))
+    if found is None:
+        return {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."}
+    return {
+        "tarih": found.day.isoformat(),
+        "gün": found.weekday,
+        "en_erken": found.earliest,
+        "en_geç": found.latest,
+    }
+
+
 def build_agent(model: Model) -> Agent[TurnDeps, AgentOutput]:
     return Agent(
         model,
         deps_type=TurnDeps,
         output_type=[str, DeferredToolRequests, HANDOFF],
         instructions=[RULES, turn_context],
+        tools=[resolve_when],
     )
 
 

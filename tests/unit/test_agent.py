@@ -2,7 +2,14 @@ import json
 from datetime import UTC, datetime
 
 import pytest
-from pydantic_ai import ModelMessage, ModelRequest, ModelResponse, TextPart
+from pydantic_ai import (
+    ModelMessage,
+    ModelRequest,
+    ModelResponse,
+    TextPart,
+    ToolCallPart,
+    ToolReturnPart,
+)
 from pydantic_ai.models.fallback import FallbackModel
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.google import GoogleModel
@@ -105,6 +112,38 @@ async def test_nothing_in_the_data_can_close_its_block() -> None:
     assert json.loads(block(instructions, "hizmetler"))[0]["ad"] == trick
     assert json.loads(block(instructions, "randevular"))[0]["hizmet"] == trick
     assert json.loads(block(instructions, "isletme"))["işletmenin notları"] == notes
+
+
+@pytest.mark.parametrize(
+    ("expression", "answer"),
+    [
+        (
+            "haftaya salı öğleden sonra",
+            {"tarih": "2026-10-20", "gün": "Salı", "en_erken": "14:00", "en_geç": "18:00"},
+        ),
+        (
+            "bir ara",
+            {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."},
+        ),
+    ],
+)
+async def test_the_model_resolves_a_day_by_rule_not_by_arithmetic(
+    expression: str, answer: dict[str, str | None]
+) -> None:
+    returned: list[ToolReturnPart] = []
+
+    def model(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        request = messages[-1]
+        assert isinstance(request, ModelRequest)
+        returns = [part for part in request.parts if isinstance(part, ToolReturnPart)]
+        if not returns:
+            return ModelResponse(parts=[ToolCallPart("resolve_when", {"expression": expression})])
+        returned.extend(returns)
+        return ModelResponse(parts=[TextPart("Tamam.")])
+
+    deps = TurnDeps(business=BUSINESS, services=[CILT], bookings=[])
+    await build_agent(FunctionModel(model)).run(expression, deps=deps)
+    assert [part.content for part in returned] == [answer]
 
 
 def settings(**overrides: object) -> Settings:
