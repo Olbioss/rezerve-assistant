@@ -21,7 +21,9 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
+    "pyyaml>=6.0.3",
     "ruff>=0.17.0",
+    "types-pyyaml>=6.0.12",
 ]
 
 [build-system]
@@ -49,7 +51,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC"]
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.pyright]
-include = ["src", "tests"]
+include = ["src", "tests", "evals"]
 typeCheckingMode = "standard"
 strict = ["src"]
 pythonVersion = "3.13"
