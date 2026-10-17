@@ -39,6 +39,9 @@ module-name = "assistant"
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+# The plans quote code fragments meant to be pasted at an indent: formatting
+# them as standalone Python would change what they say.
+extend-exclude = ["docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC"]
