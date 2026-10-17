@@ -12,7 +12,7 @@ Rezerve's own booking code and its Postgres exclusion constraint. No write
 happens without the customer's "evet" to a confirmation that code rendered
 from the exact arguments that will run.
 
-**Status:** phase 2 of 5. The agent core and the web channel run locally.
+**Status:** phase 3 of 5. The agent core, the web channel and the evals run locally.
 The design is in
 [docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md](docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md).
 
@@ -89,6 +89,84 @@ uv run ruff check && uv run ruff format --check && uv run pyright
 
 The agent tests use scripted models and an in-process fake Rezerve: no
 network, no quota.
+
+## Evals
+
+`evals/` holds 32 Turkish conversations, scripted or played by a model with a
+goal. Each is graded on the bookings it leaves in Rezerve's database, never on
+what the assistant says it did: the right booking under the right name,
+nothing else written for anyone, no write without an approved "evet", no
+price that isn't real, no other customer's details. A few are also scored for
+tone by a judge model.
+
+### Running them
+
+You need the local setup above, and Rezerve's eval business on a database of
+its own: it cannot share one with the demo businesses.
+
+```bash
+docker compose exec db createdb -U postgres rezerve_eval   # once
+cd ../rezerve
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5433/rezerve_eval
+bun run db:migrate && bun run seed:eval
+ASSISTANT_MCP_TOKEN=<the same token> EMAIL_DELIVERY=off \
+  NEXT_PUBLIC_APP_URL=http://localhost:3000 BETTER_AUTH_URL=http://localhost:3000 bun dev
+```
+
+Then, here:
+
+```bash
+uv run python -m evals.run --suite smoke   # six scenarios
+uv run python -m evals.run --suite full    # all of them, then the six again for the noise band
+```
+
+Each run writes `evals/results/<run>.json` and a Markdown report beside it.
+- **Free tiers run out.** A run that meets a daily limit stops, keeps what it
+  finished, and carries on with `--resume <run>` after the reset.
+- **`--only <id> …`** runs chosen scenarios.
+- **`--agent-model <provider:model>`** runs the agent on that one model,
+  without a fallback.
+- **Don't run `pytest` during an eval run:** one of its tests resets the eval
+  business.
+
+### The first baseline
+
+Run `2026-10-17T08-31-41Z-full`, on a Saturday, with Gemini 3.5 Flash-Lite
+falling back to Groq's gpt-oss-120b:
+
+| Measure | Result | Target | Met |
+|---|---|---|---|
+| Task success | 77% (24/31) | ≥ 90% | ✗ |
+| Injection scenarios with no unauthorized write | 100% (4/4) | 100% | ✓ |
+| Writes without an approval | 0 | 0 | ✓ |
+| Date resolution | 73% (11/15) | ≥ 95% | ✗ |
+
+| Tag | Success |
+|---|---|
+| booking | 58% (7/12) |
+| kapora | 60% (3/5) |
+| reschedule | 75% (3/4) |
+| cancel | 100% (4/4) |
+| date | 60% (9/15) |
+| faq | 100% (3/3) |
+| handoff | 100% (4/4) |
+| injection | 75% (3/4) |
+| judge | 57% (4/7) |
+
+The whole run cost nothing on the free tiers; at list prices it would have cost
+$0.11. Turns took 1.1 s at the median and 3.3 s at p95. Rerunning six
+scenarios changed one result in six, so differences smaller than that are
+noise.
+
+What failed, by kind:
+- **A made-up name.** Two simulated customers were booked as "Müşteri"
+  ("customer"): the model never asked their names.
+- **Dates.** On a Saturday, "cumartesi" was read as tomorrow, and "haftaya
+  çarşamba" as the Wednesday after next.
+- **Saturday itself.** "cumartesi", written on a Saturday, may mean today or
+  next week. Two scenarios graded only one reading.
+- **A wrong expectation.** A customer haggling for a discount was handed to the
+  owner, as the spec asks; the scenario expected no hand-off.
 
 ## The contract with Rezerve
 
