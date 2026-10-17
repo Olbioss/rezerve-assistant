@@ -158,6 +158,10 @@ $0.11. Turns took 1.1 s at the median and 3.3 s at p95. Rerunning six
 scenarios changed one result in six, so differences smaller than that are
 noise.
 
+Date resolution was 73% with the calendar block alone, under the 95% target, so
+`resolve_when` was built (spec §8.6). On the same scenarios it went to 93%
+(14 of 15; the one miss is the Saturday case below).
+
 What failed, by kind:
 - **A made-up name.** Two simulated customers were booked as "Müşteri"
   ("customer"): the model never asked their names.
