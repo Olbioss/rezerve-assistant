@@ -179,3 +179,14 @@ def test_a_failure_names_times_the_way_the_business_sees_them() -> None:
         "missing Cilt Bakımı Sat 17 15:30–15:30; new: Cilt Bakımı Sat 17 16:00 pending"
     )
     assert details["nothing_else"] == "Cilt Bakımı Sat 17 16:00 pending"
+
+
+def test_a_name_typed_without_turkish_letters_is_the_same_name() -> None:
+    named = Expected(
+        created=[Window(SATURDAY_1530, SATURDAY_1530, "Cilt Bakımı", "pending", "Emre Çelik")]
+    )
+    approved = said(approved=["create_booking"])
+    # A customer on a keyboard without Turkish letters still gave their name.
+    for typed in ("Emre Celik", "EMRE ÇELİK", "emre çelik"):
+        assert checked(named, [], [row("b1", customer_name=typed)], approved)["created"], typed
+    assert not checked(named, [], [row("b1", customer_name="Emre Çelikkol")], approved)["created"]

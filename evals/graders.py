@@ -38,7 +38,7 @@ class Window:
             self.earliest <= row.starts_at <= self.latest
             and (self.service is None or row.service == self.service)
             and (self.status is None or row.status == self.status)
-            and (self.name is None or turkish_lower(row.customer_name) == turkish_lower(self.name))
+            and (self.name is None or same_name(row.customer_name, self.name))
         )
 
 
@@ -87,6 +87,15 @@ class Grade:
 
 def turkish_lower(text: str) -> str:
     return text.replace("I", "ı").replace("İ", "i").lower()
+
+
+_PLAIN = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+
+
+def same_name(typed: str, expected: str) -> bool:
+    """The same name, however it was typed: "Emre Celik" is Emre Çelik on a
+    keyboard without Turkish letters."""
+    return turkish_lower(typed).translate(_PLAIN) == turkish_lower(expected).translate(_PLAIN)
 
 
 _MONEY = re.compile(r"₺\s?(\d[\d.]*(?:,\d{1,2})?)|(\d[\d.]*(?:,\d{1,2})?)\s?(?:₺|TL\b|lira\b)")
