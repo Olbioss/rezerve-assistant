@@ -25,6 +25,8 @@ Kurallar:
 - Asistan bir işlem için onay sorarsa: işlem amacına uyuyorsa onayla, uymuyorsa düzeltmesini iste.
 - Amacına ulaştığın an (örneğin randevun alındığında) ya da ulaşılamayacağı belli olduğunda, \
 teşekkür ya da veda yazmadan yalnızca {done} yaz.
+- Asistan seni işletmeye yönlendirirse (bir telefon numarası verir ya da seni aktardığını \
+söylerse) asistanla işin bitmiştir: yalnızca {done} yaz.
 """
 
 
