@@ -426,3 +426,33 @@ async def test_a_message_written_before_the_confirmation_cannot_approve_it(
     # Only a yes written after the confirmation was there to read approves it.
     assert await turn.say("evet") == ["Randevunuz ayrıldı."]
     assert [name for name, _ in turn.fake.writes()] == ["create_booking"]
+
+
+async def test_each_turn_is_metered_and_each_proposal_kept_with_its_answer(store: Store) -> None:
+    turn = Harness(store, Script(calls("create_booking", BOOK_CILT), says("Randevunuz ayrıldı.")))
+    await turn.say("yarın 15:30 cilt bakımı, Elif Kaya, elif@example.com")
+    await turn.say("evet")
+
+    runs = await store.runs(turn.conversation_id)
+    assert [(run.outcome, run.requests, run.model_used) for run in runs] == [
+        ("confirmation", 1, "script"),
+        ("reply", 1, "script"),
+    ]
+    assert await store.decisions(turn.conversation_id) == [("create_booking", "approved")]
+
+
+async def test_a_turn_counts_the_calls_that_failed(store: Store) -> None:
+    no_email = {k: v for k, v in BOOK_CILT.items() if k != "customer_email"}
+    turn = Harness(
+        store,
+        Script(
+            # Code sends this back: a kapora needs an email.
+            calls("create_booking", no_email),
+            # Rezerve refuses this one: no such booking.
+            calls("get_booking", {"booking_id": "yok"}, "c2"),
+            says("E-posta adresiniz nedir?"),
+        ),
+    )
+    await turn.say("yarın 15:30 cilt bakımı, adım Elif Kaya")
+    [run] = await store.runs(turn.conversation_id)
+    assert (run.outcome, run.tool_errors) == ("reply", 2)

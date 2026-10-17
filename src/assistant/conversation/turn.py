@@ -21,8 +21,12 @@ from pydantic_ai import (
     FallbackExceptionGroup,
     ModelAPIError,
     ModelMessage,
+    ModelRequest,
+    ModelRequestPart,
     ModelResponse,
+    RetryPromptPart,
     RunUsage,
+    ToolReturnPart,
     UsageLimitExceeded,
     UsageLimits,
 )
@@ -92,6 +96,13 @@ class TurnSettings:
         )
 
 
+def _is_tool_error(part: ModelRequestPart) -> bool:
+    """A call that failed on Rezerve, or whose arguments did not validate."""
+    if isinstance(part, ToolReturnPart):
+        return part.outcome == "failed"
+    return isinstance(part, RetryPromptPart) and part.tool_name is not None
+
+
 @dataclass
 class Meter:
     """What a turn cost, across its agent runs and the reply classifier."""
@@ -100,6 +111,7 @@ class Meter:
     input_tokens: int = 0
     output_tokens: int = 0
     tool_calls: int = 0
+    tool_errors: int = 0
     models_tried: list[str] = field(default_factory=list[str])
     model_used: str | None = None
 
@@ -109,6 +121,8 @@ class Meter:
         self.output_tokens += usage.output_tokens
         self.tool_calls += usage.tool_calls
         for message in messages:
+            if isinstance(message, ModelRequest):
+                self.tool_errors += sum(map(_is_tool_error, message.parts))
             if isinstance(message, ModelResponse):
                 for attempt in message.failed_attempts or []:
                     # Otherwise invisible: a model that rejects every request
@@ -167,6 +181,7 @@ class _Turn:
             input_tokens=meter.input_tokens,
             output_tokens=meter.output_tokens,
             tool_calls=meter.tool_calls,
+            tool_errors=meter.tool_errors,
             outcome=outcome,
         )
         return TurnResult(
@@ -319,6 +334,7 @@ class TurnProcessor:
             first, *others = output.approvals
             proposal = await propose(first, deps, rezerve, self._clock())
             if isinstance(proposal, Refusal):
+                turn.meter.tool_errors += 1
                 run = await self._run(
                     deps, rezerve, turn, None, run.all_messages(), refusal(output, proposal.reason)
                 )

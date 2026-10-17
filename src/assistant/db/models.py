@@ -141,6 +141,8 @@ class AgentRun(Base):
     input_tokens: Mapped[int]
     output_tokens: Mapped[int]
     tool_calls: Mapped[int]
+    # Calls Rezerve refused, code sent back, or whose arguments did not validate.
+    tool_errors: Mapped[int] = mapped_column(server_default=sa.text("0"))
     est_cost_usd: Mapped[Decimal | None] = mapped_column(sa.Numeric(10, 6))
     outcome: Mapped[str] = mapped_column(sa.Text)
     trace_id: Mapped[str | None] = mapped_column(sa.Text)

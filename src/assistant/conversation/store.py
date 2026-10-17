@@ -89,6 +89,7 @@ class RunRecord:
     input_tokens: int
     output_tokens: int
     tool_calls: int
+    tool_errors: int
     outcome: Outcome
 
 
@@ -355,6 +356,7 @@ class Store:
                         input_tokens=run.input_tokens,
                         output_tokens=run.output_tokens,
                         tool_calls=run.tool_calls,
+                        tool_errors=run.tool_errors,
                         outcome=run.outcome,
                     )
                 )
@@ -364,6 +366,40 @@ class Store:
                     .where(Message.seq.in_(result.processed))
                     .values(processed_at=now)
                 )
+
+    async def runs(self, conversation_id: int) -> list[RunRecord]:
+        """What each of the conversation's turns cost, oldest first."""
+        async with self._sessions() as session:
+            rows = await session.execute(
+                sa.select(AgentRun)
+                .where(AgentRun.conversation_id == conversation_id)
+                .order_by(AgentRun.id)
+            )
+            return [
+                RunRecord(
+                    started_at=row.started_at,
+                    duration_ms=row.duration_ms,
+                    model_used=row.model_used,
+                    models_tried=list(row.models_tried),
+                    requests=row.requests,
+                    input_tokens=row.input_tokens,
+                    output_tokens=row.output_tokens,
+                    tool_calls=row.tool_calls,
+                    tool_errors=row.tool_errors,
+                    outcome=cast(Outcome, row.outcome),
+                )
+                for row in rows.scalars()
+            ]
+
+    async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
+        """Every write proposed in the conversation, and how it was answered."""
+        async with self._sessions() as session:
+            rows = await session.execute(
+                sa.select(PendingApproval.tool_name, PendingApproval.decision)
+                .where(PendingApproval.conversation_id == conversation_id)
+                .order_by(PendingApproval.id)
+            )
+            return [(row.tool_name, cast(Decision | None, row.decision)) for row in rows]
 
     async def unsent(self, conversation_id: int) -> list[OutboundMessage]:
         async with self._sessions() as session:
