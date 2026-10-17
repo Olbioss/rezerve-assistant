@@ -126,6 +126,15 @@ async def test_a_booking_without_kapora_shows_the_price(
             "starts_at",
         ),
         ({"service_id": SAC, "starts_at": "2026-10-17T12:30:00Z"}, "adını"),
+        # A name the model wrote because it never asked: seen in a live eval run.
+        (
+            {"service_id": SAC, "starts_at": "2026-10-17T12:30:00Z", "customer_name": "Müşteri"},
+            "adını",
+        ),
+        (
+            {"service_id": SAC, "starts_at": "2026-10-17T12:30:00Z", "customer_name": "misafir"},
+            "adını",
+        ),
         (
             {"service_id": CILT, "starts_at": "2026-10-17T12:30:00Z", "customer_name": "Ali"},
             "e-posta",

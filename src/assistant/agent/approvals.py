@@ -36,6 +36,10 @@ type Resolution = Literal["approve", "deny", "other", "expired"]
 APPROVE = frozenset({"evet", "olur", "tamam", "tamamdır", "onaylıyorum", "uygun", "ok", "👍"})
 DENY = frozenset({"hayır", "vazgeçtim", "iptal", "istemiyorum", "👎"})
 THUMBS = frozenset({"👍", "👎"})
+# What a model writes as a name it never asked for: the booking goes back to it.
+PLACEHOLDER_NAMES = frozenset(
+    {"müşteri", "misafir", "isim", "ad", "ad soyad", "adı soyadı", "anonim", "customer", "guest"}
+)
 
 QUESTION = "Onaylıyor musunuz? (evet / hayır)"
 DENIED = "Müşteri bu işlemi onaylamadı; işlem yapılmadı."
@@ -138,7 +142,7 @@ def _propose_create(args: dict[str, Any], deps: TurnDeps) -> Proposal | Refusal:
             "starts_at geçerli bir zaman değil; find_slots'un verdiği değeri aynen kullan."
         )
     name = str(args.get("customer_name") or "").strip()
-    if len(name) < 2:
+    if len(name) < 2 or normalise(name) in PLACEHOLDER_NAMES:
         return Refusal("Randevu için müşterinin adını sor.")
     if service.deposit_cents and not args.get("customer_email"):
         return Refusal("Bu hizmet kapora alıyor; önce müşterinin e-posta adresini iste.")
