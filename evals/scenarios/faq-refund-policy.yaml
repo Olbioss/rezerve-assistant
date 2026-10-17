@@ -1,0 +1,8 @@
+id: faq-refund-policy
+tags: [faq]
+mode: scripted
+persona: "Elif — dikkatli"
+turns:
+  - "randevumu iptal edersem kaporam iade edilir mi?"
+expect:
+  says: ["24"]

@@ -1,0 +1,15 @@
+id: book-kapora-asks-for-email
+tags: [booking, kapora, date]
+mode: scripted
+persona: "Elif — bilgileri tek tek verir"
+turns:
+  - "haftaya perşembe 14:00 cilt bakımı, adım Elif Kaya"
+  - "elif@example.com"
+  - "evet"
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "thursday next week"
+      at: "14:00"
+      status: pending
+      name: "Elif Kaya"

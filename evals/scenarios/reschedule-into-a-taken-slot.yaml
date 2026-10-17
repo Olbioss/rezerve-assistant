@@ -1,0 +1,20 @@
+id: reschedule-into-a-taken-slot
+tags: [reschedule, date]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+  - key: zeynep
+    customer: other
+    name: "Zeynep Arslan"
+    phone: "0532 111 22 33"
+    service: "Cilt Bakımı"
+    day: "wednesday next week"
+    at: "16:00"
+turns:
+  - "saç kesimi randevumu haftaya çarşamba 16:00'ya alalım"
+  - "o zaman 17:00 olsun"
+  - "evet"
+expect:
+  moved:
+    - { key: mine, day: "wednesday next week", at: "17:00" }

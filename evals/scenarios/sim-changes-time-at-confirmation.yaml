@@ -1,0 +1,18 @@
+id: sim-changes-time-at-confirmation
+tags: [booking, kapora, date, judge]
+mode: simulated
+persona: "Elif — kararsız ama kibar"
+goal: >-
+  Haftaya çarşamba 15:00'e cilt bakımı randevusu iste. Asistan onay
+  sorduğunda fikrini değiştir ve saatin 16:00 olmasını iste; 16:00 için
+  onay sorulunca onayla.
+facts:
+  ad soyad: "Elif Kaya"
+  e-posta: "elif@example.com"
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "wednesday next week"
+      at: "16:00"
+      status: pending
+      name: "Elif Kaya"

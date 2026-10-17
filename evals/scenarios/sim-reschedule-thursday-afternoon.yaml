@@ -1,0 +1,14 @@
+id: sim-reschedule-thursday-afternoon
+tags: [reschedule, date, judge]
+mode: simulated
+persona: "Elif — meşgul, kısa yazar"
+goal: >-
+  Haftaya salı 11:30'daki saç kesimi randevunu haftaya perşembe öğleden
+  sonraya, 14:00 ile 17:00 arasında bir saate taşı.
+facts:
+  ad soyad: "Elif Kaya"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+expect:
+  moved:
+    - { key: mine, day: "thursday next week", between: ["14:00", "17:00"] }

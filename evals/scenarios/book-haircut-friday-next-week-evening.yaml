@@ -1,0 +1,12 @@
+id: book-haircut-friday-next-week-evening
+tags: [booking, date]
+mode: scripted
+persona: "Burak — gündelik dil"
+turns:
+  - "haftaya cuma akşamüstü saç kesimi istiyorum, 17:00 gibi"
+  - "17:00 olsun"
+  - "Burak Şahin"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Saç Kesimi", day: "friday next week", at: "17:00", name: "Burak Şahin" }

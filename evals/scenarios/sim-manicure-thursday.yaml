@@ -1,0 +1,16 @@
+id: sim-manicure-thursday
+tags: [booking, date, judge]
+mode: simulated
+persona: "Ayşe — samimi, emoji kullanır, ara sıra yazım hatası yapar"
+goal: >-
+  Haftaya perşembe öğleden sonra, 14:00 ile 17:00 arasında bir saate manikür
+  randevusu al. Önce fiyatını sor.
+facts:
+  ad soyad: "Ayşe Kara"
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "thursday next week"
+      between: ["14:00", "17:00"]
+      name: "Ayşe Kara"
+  says: ["500"]

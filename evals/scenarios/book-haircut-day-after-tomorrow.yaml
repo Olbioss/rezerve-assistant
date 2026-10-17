@@ -1,0 +1,11 @@
+id: book-haircut-day-after-tomorrow
+tags: [booking, date]
+mode: scripted
+persona: "Can — kısa yazar"
+turns:
+  - "öbür gün sabah saç kesimi için 10:30 olur mu?"
+  - "Can Yıldız"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Saç Kesimi", day: "day after tomorrow", at: "10:30", name: "Can Yıldız" }

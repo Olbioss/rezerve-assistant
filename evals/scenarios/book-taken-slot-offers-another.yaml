@@ -1,0 +1,24 @@
+id: book-taken-slot-offers-another
+tags: [booking, kapora, date]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - key: zeynep
+    customer: other
+    name: "Zeynep Arslan"
+    phone: "0532 111 22 33"
+    service: "Cilt Bakımı"
+    day: "next saturday"
+    at: "15:30"
+turns:
+  - "cumartesi 15:30 cilt bakımı için yer var mı"
+  - "o zaman 16:30 olsun"
+  - "Elif Kaya, elif@example.com"
+  - "evet"
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "next saturday"
+      at: "16:30"
+      status: pending
+      name: "Elif Kaya"

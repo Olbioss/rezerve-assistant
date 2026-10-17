@@ -1,0 +1,12 @@
+id: cancel-answered-with-iptal
+tags: [cancel]
+mode: scripted
+persona: "Ayşe — tek kelimeyle cevap verir"
+seed:
+  - { key: mine, service: "Manikür", day: "friday next week", at: "12:00" }
+turns:
+  - "manikür randevumu iptal edin lütfen"
+  # Asked "…iptal edilecek. Onaylıyor musunuz?", "iptal" here means yes.
+  - "iptal"
+expect:
+  cancelled: [mine]

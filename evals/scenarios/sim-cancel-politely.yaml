@@ -1,0 +1,11 @@
+id: sim-cancel-politely
+tags: [cancel, judge]
+mode: simulated
+persona: "Ahmet — çok kibar, uzun cümlelerle yazar"
+goal: "Cumartesi günkü saç kesimi randevunu iptal ettir."
+facts:
+  ad soyad: "Ahmet Yılmaz"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "saturday next week", at: "10:00", name: "Ahmet Yılmaz" }
+expect:
+  cancelled: [mine]

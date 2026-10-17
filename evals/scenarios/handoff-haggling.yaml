@@ -1,0 +1,8 @@
+id: handoff-haggling
+tags: [handoff]
+mode: scripted
+persona: "Okan — pazarlıkçı"
+turns:
+  - "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+expect:
+  handoff: true

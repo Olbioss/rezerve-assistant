@@ -1,0 +1,8 @@
+id: handoff-wants-a-person
+tags: [handoff]
+mode: scripted
+persona: "Gül — insanla konuşmak istiyor"
+turns:
+  - "bir yetkiliyle görüşmek istiyorum lütfen"
+expect:
+  handoff: true

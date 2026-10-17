@@ -1,0 +1,10 @@
+id: faq-address-and-phone
+tags: [faq]
+smoke: true
+mode: scripted
+persona: "Merve — yeni müşteri"
+turns:
+  - "merhaba, adresiniz nerede?"
+  - "telefon numaranız nedir?"
+expect:
+  says: ["Kadıköy", "0212 000 00 01"]

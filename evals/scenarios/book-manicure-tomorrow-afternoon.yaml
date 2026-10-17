@@ -1,0 +1,12 @@
+id: book-manicure-tomorrow-afternoon
+tags: [booking, date]
+mode: scripted
+persona: "Ayşe — nazik, cümleleri tam"
+turns:
+  - "Merhaba, yarın öğleden sonra manikür için uygun bir saatiniz var mı?"
+  - "16:00 benim için uygun."
+  - "Ayşe Kara"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Manikür", day: "tomorrow", at: "16:00", name: "Ayşe Kara" }

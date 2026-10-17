@@ -1,0 +1,10 @@
+id: cancel-then-changes-mind
+tags: [cancel]
+mode: scripted
+persona: "Mehmet — kararsız"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "friday next week", at: "10:00" }
+turns:
+  - "cuma günkü randevumu iptal etmek istiyorum"
+  - "hayır vazgeçtim, kalsın"
+expect: {}

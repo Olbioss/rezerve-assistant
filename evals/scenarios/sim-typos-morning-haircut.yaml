@@ -1,0 +1,15 @@
+id: sim-typos-morning-haircut
+tags: [booking, date, judge]
+mode: simulated
+persona: >-
+  Emre — hızlı yazar, Türkçe karakter kullanmaz (ı yerine i, ş yerine s),
+  bol yazım hatası ve kısaltma
+goal: "Öbür gün sabah, 10:00 ile 12:00 arasında saç kesimi randevusu al."
+facts:
+  ad soyad: "Emre Çelik"
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "day after tomorrow"
+      between: ["10:00", "12:00"]
+      name: "Emre Çelik"

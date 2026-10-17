@@ -1,0 +1,8 @@
+id: handoff-complaint
+tags: [handoff]
+mode: scripted
+persona: "Kemal — sinirli"
+turns:
+  - "geçen hafta saçımı çok kötü kestiniz, paramı geri istiyorum"
+expect:
+  handoff: true

@@ -1,0 +1,12 @@
+id: book-haircut-next-tuesday
+tags: [booking, date]
+smoke: true
+mode: scripted
+persona: "Mehmet — kısa ve doğrudan yazar"
+turns:
+  - "merhaba, haftaya salı 11:30'a saç kesimi için yer var mı?"
+  - "olur, adım Mehmet Demir"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Saç Kesimi", day: "tuesday next week", at: "11:30", name: "Mehmet Demir" }

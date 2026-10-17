@@ -1,0 +1,12 @@
+id: cancel-own-booking
+tags: [cancel]
+smoke: true
+mode: scripted
+persona: "Mehmet — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "friday next week", at: "10:00" }
+turns:
+  - "haftaya cuma saç kesimi randevumu iptal etmek istiyorum"
+  - "evet"
+expect:
+  cancelled: [mine]

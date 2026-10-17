@@ -1,0 +1,15 @@
+id: book-skin-care-on-a-date
+tags: [booking, date, kapora]
+mode: scripted
+persona: "Deniz — tarih vererek yazar"
+turns:
+  - "{date:in 12 days} saat 14:00'te cilt bakımı alabilir miyim?"
+  - "Deniz Aydın, deniz@example.com"
+  - "evet"
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "in 12 days"
+      at: "14:00"
+      status: pending
+      name: "Deniz Aydın"

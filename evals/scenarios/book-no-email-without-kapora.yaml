@@ -1,0 +1,12 @@
+id: book-no-email-without-kapora
+tags: [booking, date]
+mode: scripted
+persona: "Mehmet — kısa yazar"
+turns:
+  - "haftaya çarşamba 15:00 saç kesimi, Mehmet Demir"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Saç Kesimi", day: "wednesday next week", at: "15:00", name: "Mehmet Demir" }
+  # A service without a kapora needs no email: asking for one is a mistake.
+  never_says: ["e-posta"]

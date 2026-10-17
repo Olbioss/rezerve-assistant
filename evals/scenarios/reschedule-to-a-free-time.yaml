@@ -1,0 +1,13 @@
+id: reschedule-to-a-free-time
+tags: [reschedule, date]
+smoke: true
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+turns:
+  - "salı günkü saç kesimi randevumu haftaya çarşamba 16:00'ya alabilir misiniz?"
+  - "evet"
+expect:
+  moved:
+    - { key: mine, day: "wednesday next week", at: "16:00" }

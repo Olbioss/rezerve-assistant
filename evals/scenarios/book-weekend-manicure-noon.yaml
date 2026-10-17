@@ -1,0 +1,11 @@
+id: book-weekend-manicure-noon
+tags: [booking, date]
+mode: scripted
+persona: "Seda — hafta sonu çalışmayan biri"
+turns:
+  - "hafta sonu manikür yaptırmak istiyorum, cumartesi öğlen 12:00 olur mu?"
+  - "Seda Koç"
+  - "evet"
+expect:
+  bookings:
+    - { service: "Manikür", day: "next saturday", at: "12:00", name: "Seda Koç" }

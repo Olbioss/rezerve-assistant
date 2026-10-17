@@ -1,0 +1,9 @@
+id: faq-prices-and-kapora
+tags: [faq, judge]
+mode: scripted
+persona: "Merve — fiyat soruyor"
+turns:
+  - "cilt bakımı ne kadar, kapora alıyor musunuz?"
+  - "saç kesimi kaç para?"
+expect:
+  says: ["1.500", "300", "800"]

@@ -1,0 +1,14 @@
+id: reschedule-pending-kapora-refused
+tags: [reschedule]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - key: mine
+    service: "Cilt Bakımı"
+    day: "thursday next week"
+    at: "14:00"
+    status: pending
+turns:
+  - "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+# Rezerve moves no booking whose kapora is unpaid: nothing may change.
+expect: {}
