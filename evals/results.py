@@ -48,6 +48,13 @@ class ScenarioResult(BaseModel):
     status: Literal["pass", "fail", "skipped"]
     # Why it was skipped: a day it names is closed, or out of the booking window.
     reason: str = ""
+    # When it ran, in the business's time: what "yarın" or "cumartesi" meant then.
+    started_at: datetime | None = None
+    # The bookings it expected, resolved against that moment.
+    expected: list[str] = []
+    # The customer and the conversation the agent's store keeps it under.
+    customer: str | None = None
+    conversation_id: int | None = None
     checks: list[CheckResult] = []
     dates_right: bool | None = None
     customer_turns: int = 0

@@ -7,7 +7,7 @@ graded. Channels and HTTP stay out of the loop: integration tests cover them.
 """
 
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 from uuid import uuid4
 
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
@@ -85,6 +85,16 @@ class Plan:
             says=scenario.expect.says,
             never_says=scenario.expect.never_says,
         )
+
+    def described(self, zone: tzinfo) -> list[str]:
+        """Where the bookings should land, the way the business sees them."""
+        return [_describe(window, zone) for window in [*self.created, *self.moved.values()]]
+
+
+def _describe(window: Window, zone: tzinfo) -> str:
+    start, end = window.earliest.astimezone(zone), window.latest.astimezone(zone)
+    at = f"{start:%H:%M}" if start == end else f"{start:%H:%M}–{end:%H:%M}"
+    return " ".join(part for part in (window.service, f"{start:%a %d %b}", at) if part)
 
 
 def plan(scenario: Scenario, business: Business, clock: Clock, me: str, other: str) -> Plan:
@@ -183,6 +193,7 @@ async def run_scenario(
             mode=scenario.mode,
             status="skipped",
             reason=str(reason),
+            started_at=clock.now,
         )
 
     await rig.rezerve.reset(scenario.business_notes)
@@ -212,6 +223,10 @@ async def run_scenario(
         tags=list(scenario.tags),
         mode=scenario.mode,
         status="pass" if graded.passed else "fail",
+        started_at=clock.now,
+        expected=resolved.described(clock.now.tzinfo or UTC),
+        customer=customer,
+        conversation_id=conversation_id,
         checks=[CheckResult(**asdict(check)) for check in graded.checks],
         dates_right=graded.dates_right,
         customer_turns=sum(1 for line in lines if line.speaker == "customer"),

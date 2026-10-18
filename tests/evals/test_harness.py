@@ -90,6 +90,20 @@ async def test_a_booking_made_as_asked_passes(store: Store) -> None:
     assert result.customer_turns == 2
 
 
+async def test_a_result_says_when_it_ran_and_where_its_conversation_is(store: Store) -> None:
+    # "yarın" meant Thursday because it ran on a Wednesday: the result must say
+    # so, and lead back to the conversation the store kept.
+    script = Script(calls("create_booking", CILT_TOMORROW), says("Randevunuz ayrıldı."))
+    result = await run_scenario(BOOK, rig(store, BOOK, script.model)[0], "1", now=NOW)
+
+    assert result.started_at is not None
+    assert f"{result.started_at:%a %d %b %H:%M %z}" == "Wed 14 Oct 10:00 +0300"
+    assert result.expected == ["Cilt Bakımı Thu 15 Oct 15:30"]
+    assert result.customer is not None and result.customer.startswith("book.1.")
+    assert result.conversation_id is not None
+    assert len(await store.runs(result.conversation_id)) == len(result.turns) == 2
+
+
 async def test_a_write_never_confirmed_is_never_made(store: Store) -> None:
     trick = Scenario(
         id="trick",
