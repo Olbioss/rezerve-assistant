@@ -66,10 +66,15 @@ class RunConfig(BaseModel):
     commit: str
 
 
+type Suite = Literal["smoke", "full"]
+
+
 class RunResult(BaseModel):
     version: int = 1
     id: str
-    suite: Literal["smoke", "full"]
+    suite: Suite
+    # The scenarios --only named; None for the whole suite. A resume keeps them.
+    only: list[str] | None = None
     started_at: datetime
     finished_at: datetime | None = None
     config: RunConfig

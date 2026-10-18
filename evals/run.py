@@ -35,7 +35,7 @@ from evals.harness import EVAL_SLUG, Outbox, Rig, run_scenario
 from evals.judge import Judge
 from evals.models import QuotaExhausted, patient_chain
 from evals.report import render
-from evals.results import RunConfig, RunResult, ScenarioResult, history, load, save
+from evals.results import RunConfig, RunResult, ScenarioResult, Suite, history, load, save
 from evals.rezerve_side import RezerveDb
 from evals.scenario import Scenario, load_scenarios
 from evals.simulate import Simulator
@@ -43,11 +43,43 @@ from evals.simulate import Simulator
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m evals.run", description=__doc__)
-    parser.add_argument("--suite", choices=["smoke", "full"], default="smoke")
+    parser.add_argument("--suite", choices=["smoke", "full"], help="smoke unless resuming")
     parser.add_argument("--only", nargs="+", metavar="ID", help="run just these scenarios")
     parser.add_argument("--agent-model", help="one model for the agent, no fallback")
-    parser.add_argument("--resume", metavar="RUN_ID", help="carry on a run a quota stopped")
+    parser.add_argument(
+        "--resume", metavar="RUN_ID", help="carry on a run a quota stopped, as it started"
+    )
     return parser.parse_args(argv)
+
+
+def selection(args: argparse.Namespace, run: RunResult | None) -> tuple[Suite, list[str] | None]:
+    """The suite and the scenarios: a resumed run's own, or the command line's."""
+    if run is not None:
+        return run.suite, run.only
+    suite: Suite = args.suite or "smoke"
+    return suite, args.only
+
+
+def agent_models(args: argparse.Namespace, run: RunResult | None) -> list[str] | None:
+    """The agent's models when they are not the configured chain: a resumed
+    run's own, or the one --agent-model names."""
+    if run is not None:
+        return run.config.agent_models
+    return [args.agent_model] if args.agent_model else None
+
+
+def check_resume(args: argparse.Namespace, run: RunResult) -> None:
+    """Refuse a flag given with --resume that disagrees with how the run
+    started: its results would be measured on something else."""
+    clashes: list[str] = []
+    if args.suite and args.suite != run.suite:
+        clashes.append(f"--suite {args.suite} (it is a {run.suite} run)")
+    if args.only and args.only != run.only:
+        clashes.append(f"--only (it ran {' '.join(run.only) if run.only else 'the whole suite'})")
+    if args.agent_model and [args.agent_model] != run.config.agent_models:
+        clashes.append(f"--agent-model (it ran {' → '.join(run.config.agent_models)})")
+    if clashes:
+        raise SystemExit(f"{run.id} carries on as it started; drop " + "; ".join(clashes))
 
 
 def select(scenarios: list[Scenario], suite: str, only: list[str] | None) -> list[Scenario]:
@@ -67,11 +99,11 @@ def pending(done: list[ScenarioResult], todo: list[Scenario]) -> list[Scenario]:
     return [scenario for scenario in todo if scenario.id not in finished]
 
 
-def settings_for(args: argparse.Namespace) -> EvalSettings:
+def settings_for(models: list[str] | None) -> EvalSettings:
     settings = EvalSettings()  # pyright: ignore[reportCallIssue]
-    if args.agent_model:
+    if models:
         settings = settings.model_copy(
-            update={"model_primary": args.agent_model, "model_fallbacks": []}
+            update={"model_primary": models[0], "model_fallbacks": models[1:]}
         )
     return settings
 
@@ -107,8 +139,9 @@ def commit() -> str:
         return "unknown"
 
 
-async def execute(args: argparse.Namespace, settings: EvalSettings) -> int:
-    scenarios = select(load_scenarios(), args.suite, args.only)
+async def execute(args: argparse.Namespace, settings: EvalSettings, run: RunResult | None) -> int:
+    suite, only = selection(args, run)
+    scenarios = select(load_scenarios(), suite, only)
     engine = create_engine(settings.eval_database_url)
     rezerve = RezerveDb(settings.rezerve_database_url)
     cache = DiskCache()
@@ -146,13 +179,12 @@ async def execute(args: argparse.Namespace, settings: EvalSettings) -> int:
         )
         await preflight(settings, rezerve, token)
 
-        if args.resume:
-            run = load(args.resume)
-        else:
+        if run is None:
             started = datetime.now(UTC)
             run = RunResult(
-                id=f"{started:%Y-%m-%dT%H-%M-%SZ}-{args.suite}",
-                suite=args.suite,
+                id=f"{started:%Y-%m-%dT%H-%M-%SZ}-{suite}",
+                suite=suite,
+                only=only,
                 started_at=started,
                 config=RunConfig(
                     agent_models=[settings.model_primary, *settings.model_fallbacks],
@@ -162,7 +194,7 @@ async def execute(args: argparse.Namespace, settings: EvalSettings) -> int:
                 ),
             )
         run.stopped = None
-        repeats = [s for s in scenarios if s.smoke] if args.suite == "full" else []
+        repeats = [s for s in scenarios if s.smoke] if suite == "full" else []
         try:
             for results, todo, attempt in (
                 (run.scenarios, scenarios, "1"),
@@ -176,7 +208,10 @@ async def execute(args: argparse.Namespace, settings: EvalSettings) -> int:
         except QuotaExhausted as error:
             run.stopped = str(error)
             path = save(run)
-            print(f"Stopped: {error}\nSaved {path}. Resume with: --resume {run.id}")
+            print(
+                f"Stopped: {error}\nSaved {path}. Resume with: "
+                f"uv run python -m evals.run --resume {run.id}"
+            )
             return 2
         run.finished_at = datetime.now(UTC)
         path = save(run)
@@ -209,10 +244,13 @@ async def preflight(settings: EvalSettings, rezerve: RezerveDb, token: str) -> N
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    settings = settings_for(args)
+    run = load(args.resume) if args.resume else None
+    if run is not None:
+        check_resume(args, run)
+    settings = settings_for(agent_models(args, run))
     asyncio.run(ensure_database(settings.eval_database_url))
     migrate(settings.eval_database_url)
-    return asyncio.run(execute(args, settings))
+    return asyncio.run(execute(args, settings, run))
 
 
 if __name__ == "__main__":
