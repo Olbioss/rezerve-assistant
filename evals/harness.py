@@ -263,7 +263,7 @@ async def _converse(scenario: Scenario, rig: Rig, customer: str, me: str, clock:
             text: str | None = render(scenario.turns[turn], clock)
         else:
             assert rig.simulator is not None, "a simulated scenario needs the simulator"
-            text = await rig.simulator.next_message(scenario, lines)
+            text = await rig.simulator.next_message(scenario, lines, clock.today)
             if text is None:
                 return Talk(lines, conversation_id, True, waits)
         lines.append(Line("customer", text))

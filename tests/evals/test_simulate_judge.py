@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from pathlib import Path
 
 from pydantic_ai import ModelMessage, ModelRequest, ModelResponse, TextPart, ToolCallPart
@@ -18,6 +19,7 @@ SCENARIO = Scenario(
     facts={"ad": "Elif Kaya"},
     expect=Expect(),
 )
+MONDAY = date(2026, 10, 19)
 
 
 def speaking(*texts: str) -> tuple[FunctionModel, list[str]]:
@@ -37,22 +39,33 @@ async def test_the_customer_plays_its_part_and_says_when_done(tmp_path: Path) ->
     model, seen = speaking("merhaba, haftaya salı saç kesimi olur mu?", "[[BITTI]]")
     simulator = Simulator(model, DiskCache(tmp_path))
 
-    first = await simulator.next_message(SCENARIO, [])
+    first = await simulator.next_message(SCENARIO, [], MONDAY)
     assert first == "merhaba, haftaya salı saç kesimi olur mu?"
     assert "Haftaya salı saç kesimi randevusu al." in seen[0]
     assert "- ad: Elif Kaya" in seen[0]
 
     lines = [Line("customer", first), Line("assistant", "Randevunuz alındı.")]
-    assert await simulator.next_message(SCENARIO, lines) is None
+    assert await simulator.next_message(SCENARIO, lines, MONDAY) is None
+
+
+async def test_the_customer_knows_the_date_and_keeps_the_goals_day_words(tmp_path: Path) -> None:
+    model, seen = speaking("merhaba", "merhaba")
+    simulator = Simulator(model, DiskCache(tmp_path))
+    await simulator.next_message(SCENARIO, [], MONDAY)
+    assert "Bugün: 19 Ekim 2026 Pazartesi." in seen[0]
+    assert "Günü amacındaki sözcüklerle söyle" in seen[0]
+    # Another day, another opening line: "haftaya salı" is another Tuesday.
+    await simulator.next_message(SCENARIO, [], MONDAY + timedelta(days=1))
+    assert len(seen) == 2
 
 
 async def test_the_same_conversation_is_answered_from_the_cache(tmp_path: Path) -> None:
     cache = DiskCache(tmp_path)
     model, seen = speaking("merhaba")
-    await Simulator(model, cache).next_message(SCENARIO, [])
+    await Simulator(model, cache).next_message(SCENARIO, [], MONDAY)
     # A new simulator on the same cache: the model is not asked again.
     again, seen_again = speaking("başka bir şey")
-    assert await Simulator(again, cache).next_message(SCENARIO, []) == "merhaba"
+    assert await Simulator(again, cache).next_message(SCENARIO, [], MONDAY) == "merhaba"
     assert (len(seen), seen_again, cache.hits) == (1, [], 1)
 
 
