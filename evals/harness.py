@@ -162,10 +162,12 @@ def allowed_amounts(business: Business) -> set[int]:
 async def run_scenario(
     scenario: Scenario, rig: Rig, attempt: str, now: datetime | None = None
 ) -> ScenarioResult:
-    """`attempt` makes this run's customer a new one, unknown to Rezerve and to the store."""
+    """Every call is a new customer, unknown to Rezerve and to the store, even
+    under an `attempt` seen before: a resumed run repeats the scenario a quota
+    cut off, and must not carry on the conversation the cut left behind."""
     business = await rig.rezerve.business()
     clock = Clock.at(now or datetime.now(UTC), business.timezone, business.min_lead)
-    customer = f"{scenario.id}.{attempt}"
+    customer = f"{scenario.id}.{attempt}.{uuid4().hex[:8]}"
     me = customer_ref(rig.secret, "eval", customer)
     try:
         resolved = plan(scenario, business, clock, me, customer_ref(rig.secret, "eval", "other"))

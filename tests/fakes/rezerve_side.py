@@ -11,10 +11,11 @@ HOURS = {weekday: [(10 * 60, 13 * 60), (14 * 60, 19 * 60)] for weekday in range(
 
 
 class FakeSide:
-    def __init__(self, fake: FakeRezerve, me: str) -> None:
+    def __init__(self, fake: FakeRezerve) -> None:
         self.fake = fake
-        # FakeRezerve cannot tell customers apart: what it books is this customer's.
-        self.me = me
+        # FakeRezerve cannot tell customers apart: what it books belongs to
+        # the customer the last session was opened for.
+        self.me = ""
         self.refs: dict[str, str] = {}
         self.notes: str | None = None
 

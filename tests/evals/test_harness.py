@@ -10,7 +10,7 @@ from assistant.agent.agent import build_agent
 from assistant.agent.approvals import ReplyClassifier
 from assistant.conversation.store import Store
 from assistant.conversation.turn import TurnProcessor, TurnSettings
-from assistant.identity import customer_ref
+from assistant.mcp import RezerveSession
 from evals.cache import DiskCache
 from evals.harness import Outbox, Rig, run_scenario
 from evals.models import PatientModel, QuotaExhausted
@@ -60,16 +60,21 @@ def rig(
     patience: list[PatientModel] | None = None,
 ) -> tuple[Rig, FakeRezerve]:
     fake = FakeRezerve()
+    side = FakeSide(fake)
     outbox = Outbox()
+
+    def open_rezerve(slug: str, ref: str) -> RezerveSession:
+        side.me = ref
+        return fake.session()
+
     processor = TurnProcessor(
         store=store,
         agent=build_agent(model),
         classifier=ReplyClassifier(Script().model),
-        open_rezerve=lambda slug, ref: fake.session(),
+        open_rezerve=open_rezerve,
         channels={"web": outbox},
         settings=SETTINGS,
     )
-    side = FakeSide(fake, customer_ref(SECRET, "eval", f"{scenario.id}.1"))
     return Rig(store, processor, outbox, side, SECRET, simulator, None, patience or []), fake
 
 
@@ -162,6 +167,23 @@ async def test_a_daily_quota_stops_the_scenario(store: Store) -> None:
     rigged, _ = rig(store, BOOK, model, patience=[model])
     with pytest.raises(QuotaExhausted):
         await run_scenario(BOOK, rigged, "1", now=NOW)
+
+
+async def test_a_scenario_a_quota_cut_off_starts_over_when_run_again(store: Store) -> None:
+    # A resumed run repeats the scenario the quota stopped, under the same
+    # attempt: it must start over, not carry on the conversation the cut left.
+    def exhausted(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        raise ModelHTTPError(429, "gemini-test", GEMINI_PER_DAY)
+
+    model = PatientModel(FunctionModel(exhausted, model_name="gemini-test"))
+    with pytest.raises(QuotaExhausted):
+        await run_scenario(BOOK, rig(store, BOOK, model, patience=[model])[0], "1", now=NOW)
+
+    script = Script(calls("create_booking", CILT_TOMORROW), says("Randevunuz ayrıldı."))
+    result = await run_scenario(BOOK, rig(store, BOOK, script.model)[0], "1", now=NOW)
+
+    assert result.status == "pass", result.checks
+    assert [turn.outcome for turn in result.turns] == ["confirmation", "reply"]
 
 
 async def test_a_simulated_customer_talks_until_it_is_done(store: Store, tmp_path: Path) -> None:
