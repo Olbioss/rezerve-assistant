@@ -35,6 +35,34 @@ THURSDAY = date(2026, 10, 15)
         ("31 Şubat", None),
         ("öğleden sonra", None),
         ("merhaba", None),
+        # Typed without Turkish letters.
+        ("yarin", When(date(2026, 10, 16), "Cuma")),
+        ("bugun", When(date(2026, 10, 15), "Perşembe")),
+        ("haftaya sali", When(date(2026, 10, 20), "Salı")),
+        ("persembe ogleden sonra", When(date(2026, 10, 15), "Perşembe", "14:00", "18:00")),
+        ("carsambaya", When(date(2026, 10, 21), "Çarşamba")),
+        ("obur gun sabah", When(date(2026, 10, 17), "Cumartesi", "09:00", "12:00")),
+        # Phrases that start like another one.
+        ("yarından sonra", When(date(2026, 10, 17), "Cumartesi")),
+        ("yarından sonraki gün sabah", When(date(2026, 10, 17), "Cumartesi", "09:00", "12:00")),
+        ("haftaya bugün", When(date(2026, 10, 22), "Perşembe")),
+        ("haftaya hafta sonu", When(date(2026, 10, 24), "Cumartesi")),
+        (
+            "hafta sonu, haftaya cumartesi öğlen",
+            When(date(2026, 10, 24), "Cumartesi", "12:00", "14:00"),
+        ),
+        ("Salim Bey için", None),
+        ("pazarlık", None),
+        # "The next day" after what? And two days at once: ask.
+        ("ertesi gün", None),
+        ("yarın değil, haftaya salı", None),
+        # Dates in figures; a date that has just passed is a slip, not next year.
+        ("28.10", When(date(2026, 10, 28), "Çarşamba")),
+        ("28/10 akşam", When(date(2026, 10, 28), "Çarşamba", "18:00", "21:00")),
+        ("saat 12.10", None),
+        ("yarın 15.30", When(date(2026, 10, 16), "Cuma")),
+        ("yarın 12.10'da", When(date(2026, 10, 16), "Cuma")),
+        ("14 Ekim", None),
     ],
 )
 def test_a_turkish_day_is_resolved_by_rule(expression: str, expected: When | None) -> None:
