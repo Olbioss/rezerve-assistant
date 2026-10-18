@@ -2,6 +2,7 @@
  "version": 1,
  "id": "2026-10-17T12-51-25Z-full",
  "suite": "full",
+ "only": null,
  "started_at": "2026-10-17T12:51:25.742227Z",
  "finished_at": "2026-10-18T13:30:49.056011Z",
  "config": {
@@ -22,6 +23,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -162,6 +167,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -324,6 +333,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -465,6 +478,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -605,6 +622,10 @@
    "mode": "scripted",
    "status": "skipped",
    "reason": "the business is closed at Sun 18 Oct 16:00",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [],
    "dates_right": null,
    "customer_turns": 0,
@@ -621,6 +642,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -740,6 +765,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -881,6 +910,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1044,6 +1077,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1206,6 +1243,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1345,6 +1386,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1462,6 +1507,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1579,6 +1628,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1694,8 +1747,12 @@
     "faq"
    ],
    "mode": "scripted",
-   "status": "fail",
+   "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1724,8 +1781,8 @@
     },
     {
      "name": "says",
-     "passed": false,
-     "detail": "0212 000 00 01"
+     "passed": true,
+     "detail": ""
     },
     {
      "name": "never_says",
@@ -1814,6 +1871,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -1936,6 +1997,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2031,6 +2096,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2126,6 +2195,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2221,6 +2294,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2316,6 +2393,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2411,6 +2492,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2506,6 +2591,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2645,6 +2734,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2763,6 +2856,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -2903,6 +3000,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3021,6 +3122,10 @@
    "mode": "simulated",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3143,6 +3248,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3263,6 +3372,10 @@
    "mode": "simulated",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3452,6 +3565,10 @@
    "mode": "simulated",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3598,6 +3715,10 @@
    "mode": "simulated",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3744,6 +3865,10 @@
    "mode": "simulated",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -3868,6 +3993,10 @@
    "mode": "simulated",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4015,6 +4144,10 @@
    "mode": "scripted",
    "status": "fail",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4156,6 +4289,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4317,6 +4454,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4432,8 +4573,12 @@
     "faq"
    ],
    "mode": "scripted",
-   "status": "fail",
+   "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4462,8 +4607,8 @@
     },
     {
      "name": "says",
-     "passed": false,
-     "detail": "0212 000 00 01"
+     "passed": true,
+     "detail": ""
     },
     {
      "name": "never_says",
@@ -4551,6 +4696,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
@@ -4647,6 +4796,10 @@
    "mode": "scripted",
    "status": "pass",
    "reason": "",
+   "started_at": null,
+   "expected": [],
+   "customer": null,
+   "conversation_id": null,
    "checks": [
     {
      "name": "created",
