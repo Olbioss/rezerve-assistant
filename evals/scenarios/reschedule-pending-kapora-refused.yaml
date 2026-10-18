@@ -10,5 +10,8 @@ seed:
     status: pending
 turns:
   - "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
-# Rezerve moves no booking whose kapora is unpaid: nothing may change.
-expect: {}
+  - "olur, cuma 10:00 olsun"
+# Rezerve moves no booking whose kapora is unpaid: nothing may change, and the
+# customer is told it is the kapora that stands in the way.
+expect:
+  says: ["kapora"]

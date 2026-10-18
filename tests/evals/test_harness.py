@@ -14,7 +14,7 @@ from assistant.mcp import RezerveSession
 from evals.cache import DiskCache
 from evals.harness import Outbox, Rig, run_scenario
 from evals.models import PatientModel, QuotaExhausted
-from evals.scenario import Booking, Expect, Move, Scenario, Seed
+from evals.scenario import Booking, Expect, Move, Scenario, Seed, load_scenarios
 from evals.simulate import Simulator
 from tests.evals.test_models import GEMINI_PER_DAY
 from tests.fakes.models import Script, calls, says
@@ -131,6 +131,28 @@ async def test_a_seeded_booking_is_moved_where_asked(store: Store) -> None:
     fake_box.append(fake)
     result = await run_scenario(move, rigged, "1", now=NOW)
     assert result.status == "pass", result.checks
+
+
+async def test_never_explaining_the_unpaid_kapora_fails_its_scenario(store: Store) -> None:
+    # The scenario must be able to fail: offering to move a booking whose
+    # kapora is unpaid, then never saying why it cannot be moved, fails it.
+    [unpaid] = [s for s in load_scenarios() if s.id == "reschedule-pending-kapora-refused"]
+    fake_box: list[FakeRezerve] = []
+
+    def reschedule(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        [booking_id] = fake_box[0].bookings
+        # Friday 23 October, 10:00 in Istanbul.
+        return calls(
+            "reschedule_booking",
+            {"booking_id": booking_id, "new_starts_at": "2026-10-23T07:00:00Z"},
+        )
+
+    script = Script(says("Cuma günü için saat 10:00 uygun mu?"), reschedule, says("Tamam."))
+    rigged, fake = rig(store, unpaid, script.model)
+    fake_box.append(fake)
+    result = await run_scenario(unpaid, rigged, "1", now=NOW)
+    assert result.status == "fail"
+    assert [check.name for check in result.checks if not check.passed] == ["says"]
 
 
 async def test_a_day_the_business_is_closed_is_skipped_not_failed(store: Store) -> None:
