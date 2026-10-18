@@ -127,6 +127,22 @@ def test_the_report_shows_targets_failures_and_what_changed() -> None:
     assert "- `book` fail → pass" in report
 
 
+def test_a_run_is_compared_only_with_one_on_the_same_models() -> None:
+    # A Groq-only run after a Gemini one is a comparison of models, not a regression.
+    gemini = run("1", SCENARIOS)
+    groq_only = CONFIG.model_copy(update={"agent_models": ["groq:m"]})
+    groq = run("2", SCENARIOS).model_copy(update={"config": groq_only})
+    assert previous([gemini, groq], groq) is None
+    assert "## Since" not in render(groq, [gemini, groq])
+
+
+def test_the_noise_band_says_how_many_reruns_it_rests_on() -> None:
+    first = [scenario(id, "pass", "booking") for id in ("a", "b", "c", "d")]
+    repeats = [scenario("a", "fail", "booking"), *first[1:]]
+    report = render(run("1", first, repeats=repeats), [])
+    assert "- Noise band: 25% (1 of 4 repeated scenarios changed result on a rerun)" in report
+
+
 def test_a_run_where_everything_was_skipped_still_reports() -> None:
     skipped = [scenario("sunday", "skipped", "booking", reason="closed")]
     assert str(summarize(skipped).success) == "–"

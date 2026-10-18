@@ -126,25 +126,31 @@ def summarize(scenarios: list[ScenarioResult]) -> Summary:
     )
 
 
-def noise_band(run: RunResult) -> float | None:
-    """The share of repeated scenarios whose result changed between the two
-    passes: how far task success moves on its own, with nothing changed."""
+def _reruns(run: RunResult) -> tuple[int, int]:
+    """How many repeated scenarios changed result between the two passes, of how many."""
     first = {s.id: s.status for s in run.scenarios}
     pairs = [
         (first[s.id], s.status) for s in run.repeats if s.id in first and s.status != "skipped"
     ]
     pairs = [pair for pair in pairs if pair[0] != "skipped"]
-    if not pairs:
-        return None
-    return sum(1 for a, b in pairs if a != b) / len(pairs)
+    return sum(1 for a, b in pairs if a != b), len(pairs)
+
+
+def noise_band(run: RunResult) -> float | None:
+    """The share of repeated scenarios whose result changed between the two
+    passes: how far task success moves on its own, with nothing changed."""
+    changed, compared = _reruns(run)
+    return changed / compared if compared else None
 
 
 def previous(history: list[RunResult], current: RunResult) -> RunResult | None:
-    """The latest earlier finished run of the same suite."""
+    """The latest earlier finished run of the same suite on the same agent
+    models: one on other models is a comparison, not a change."""
     earlier = [
         run
         for run in history
         if run.id != current.id and run.suite == current.suite and run.complete
+        if run.config.agent_models == current.config.agent_models
         if run.started_at < current.started_at
     ]
     return earlier[-1] if earlier else None
@@ -220,7 +226,11 @@ def render(run: RunResult, history: list[RunResult]) -> str:
         lines.append(f"- Judge (1–5): {scores}")
     band = noise_band(run)
     if band is not None:
-        lines.append(f"- Noise band: {band:.0%} of repeated scenarios changed result on a rerun")
+        changed, compared = _reruns(run)
+        lines.append(
+            f"- Noise band: {band:.0%} ({changed} of {compared} repeated scenarios "
+            "changed result on a rerun)"
+        )
     failed = [s for s in run.scenarios if s.status == "fail"]
     if failed:
         lines += ["", "## Failed", ""]
