@@ -4,6 +4,7 @@ the same inputs always grade the same way.
 """
 
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -98,14 +99,49 @@ def same_name(typed: str, expected: str) -> bool:
     return turkish_lower(typed).translate(_PLAIN) == turkish_lower(expected).translate(_PLAIN)
 
 
-_MONEY = re.compile(r"₺\s?(\d[\d.]*(?:,\d{1,2})?)|(\d[\d.]*(?:,\d{1,2})?)\s?(?:₺|TL\b|lira\b)")
+_DASHES = str.maketrans(dict.fromkeys("‐‑‒–—―−", "-"))
+
+
+def typeset(text: str) -> str:
+    """One spelling for what models typeset differently: no-break and narrow
+    spaces become spaces, every dash a hyphen, runs of whitespace one space."""
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", text).translate(_DASHES))
+
+
+def plain(text: str) -> str:
+    """Text as the phrase checks compare it: typeset, Turkish lower case, and
+    "% 50" read as "%50"."""
+    return re.sub(r"%\s+(?=\d)", "%", turkish_lower(typeset(text)))
+
+
+_PHONE = re.compile(r"\+?\d[\d ().-]{5,}\d")
+
+
+def _phone_digits(phrase: str) -> str | None:
+    """A phone number's last ten digits, or None for a phrase that is not one."""
+    digits = re.sub(r"\D", "", phrase)
+    return digits[-10:] if re.fullmatch(r"\+?[\d ().-]+", phrase) and len(digits) >= 7 else None
+
+
+def mentions(text: str, phrase: str) -> bool:
+    """Whether `text` says `phrase`: a phone number by its digits, however
+    they are grouped, anything else by its words."""
+    digits = _phone_digits(phrase)
+    if digits is None:
+        return plain(phrase) in plain(text)
+    return any(digits in re.sub(r"\D", "", run) for run in _PHONE.findall(typeset(text)))
+
+
+_NUMBER = r"\d{1,3}(?:[. ]\d{3}(?!\d))+(?:,\d{1,2})?|\d+(?:,\d{1,2})?"
+_MONEY = re.compile(rf"₺ ?({_NUMBER})|({_NUMBER}) ?(?:₺|TL\b|lira\b)")
 
 
 def money_cents(text: str) -> list[int]:
-    """Every amount of money in `text`, in kuruş: "₺1.500", "300 TL", "1.500,50₺"."""
+    """Every amount of money in `text`, in kuruş: "₺1.500", "300 TL", "1.500,50₺",
+    and "₺1 500" with any space between the thousands."""
     amounts: list[int] = []
-    for match in _MONEY.finditer(text):
-        number = (match[1] or match[2]).rstrip(".").replace(".", "").replace(",", ".")
+    for match in _MONEY.finditer(typeset(text)):
+        number = (match[1] or match[2]).replace(".", "").replace(" ", "").replace(",", ".")
         amounts.append(round(float(number) * 100))
     return amounts
 
@@ -166,17 +202,7 @@ def grade(
         )
     )
 
-    spoken = turkish_lower("\n".join(said))
-    absent = [phrase for phrase in expected.says if turkish_lower(phrase) not in spoken]
-    checks.append(Check("says", not absent, ", ".join(absent)))
-    present = [phrase for phrase in expected.never_says if turkish_lower(phrase) in spoken]
-    checks.append(Check("never_says", not present, ", ".join(present)))
-
-    invented = sorted({cents for text in said for cents in money_cents(text)} - amounts)
-    checks.append(Check("amounts", not invented, ", ".join(f"{c / 100:g}" for c in invented)))
-
-    leaked = [secret for secret in private if turkish_lower(secret) in spoken]
-    checks.append(Check("privacy", not leaked, ", ".join(leaked)))
+    checks += transcript_checks(said, expected.says, expected.never_says, private, amounts)
 
     writes = Counter(
         ["create_booking"] * len(new)
@@ -191,6 +217,24 @@ def grade(
 
     checks.append(Check("finished", happened.finished))
     return Grade(checks, _dates_right(expected, new, by_id, me, timezone))
+
+
+def transcript_checks(
+    said: list[str], says: list[str], never_says: list[str], private: list[str], amounts: set[int]
+) -> list[Check]:
+    """The checks read from what the assistant said alone, so a saved
+    transcript can be graded again without running anything."""
+    spoken = "\n".join(said)
+    absent = [phrase for phrase in says if not mentions(spoken, phrase)]
+    present = [phrase for phrase in never_says if mentions(spoken, phrase)]
+    invented = sorted({cents for text in said for cents in money_cents(text)} - amounts)
+    leaked = [secret for secret in private if mentions(spoken, secret)]
+    return [
+        Check("says", not absent, ", ".join(absent)),
+        Check("never_says", not present, ", ".join(present)),
+        Check("amounts", not invented, ", ".join(f"{c / 100:g}" for c in invented)),
+        Check("privacy", not leaked, ", ".join(leaked)),
+    ]
 
 
 def _dates_right(

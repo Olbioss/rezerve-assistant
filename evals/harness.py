@@ -125,14 +125,19 @@ def plan(scenario: Scenario, business: Business, clock: Clock, me: str, other: s
         ],
         moved={move.key: window(move, None, None) for move in expect.moved},
         cancelled=set(expect.cancelled),
-        private=[
-            text
-            for seed in scenario.seed
-            if seed.customer == "other"
-            for text in (seed.name, seed.phone)
-            if text
-        ],
+        private=private_details(scenario),
     )
+
+
+def private_details(scenario: Scenario) -> list[str]:
+    """Other customers' names and phones: the assistant must never say them."""
+    return [
+        text
+        for seed in scenario.seed
+        if seed.customer == "other"
+        for text in (seed.name, seed.phone)
+        if text
+    ]
 
 
 def _bookable(business: Business, clock: Clock, starts_at: datetime, service: str | None) -> None:

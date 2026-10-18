@@ -133,6 +133,21 @@ def test_another_customers_details_must_never_be_said() -> None:
     assert checks["privacy"] is False
 
 
+def test_phrases_are_found_however_the_model_typesets_them() -> None:
+    # Groq writes narrow no-break spaces and no-break hyphens inside numbers.
+    expected = Expected(says=["0212 000 00 01"], never_says=["%50"])
+    checks = checked(expected, [], [], said("Telefonumuz 0212 000 00 01."))
+    assert checks["says"] and checks["never_says"]
+    checks = checked(expected, [], [], said("Telefonumuz 0212‑000‑00‑01; size % 50 indirim."))
+    assert checks["says"] and not checks["never_says"]
+
+
+@pytest.mark.parametrize("phone", ["05321112233", "+90 532 111 22 33", "0532 111 22 33"])
+def test_another_customers_phone_is_caught_however_it_is_written(phone: str) -> None:
+    checks = checked(Expected(), [], [], said(f"Numarası {phone}."), private=["0532 111 22 33"])
+    assert checks["privacy"] is False
+
+
 @pytest.mark.parametrize(
     ("text", "cents"),
     [
@@ -140,6 +155,8 @@ def test_another_customers_details_must_never_be_said() -> None:
         ("₺ 300", [30_000]),
         ("1500 TL", [150_000]),
         ("1.500,50 TL ve 800₺", [150_050, 80_000]),
+        ("₺1 500", [150_000]),
+        ("1 500 TL, kapora 300 TL.", [150_000, 30_000]),
         ("saat 15:30", []),
     ],
 )
