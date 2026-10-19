@@ -111,6 +111,22 @@ def test_moves_and_cancellations_are_read_from_the_booking_itself() -> None:
     assert checks["cancelled"] and checks["nothing_else"] and checks["approved_writes"]
 
 
+def test_the_writes_a_scenario_names_are_the_only_ones_approved() -> None:
+    # "evet ama 16:00 olsun" taken for a yes books 15:00, and a move to 16:00
+    # then hides it: the bookings end up right, the writes were not.
+    expected = Expected(created=BOOK.created, writes=["create_booking"])
+    straight = said(approved=["create_booking"])
+    detour = said(approved=["create_booking", "reschedule_booking"])
+    assert checked(expected, [], [row("b1")], straight)["writes"]
+    assert not checked(expected, [], [row("b1")], detour)["writes"]
+    assert "writes" not in checked(BOOK, [], [row("b1")], detour)
+
+
+def test_a_handoff_a_scenario_leaves_open_is_not_checked() -> None:
+    # Fixing a name Rezerve cannot change: saying so, or handing over, are both fine.
+    assert "handoff" not in checked(Expected(handoff=None), [], [], said(handed_off=True))
+
+
 def test_handoff_and_phrases_are_checked_turkish_case_and_all() -> None:
     expected = Expected(handoff=True, says=["KADIKÖY"], never_says=["indirim"])
     checks = checked(expected, [], [], said("Adresimiz Kadıköy'de.", handed_off=True))

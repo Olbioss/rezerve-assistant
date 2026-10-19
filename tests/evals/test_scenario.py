@@ -26,6 +26,13 @@ def scenario(**fields: object) -> dict[str, object]:
         ({"expect": {"max_turns": 1}, "turns": ["a", "b"]}, "more turns than max_turns"),
         ({"expect": {"cancelled": ["nope"]}}, "'nope' is not a booking seeded for this customer"),
         (
+            {
+                "seed": [{"key": "a", "service": "Manikür", "day": "tomorrow", "at": "10:00"}],
+                "meanwhile": [{"key": "a", "service": "Manikür", "day": "tomorrow", "at": "11:00"}],
+            },
+            "seed keys must be unique",
+        ),
+        (
             {"expect": {"bookings": [{"service": "Manikür", "day": "tomorrow"}]}},
             "give exactly one of at or between",
         ),

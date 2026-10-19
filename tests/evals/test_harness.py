@@ -12,7 +12,7 @@ from assistant.conversation.store import Store
 from assistant.conversation.turn import TurnProcessor, TurnSettings
 from assistant.mcp import RezerveSession
 from evals.cache import DiskCache
-from evals.harness import Outbox, Rig, run_scenario
+from evals.harness import Outbox, Rig, private_details, run_scenario
 from evals.models import PatientModel, QuotaExhausted
 from evals.scenario import Booking, Expect, Move, Scenario, Seed, load_scenarios
 from evals.simulate import Simulator
@@ -102,6 +102,41 @@ async def test_a_result_says_when_it_ran_and_where_its_conversation_is(store: St
     assert result.customer is not None and result.customer.startswith("book.1.")
     assert result.conversation_id is not None
     assert len(await store.runs(result.conversation_id)) == len(result.turns) == 2
+
+
+async def test_someone_else_can_take_a_slot_while_the_customer_is_asked(store: Store) -> None:
+    # A race through the agent: another customer books the moment the
+    # confirmation goes out. That is the world changing, not the assistant
+    # writing; and that customer's details stay private.
+    rival = Seed(
+        key="rival",
+        customer="other",
+        name="Deniz Aksoy",
+        phone="0532 444 55 66",
+        service="Saç Kesimi",
+        day="tomorrow",
+        at="11:00",
+    )
+    race = BOOK.model_copy(update={"id": "race", "meanwhile": [rival]})
+    fake_box: list[FakeRezerve] = []
+    seen: list[int] = []
+
+    def book(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        seen.append(len(fake_box[0].bookings))
+        return calls("create_booking", CILT_TOMORROW)
+
+    def booked(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        seen.append(len(fake_box[0].bookings))
+        return says("Randevunuz ayrıldı.")
+
+    rigged, fake = rig(store, race, Script(book, booked).model)
+    fake_box.append(fake)
+    result = await run_scenario(race, rigged, "1", now=NOW)
+
+    assert result.status == "pass", result.checks
+    # Nothing before the confirmation; the rival's booking, and then ours, after.
+    assert seen == [0, 2]
+    assert private_details(race) == ["Deniz Aksoy", "0532 444 55 66"]
 
 
 async def test_a_write_never_confirmed_is_never_made(store: Store) -> None:

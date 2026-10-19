@@ -14,8 +14,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 SCENARIOS = Path(__file__).parent / "scenarios"
 
 type Tag = Literal[
-    "booking", "kapora", "reschedule", "cancel", "date", "faq", "handoff", "injection", "judge"
-]
+    "booking", "kapora", "reschedule", "cancel", "date", "faq", "handoff", "injection", "judge",
+    "challenge",
+]  # fmt: skip
+type Write = Literal["create_booking", "reschedule_booking", "cancel_booking"]
 
 
 class _Strict(BaseModel):
@@ -72,7 +74,11 @@ class Expect(_Strict):
     bookings: list[Booking] = []
     moved: list[Move] = []
     cancelled: list[str] = []
-    handoff: bool = False
+    # None leaves it open: handing over and not handing over are both right.
+    handoff: bool | None = False
+    # The writes the customer approves, in order. The bookings can end up
+    # right after a wrong write and a correction; this catches the detour.
+    writes: list[Write] | None = None
     # Phrases some assistant message must contain, and phrases none may.
     says: list[str] = []
     never_says: list[str] = []
@@ -94,6 +100,9 @@ class Scenario(_Strict):
     # The business's notes for the assistant while this scenario runs.
     business_notes: str | None = None
     seed: list[Seed] = []
+    # Bookings made by someone else the first time the assistant asks this
+    # customer to confirm: the slot can go while they read.
+    meanwhile: list[Seed] = []
     expect: Expect
 
     @model_validator(mode="after")
@@ -104,7 +113,7 @@ class Scenario(_Strict):
             raise ValueError("a simulated scenario needs a goal")
         if len(self.turns) > self.expect.max_turns:
             raise ValueError("more turns than max_turns")
-        keys = [seed.key for seed in self.seed]
+        keys = [seed.key for seed in self.seed + self.meanwhile]
         if len(set(keys)) != len(keys):
             raise ValueError("seed keys must be unique")
         mine = {seed.key for seed in self.seed if seed.customer == "me"}

@@ -136,6 +136,15 @@ def test_a_run_is_compared_only_with_one_on_the_same_models() -> None:
     assert "## Since" not in render(groq, [gemini, groq])
 
 
+def test_a_run_of_chosen_scenarios_is_compared_only_with_one_like_it() -> None:
+    # A one-scenario run between two full ones is neither's "previous".
+    whole = run("1", SCENARIOS)
+    chosen = run("2", SCENARIOS[:1], only=["book"])
+    later = run("3", SCENARIOS)
+    assert previous([whole, chosen, later], later) == whole
+    assert previous([whole, chosen, later], chosen) is None
+
+
 def test_the_noise_band_says_how_many_reruns_it_rests_on() -> None:
     first = [scenario(id, "pass", "booking") for id in ("a", "b", "c", "d")]
     repeats = [scenario("a", "fail", "booking"), *first[1:]]

@@ -4,8 +4,9 @@ A scenario says when a booking should land in words that stay true on any day
 the suite runs: "next saturday", "tuesday next week", "in 9 days". Resolved in
 the business timezone, "next saturday" is the nearest Saturday on which the
 time is still bookable after the minimum lead time, so it may be today
-(spec §8.3). "<weekday> next week" is that day of the next Monday-to-Sunday
-week, the way "haftaya salı" is meant.
+(spec §8.3); "next same weekday" is the same for today's weekday. "<weekday>
+next week" is that day of the next Monday-to-Sunday week, the way "haftaya
+salı" is meant.
 """
 
 import re
@@ -14,6 +15,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from assistant.agent.format import MONTHS
+from assistant.agent.format import WEEKDAYS as WEEKDAY_NAMES
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _NEXT = re.compile(rf"next ({'|'.join(WEEKDAYS)})")
@@ -51,6 +53,8 @@ def resolve_day(expression: str, clock: Clock, at: time | None = None) -> date:
     """The date `expression` names; `at` lets "next <weekday>" skip a time already gone."""
     words = " ".join(expression.lower().split())
     today = clock.today
+    if words == "next same weekday":
+        words = f"next {WEEKDAYS[today.weekday()]}"
     if words == "today":
         return today
     if words == "tomorrow":
@@ -69,7 +73,7 @@ def resolve_day(expression: str, clock: Clock, at: time | None = None) -> date:
         return monday + timedelta(days=7 + WEEKDAYS.index(match[1]))
     raise UnknownDay(
         f"Unknown day {expression!r}: use today, tomorrow, day after tomorrow, "
-        "in N days, next <weekday> or <weekday> next week."
+        "in N days, next <weekday>, next same weekday or <weekday> next week."
     )
 
 
@@ -88,9 +92,20 @@ def day_label(day: date) -> str:
     return f"{day.day} {MONTHS[day.month - 1]}"
 
 
-_TEMPLATE = re.compile(r"\{date:([^}]+)\}")
+def weekday_label(day: date) -> str:
+    """A weekday the way a customer types it: "perşembe"."""
+    return WEEKDAY_NAMES[day.weekday()].lower()
+
+
+_TEMPLATE = re.compile(r"\{(date|weekday):([^}]+)\}")
 
 
 def render(text: str, clock: Clock) -> str:
-    """A scripted line with its `{date:<expression>}` filled in for today's run."""
-    return _TEMPLATE.sub(lambda match: day_label(resolve_day(match[1], clock)), text)
+    """A scripted line with its `{date:<expression>}` and `{weekday:<expression>}`
+    filled in for today's run."""
+
+    def fill(match: re.Match[str]) -> str:
+        day = resolve_day(match[2], clock)
+        return day_label(day) if match[1] == "date" else weekday_label(day)
+
+    return _TEMPLATE.sub(fill, text)

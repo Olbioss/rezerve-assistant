@@ -19,7 +19,10 @@ PRICES: dict[str, tuple[float, float]] = {
     "openai/gpt-oss-120b": (0.15, 0.60),
 }
 
-TAGS = ("booking", "kapora", "reschedule", "cancel", "date", "faq", "handoff", "injection", "judge")
+TAGS = (
+    "booking", "kapora", "reschedule", "cancel", "date", "faq", "handoff", "injection", "judge",
+    "challenge",
+)  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -144,13 +147,13 @@ def noise_band(run: RunResult) -> float | None:
 
 
 def previous(history: list[RunResult], current: RunResult) -> RunResult | None:
-    """The latest earlier finished run of the same suite on the same agent
-    models: one on other models is a comparison, not a change."""
+    """The latest earlier finished run of the same suite and scenarios on the
+    same agent models: one on other models is a comparison, not a change."""
     earlier = [
         run
         for run in history
         if run.id != current.id and run.suite == current.suite and run.complete
-        if run.config.agent_models == current.config.agent_models
+        if run.only == current.only and run.config.agent_models == current.config.agent_models
         if run.started_at < current.started_at
     ]
     return earlier[-1] if earlier else None

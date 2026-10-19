@@ -18,8 +18,8 @@ from evals.graders import Expected, Happened, Line, Window, grade
 from evals.judge import Judge
 from evals.models import PatientModel
 from evals.results import CheckResult, LineRecord, ScenarioResult, TurnRecord
-from evals.rezerve_side import Business, NewBooking, RezerveSide
-from evals.scenario import Scenario, When
+from evals.rezerve_side import BookingRow, Business, NewBooking, RezerveSide
+from evals.scenario import Scenario, Seed, When
 from evals.simulate import Simulator
 from evals.when import Clock, combine, parse_time, render, resolve, resolve_day
 
@@ -70,6 +70,8 @@ class Plan:
     """A scenario resolved against today and the eval business."""
 
     seeds: list[NewBooking]
+    # Seeded the first time the assistant asks the customer to confirm.
+    meanwhile: list[NewBooking]
     created: list[Window]
     moved: dict[str, Window]
     cancelled: set[str]
@@ -84,6 +86,7 @@ class Plan:
             handoff=scenario.expect.handoff,
             says=scenario.expect.says,
             never_says=scenario.expect.never_says,
+            writes=None if scenario.expect.writes is None else list(scenario.expect.writes),
         )
 
     def described(self, zone: tzinfo) -> list[str]:
@@ -110,25 +113,24 @@ def plan(scenario: Scenario, business: Business, clock: Clock, me: str, other: s
         _bookable(business, clock, latest, service)
         return Window(earliest, latest, service, status, name)
 
-    seeds: list[NewBooking] = []
-    for seed in scenario.seed:
+    def booking(seed: Seed) -> NewBooking:
         starts_at = resolve(seed.day, seed.at, clock)
         _bookable(business, clock, starts_at, seed.service)
-        seeds.append(
-            NewBooking(
-                key=seed.key,
-                service=seed.service,
-                starts_at=starts_at,
-                customer_ref=me if seed.customer == "me" else other,
-                name=seed.name,
-                phone=seed.phone,
-                status=seed.status,
-                paid=seed.paid,
-            )
+        return NewBooking(
+            key=seed.key,
+            service=seed.service,
+            starts_at=starts_at,
+            customer_ref=me if seed.customer == "me" else other,
+            name=seed.name,
+            phone=seed.phone,
+            status=seed.status,
+            paid=seed.paid,
         )
+
     expect = scenario.expect
     return Plan(
-        seeds=seeds,
+        seeds=[booking(seed) for seed in scenario.seed],
+        meanwhile=[booking(seed) for seed in scenario.meanwhile],
         created=[
             window(booking, booking.service, booking.status, booking.name)
             for booking in expect.bookings
@@ -143,7 +145,7 @@ def private_details(scenario: Scenario) -> list[str]:
     """Other customers' names and phones: the assistant must never say them."""
     return [
         text
-        for seed in scenario.seed
+        for seed in scenario.seed + scenario.meanwhile
         if seed.customer == "other"
         for text in (seed.name, seed.phone)
         if text
@@ -199,7 +201,7 @@ async def run_scenario(
     await rig.rezerve.reset(scenario.business_notes)
     ids = await rig.rezerve.seed(resolved.seeds)
     before = await rig.rezerve.snapshot()
-    talk = await _converse(scenario, rig, customer, me, clock)
+    talk = await _converse(scenario, rig, customer, me, clock, resolved.meanwhile)
     lines, conversation_id = talk.lines, talk.conversation_id
     after = await rig.rezerve.snapshot()
     runs = await rig.store.runs(conversation_id) if conversation_id is not None else []
@@ -207,7 +209,9 @@ async def run_scenario(
 
     graded = grade(
         resolved.expected(scenario, ids),
-        before,
+        # Someone else's booking made meanwhile was there before the assistant
+        # wrote anything that could clash with it.
+        before + talk.seeded,
         after,
         Happened(lines, any(run.outcome == "handoff" for run in runs), decisions, talk.finished),
         me=me,
@@ -250,22 +254,32 @@ class Talk:
     finished: bool
     # Seconds of rate-limit waiting behind each customer message's turn.
     waits: list[float]
+    # The bookings made meanwhile, as they were seeded.
+    seeded: list[BookingRow]
 
 
-async def _converse(scenario: Scenario, rig: Rig, customer: str, me: str, clock: Clock) -> Talk:
+async def _converse(
+    scenario: Scenario,
+    rig: Rig,
+    customer: str,
+    me: str,
+    clock: Clock,
+    meanwhile: list[NewBooking],
+) -> Talk:
     lines: list[Line] = []
     waits: list[float] = []
+    seeded: list[BookingRow] = []
     conversation_id: int | None = None
     for turn in range(scenario.expect.max_turns):
         if scenario.mode == "scripted":
             if turn == len(scenario.turns):
-                return Talk(lines, conversation_id, True, waits)
+                return Talk(lines, conversation_id, True, waits, seeded)
             text: str | None = render(scenario.turns[turn], clock)
         else:
             assert rig.simulator is not None, "a simulated scenario needs the simulator"
             text = await rig.simulator.next_message(scenario, lines, clock.today)
             if text is None:
-                return Talk(lines, conversation_id, True, waits)
+                return Talk(lines, conversation_id, True, waits, seeded)
         lines.append(Line("customer", text))
         message = InboundMessage(EVAL_SLUG, "web", customer, str(uuid4()), text)
         recorded = await rig.store.record_inbound(message, me, datetime.now(UTC))
@@ -277,5 +291,8 @@ async def _converse(scenario: Scenario, rig: Rig, customer: str, me: str, clock:
         for reply in rig.outbox.sent[sent:]:
             buttons = "".join(f"\n[{action['label']}]" for action in reply.actions)
             lines.append(Line("assistant", reply.text + buttons))
+        if meanwhile and not seeded and await rig.store.open_approval(conversation_id):
+            ids = set((await rig.rezerve.seed(meanwhile)).values())
+            seeded = [row for row in await rig.rezerve.snapshot() if row.id in ids]
     # Out of turns: a script has said everything; a simulated customer had more to say.
-    return Talk(lines, conversation_id, scenario.mode == "scripted", waits)
+    return Talk(lines, conversation_id, scenario.mode == "scripted", waits, seeded)

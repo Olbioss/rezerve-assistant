@@ -50,3 +50,18 @@ def test_an_unknown_day_is_a_mistake_in_the_scenario() -> None:
 def test_a_scripted_line_names_dates_the_way_a_customer_does() -> None:
     assert render("{date:in 13 days} saat 3 uygun mu?", THURSDAY) == "28 Ekim saat 3 uygun mu?"
     assert render("yarın olur", THURSDAY) == "yarın olur"
+
+
+def test_a_scripted_line_can_name_a_weekday_the_way_a_customer_does() -> None:
+    # "perşembe", written on a Thursday: the same-weekday case, on any run day.
+    assert render("{weekday:today} 10:00 olur mu?", THURSDAY) == "perşembe 10:00 olur mu?"
+    assert render("{weekday:in 2 days}", THURSDAY) == "cumartesi"
+
+
+def test_the_same_weekday_is_today_only_while_the_time_is_still_bookable() -> None:
+    assert resolve("next same weekday", "14:00", THURSDAY) == datetime(
+        2026, 10, 15, 14, 0, tzinfo=ISTANBUL
+    )
+    assert resolve("next same weekday", "10:00", THURSDAY) == datetime(
+        2026, 10, 22, 10, 0, tzinfo=ISTANBUL
+    )

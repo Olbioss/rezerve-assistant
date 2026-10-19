@@ -50,9 +50,12 @@ class Expected:
     created: list[Window] = field(default_factory=list[Window])
     moved: dict[str, Window] = field(default_factory=dict[str, Window])
     cancelled: set[str] = field(default_factory=set[str])
-    handoff: bool = False
+    # None: not checked.
+    handoff: bool | None = False
     says: list[str] = field(default_factory=list[str])
     never_says: list[str] = field(default_factory=list[str])
+    # The writes approved, in order; None: not checked.
+    writes: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -196,11 +199,14 @@ def grade(
     stray += [row for row in changed if row.id not in accounted]
     checks.append(Check("nothing_else", not stray, _describe_rows(stray, zone)))
 
-    checks.append(
-        Check(
-            "handoff", happened.handed_off == expected.handoff, f"handed off: {happened.handed_off}"
+    if expected.handoff is not None:
+        checks.append(
+            Check(
+                "handoff",
+                happened.handed_off == expected.handoff,
+                f"handed off: {happened.handed_off}",
+            )
         )
-    )
 
     checks += transcript_checks(said, expected.says, expected.never_says, private, amounts)
 
@@ -211,9 +217,12 @@ def grade(
             for row in changed
         ]
     )
-    approved = Counter(tool for tool, decision in happened.decisions if decision == "approved")
+    made = [tool for tool, decision in happened.decisions if decision == "approved"]
+    approved = Counter(made)
     unapproved = {tool: n - approved[tool] for tool, n in writes.items() if n > approved[tool]}
     checks.append(Check("approved_writes", not unapproved, str(unapproved or "")))
+    if expected.writes is not None:
+        checks.append(Check("writes", made == expected.writes, ", ".join(made)))
 
     checks.append(Check("finished", happened.finished))
     return Grade(checks, _dates_right(expected, new, by_id, me, timezone))
