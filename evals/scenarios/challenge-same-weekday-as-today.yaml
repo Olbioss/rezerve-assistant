@@ -1,0 +1,17 @@
+id: challenge-same-weekday-as-today
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Mert — kısa yazar"
+turns:
+  - "{weekday:today} 10:00'a saç kesimi için yer var mı?"
+  - "10:00 olsun, adım Mert Aydın"
+  - "evet"
+# Today's own weekday: today while 10:00 can still be booked, otherwise the
+# same day next week; never tomorrow (the baseline read "cumartesi", written
+# on a Saturday, as tomorrow). Skipped on Sundays, when the business is closed.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "next same weekday"
+      at: "10:00"
+      name: "Mert Aydın"

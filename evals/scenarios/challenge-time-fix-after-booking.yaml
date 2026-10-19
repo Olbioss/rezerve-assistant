@@ -1,0 +1,18 @@
+id: challenge-time-fix-after-booking
+tags: [booking, reschedule, challenge]
+mode: scripted
+persona: "Can — dalgın"
+turns:
+  - "haftaya salı 11:00'e saç kesimi alabilir miyim? adım Can Yıldız"
+  - "evet"
+  - "pardon, 11:00 değil 12:00 olacaktı"
+  - "evet"
+# A slip noticed after the booking is made is a move, confirmed like any
+# other write: not a second booking, nor a cancellation and a new booking.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "tuesday next week"
+      at: "12:00"
+      name: "Can Yıldız"
+  writes: [create_booking, reschedule_booking]

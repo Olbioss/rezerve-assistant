@@ -1,0 +1,16 @@
+id: challenge-closed-sunday
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Selin — kısa yazar"
+turns:
+  - "pazar 14:00'e manikür yaptırabilir miyim? adım Selin Yurt"
+  - "o zaman haftaya pazartesi 14:00 olsun"
+  - "evet"
+# The business is closed on Sundays: nothing is booked for a Sunday, and the
+# Monday the customer then names is the one booked.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "monday next week"
+      at: "14:00"
+      name: "Selin Yurt"

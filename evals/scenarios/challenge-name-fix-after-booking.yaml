@@ -1,0 +1,19 @@
+id: challenge-name-fix-after-booking
+tags: [booking, challenge]
+mode: scripted
+persona: "Ece — kibar"
+turns:
+  - "haftaya cuma 16:00'ya manikür alabilir miyim? adım Ece Demir"
+  - "evet"
+  - "pardon, soyadım Demir değil Demirci, düzeltebilir misiniz?"
+# Rezerve cannot change the name on a booking. Saying so, or handing over to
+# the business, are both right; saying it was changed is not.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "friday next week"
+      at: "16:00"
+      name: "Ece Demir"
+  writes: [create_booking]
+  handoff: null
+  never_says: ["düzelttim", "düzeltildi", "güncelledim", "güncellendi", "değiştirdim", "değiştirildi"]

@@ -1,0 +1,17 @@
+id: challenge-yes-but-another-time
+tags: [booking, challenge]
+mode: scripted
+persona: "Mert — aceleci, kısa yazar"
+turns:
+  - "haftaya perşembe 15:00'e saç kesimi alabilir miyim? adım Mert Aydın"
+  - "evet ama 16:00 olsun"
+  - "evet"
+# A yes with a change in it is not a yes to what was asked: 15:00 is never
+# booked, not even on the way to 16:00.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "thursday next week"
+      at: "16:00"
+      name: "Mert Aydın"
+  writes: [create_booking]

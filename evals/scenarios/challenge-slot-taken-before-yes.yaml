@@ -1,0 +1,26 @@
+id: challenge-slot-taken-before-yes
+tags: [booking, challenge]
+mode: simulated
+persona: "Zeynep — kısa ve net yazar"
+goal: >-
+  Haftaya çarşamba 14:00'e manikür randevusu al. O saat artık doluysa aynı
+  gün 14:00'ten sonraki en yakın saati kabul et. Randevun alındığında bitir.
+facts:
+  ad soyad: "Zeynep Arslan"
+meanwhile:
+  - key: rival
+    customer: other
+    name: "Deniz Aksoy"
+    phone: "0532 444 55 66"
+    service: "Manikür"
+    day: "wednesday next week"
+    at: "14:00"
+# Someone else takes 14:00 while Zeynep reads the confirmation. Her "evet"
+# can no longer book it: the assistant must say so, not claim a booking that
+# failed (she would leave believing it), and find her a later time that day.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "wednesday next week"
+      between: ["14:30", "18:30"]
+      name: "Zeynep Arslan"
