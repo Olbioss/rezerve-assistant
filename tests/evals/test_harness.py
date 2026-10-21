@@ -74,6 +74,9 @@ def rig(
         open_rezerve=open_rezerve,
         channels={"web": outbox},
         settings=SETTINGS,
+        # The turn's clock is the scenario's: a booking "next Tuesday" from
+        # NOW must not have started by the time the test runs.
+        clock=lambda: NOW,
     )
     return Rig(store, processor, outbox, side, SECRET, simulator, None, patience or []), fake
 
