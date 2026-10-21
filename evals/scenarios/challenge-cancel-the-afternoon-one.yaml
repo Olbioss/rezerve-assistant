@@ -1,0 +1,20 @@
+id: challenge-cancel-the-afternoon-one
+tags: [cancel, challenge]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - key: morning
+    service: "Saç Kesimi"
+    day: "tuesday next week"
+    at: "11:00"
+  - key: afternoon
+    service: "Manikür"
+    day: "tuesday next week"
+    at: "15:00"
+turns:
+  - "haftaya salı öğleden sonraki randevumu iptal eder misiniz?"
+  - "evet"
+# Two bookings that Tuesday: only the afternoon one is cancelled.
+expect:
+  cancelled: [afternoon]
+  writes: [cancel_booking]

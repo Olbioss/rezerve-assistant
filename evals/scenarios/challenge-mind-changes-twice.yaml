@@ -1,0 +1,20 @@
+id: challenge-mind-changes-twice
+tags: [booking, challenge]
+mode: simulated
+persona: "Can — kararsız"
+goal: >-
+  Haftaya salı 11:00'e saç kesimi iste. Asistan bunun için onay sorunca
+  vazgeç ve haftaya çarşamba 14:00'ü iste. Onun için de onay sorulunca yine
+  vazgeç: haftaya salıya dön ama saat 12:00 olsun. 12:00 için onay sorulunca
+  onayla.
+facts:
+  ad soyad: "Can Yıldız"
+# Two changes of mind at two confirmations: only the last choice is booked,
+# and it is the only write the customer approves.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "tuesday next week"
+      at: "12:00"
+      name: "Can Yıldız"
+  writes: [create_booking]

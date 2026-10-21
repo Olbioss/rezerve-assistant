@@ -30,7 +30,7 @@ def test_the_suite_covers_every_tag_and_has_a_smoke_subset() -> None:
         "booking", "kapora", "reschedule", "cancel", "date", "faq", "handoff", "injection", "judge",
         "challenge",
     }  # fmt: skip
-    assert 25 <= len(SCENARIOS) <= 40
+    assert 25 <= len(SCENARIOS) <= 50
     assert sum(scenario.smoke for scenario in SCENARIOS) >= 5
 
 

@@ -1,0 +1,21 @@
+id: challenge-move-to-quarter-past-four
+tags: [reschedule, challenge]
+mode: scripted
+persona: "Elif — günlük konuşur gibi yazar"
+seed:
+  - key: mine
+    service: "Saç Kesimi"
+    day: "thursday next week"
+    at: "11:00"
+turns:
+  - "haftaya perşembe randevumu dördü çeyrek geçeye alabilir miyiz?"
+  - "o zaman en yakın saat olsun"
+  - "evet"
+# "dördü çeyrek geçe" is 16:15, between the salon's half-hour times: the
+# booking moves to 16:00 or 16:30 that same Thursday, after a yes.
+expect:
+  moved:
+    - key: mine
+      day: "thursday next week"
+      between: ["16:00", "16:30"]
+  writes: [reschedule_booking]

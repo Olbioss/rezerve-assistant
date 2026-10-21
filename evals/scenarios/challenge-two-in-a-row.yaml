@@ -1,0 +1,22 @@
+id: challenge-two-in-a-row
+tags: [booking, challenge]
+mode: scripted
+persona: "Elif — iki işi birden halletmek istiyor"
+turns:
+  - "haftaya çarşamba 10:00'da saç kesimi, hemen ardından da manikür istiyorum. adım Elif Kaya"
+  - "evet"
+  - "evet"
+  - "evet"
+# Two bookings, one after the other, each confirmed on its own. The salon's
+# times run on the half hour, so "right after" a 45-minute haircut is 11:00.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "wednesday next week"
+      at: "10:00"
+      name: "Elif Kaya"
+    - service: "Manikür"
+      day: "wednesday next week"
+      at: "11:00"
+      name: "Elif Kaya"
+  writes: [create_booking, create_booking]

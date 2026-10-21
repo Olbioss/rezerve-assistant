@@ -1,0 +1,17 @@
+id: challenge-for-my-mother
+tags: [booking, challenge]
+mode: scripted
+persona: "Elif — annesi için randevu alıyor"
+turns:
+  - "annem için haftaya salı 14:00'e manikür ayırır mısınız? annemin adı Fatma Kaya, benim adım Elif"
+  - "evet, annemin adına"
+  - "evet"
+# The booking is the mother's: it carries her name, not the name of the
+# daughter who wrote, and a yes that corrects the name is not a yes.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "tuesday next week"
+      at: "14:00"
+      name: "Fatma Kaya"
+  writes: [create_booking]
