@@ -4,6 +4,7 @@ regression (spec §8.4, §8.6).
 """
 
 import statistics
+from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
 
@@ -129,8 +130,42 @@ def summarize(scenarios: list[ScenarioResult]) -> Summary:
     )
 
 
+def outcomes(results: list[ScenarioResult]) -> dict[str, str]:
+    """Each scenario's result over its runs: a pass only if every graded run
+    passed, and skipped if none was graded."""
+    graded: dict[str, list[str]] = {}
+    for result in results:
+        statuses = graded.setdefault(result.id, [])
+        if result.status != "skipped":
+            statuses.append(result.status)
+    return {
+        id: "skipped" if not statuses else "pass" if set(statuses) == {"pass"} else "fail"
+        for id, statuses in graded.items()
+    }
+
+
+def pass_all(run: RunResult) -> Rate:
+    """The scenarios that passed every one of their runs, of those graded."""
+    return _rate(
+        status == "pass" for status in outcomes(run.scenarios).values() if status != "skipped"
+    )
+
+
+def _disagreeing(run: RunResult) -> tuple[list[str], int]:
+    """The scenarios whose graded runs disagree, and how many were graded more than once."""
+    graded: dict[str, list[str]] = {}
+    for result in run.scenarios:
+        if result.status != "skipped":
+            graded.setdefault(result.id, []).append(result.status)
+    flaky = sorted(id for id, statuses in graded.items() if len(set(statuses)) > 1)
+    return flaky, sum(1 for statuses in graded.values() if len(statuses) > 1)
+
+
 def _reruns(run: RunResult) -> tuple[int, int]:
-    """How many repeated scenarios changed result between the two passes, of how many."""
+    """How many scenarios changed result on a rerun, of how many were rerun."""
+    if run.trials > 1:
+        flaky, compared = _disagreeing(run)
+        return len(flaky), compared
     first = {s.id: s.status for s in run.scenarios}
     pairs = [
         (first[s.id], s.status) for s in run.repeats if s.id in first and s.status != "skipped"
@@ -140,20 +175,23 @@ def _reruns(run: RunResult) -> tuple[int, int]:
 
 
 def noise_band(run: RunResult) -> float | None:
-    """The share of repeated scenarios whose result changed between the two
-    passes: how far task success moves on its own, with nothing changed."""
+    """The share of rerun scenarios whose result changed, with nothing else
+    changed: between a full run's two passes of the smoke scenarios, or
+    between a scenario's several runs. How far task success moves on its own."""
     changed, compared = _reruns(run)
     return changed / compared if compared else None
 
 
 def previous(history: list[RunResult], current: RunResult) -> RunResult | None:
-    """The latest earlier finished run of the same suite and scenarios on the
-    same agent models: one on other models is a comparison, not a change."""
+    """The latest earlier finished run of the same suite, scenarios and number
+    of runs on the same agent models: one on other models is a comparison,
+    not a change."""
     earlier = [
         run
         for run in history
         if run.id != current.id and run.suite == current.suite and run.complete
-        if run.only == current.only and run.config.agent_models == current.config.agent_models
+        if run.only == current.only and run.trials == current.trials
+        if run.config.agent_models == current.config.agent_models
         if run.started_at < current.started_at
     ]
     return earlier[-1] if earlier else None
@@ -227,23 +265,40 @@ def render(run: RunResult, history: list[RunResult]) -> str:
     if summary.judge:
         scores = ", ".join(f"{key} {value:.1f}" for key, value in summary.judge.items())
         lines.append(f"- Judge (1–5): {scores}")
+    if run.trials > 1:
+        flaky, _ = _disagreeing(run)
+        some = f"; passed some, not all: {', '.join(f'`{id}`' for id in flaky)}" if flaky else ""
+        lines.append(f"- Passed all {run.trials} runs: {pass_all(run)}{some}")
     band = noise_band(run)
     if band is not None:
         changed, compared = _reruns(run)
-        lines.append(
-            f"- Noise band: {band:.0%} ({changed} of {compared} repeated scenarios "
-            "changed result on a rerun)"
+        what = (
+            "scenarios changed result between their runs"
+            if run.trials > 1
+            else "repeated scenarios changed result on a rerun"
         )
+        lines.append(f"- Noise band: {band:.0%} ({changed} of {compared} {what})")
     failed = [s for s in run.scenarios if s.status == "fail"]
     if failed:
         lines += ["", "## Failed", ""]
+        runs = Counter(s.id for s in run.scenarios if s.status != "skipped")
+        times = Counter(s.id for s in failed)
+        listed: set[str] = set()
         for scenario in failed:
+            if scenario.id in listed:
+                continue
+            listed.add(scenario.id)
             why = "; ".join(
                 f"{c.name}{f' ({c.detail})' if c.detail else ''}"
                 for c in scenario.checks
                 if not c.passed
             )
-            lines.append(f"- `{scenario.id}`: {why}")
+            count = (
+                f" (failed {times[scenario.id]} of {runs[scenario.id]} runs)"
+                if run.trials > 1
+                else ""
+            )
+            lines.append(f"- `{scenario.id}`{count}: {why}")
     lines += _diff(run, previous(history, run), band)
     return "\n".join(lines) + "\n"
 
@@ -251,8 +306,8 @@ def render(run: RunResult, history: list[RunResult]) -> str:
 def _diff(run: RunResult, prev: RunResult | None, band: float | None) -> list[str]:
     if prev is None:
         return []
-    before = {s.id: s.status for s in prev.scenarios if s.status != "skipped"}
-    now = {s.id: s.status for s in run.scenarios if s.status != "skipped"}
+    before = {i: s for i, s in outcomes(prev.scenarios).items() if s != "skipped"}
+    now = {i: s for i, s in outcomes(run.scenarios).items() if s != "skipped"}
     shared = sorted(before.keys() & now.keys())
     if not shared:
         return []

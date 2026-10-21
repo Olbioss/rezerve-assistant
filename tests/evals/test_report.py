@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from evals.judge import Score
-from evals.report import noise_band, previous, price, render, summarize
+from evals.report import noise_band, pass_all, previous, price, render, summarize
 from evals.results import CheckResult, RunConfig, RunResult, ScenarioResult, TurnRecord
 
 CONFIG = RunConfig(
@@ -150,6 +150,29 @@ def test_the_noise_band_says_how_many_reruns_it_rests_on() -> None:
     repeats = [scenario("a", "fail", "booking"), *first[1:]]
     report = render(run("1", first, repeats=repeats), [])
     assert "- Noise band: 25% (1 of 4 repeated scenarios changed result on a rerun)" in report
+
+
+def test_a_scenario_passes_several_runs_only_if_it_passed_every_one() -> None:
+    # Three runs each: a passes all three, b fails one, c is skipped every time.
+    missed = [CheckResult(name="created", passed=False, detail="x")]
+    a = [scenario("a", "pass", "booking") for _ in range(3)]
+    b = [scenario("b", "pass", "booking"), scenario("b", "fail", "booking", checks=missed)]
+    b.append(scenario("b", "pass", "booking"))
+    c = [scenario("c", "skipped", "booking", reason="closed") for _ in range(3)]
+    thrice = run("1", a + b + c, trials=3)
+
+    assert str(pass_all(thrice)) == "50% (1/2)"
+    # The runs that disagree are the noise: b's, one scenario of the two that ran.
+    assert noise_band(thrice) == 0.5
+    report = render(thrice, [])
+    assert "- Passed all 3 runs: 50% (1/2); passed some, not all: `b`" in report
+    assert "- `b` (failed 1 of 3 runs): created (x)" in report
+
+
+def test_a_run_is_compared_only_with_one_of_as_many_trials() -> None:
+    once = run("1", SCENARIOS)
+    thrice = run("2", SCENARIOS, trials=3)
+    assert previous([once, thrice], thrice) is None
 
 
 def test_a_run_where_everything_was_skipped_still_reports() -> None:

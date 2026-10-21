@@ -126,8 +126,10 @@ uv run python -m evals.run --suite full    # all of them, then the six again for
 Each run writes `evals/results/<run>.json` and a Markdown report beside it.
 - **Free tiers run out.** A run that meets a daily limit stops and keeps what
   it finished. After the reset, `--resume <run>` carries it on with the
-  suite, scenarios and model it started with.
+  suite, scenarios, trials and model it started with.
 - **`--only <id> …`** runs chosen scenarios.
+- **`--trials <n>`** runs each scenario n times. The report adds how many
+  scenarios passed every run, and names those that passed only some.
 - **`--agent-model <provider:model>`** runs the agent on that one model,
   without a fallback.
 - **A grader fix needs no rerun.** `uv run python -m evals.regrade <run> …`

@@ -1,6 +1,6 @@
 """Run the evals (spec §8.5):
 
-    uv run python -m evals.run --suite smoke|full [--only <id> ...]
+    uv run python -m evals.run --suite smoke|full [--only <id> ...] [--trials <n>]
         [--agent-model <provider:model>] [--resume <run-id>]
 
 Needs Rezerve running locally on the Compose database with the eval business
@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from functools import partial
@@ -45,11 +46,24 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m evals.run", description=__doc__)
     parser.add_argument("--suite", choices=["smoke", "full"], help="smoke unless resuming")
     parser.add_argument("--only", nargs="+", metavar="ID", help="run just these scenarios")
+    parser.add_argument(
+        "--trials",
+        type=_at_least_one,
+        metavar="N",
+        help="run each scenario N times; it passes only if it passes each time (default 1)",
+    )
     parser.add_argument("--agent-model", help="one model for the agent, no fallback")
     parser.add_argument(
         "--resume", metavar="RUN_ID", help="carry on a run a quota stopped, as it started"
     )
     return parser.parse_args(argv)
+
+
+def _at_least_one(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return number
 
 
 def selection(args: argparse.Namespace, run: RunResult | None) -> tuple[Suite, list[str] | None]:
@@ -58,6 +72,13 @@ def selection(args: argparse.Namespace, run: RunResult | None) -> tuple[Suite, l
         return run.suite, run.only
     suite: Suite = args.suite or "smoke"
     return suite, args.only
+
+
+def trials_for(args: argparse.Namespace, run: RunResult | None) -> int:
+    """Runs of each scenario: a resumed run's own, or the command line's."""
+    if run is not None:
+        return run.trials
+    return args.trials or 1
 
 
 def agent_models(args: argparse.Namespace, run: RunResult | None) -> list[str] | None:
@@ -76,6 +97,8 @@ def check_resume(args: argparse.Namespace, run: RunResult) -> None:
         clashes.append(f"--suite {args.suite} (it is a {run.suite} run)")
     if args.only and args.only != run.only:
         clashes.append(f"--only (it ran {' '.join(run.only) if run.only else 'the whole suite'})")
+    if args.trials and args.trials != run.trials:
+        clashes.append(f"--trials {args.trials} (it runs each scenario {run.trials} times)")
     if args.agent_model and [args.agent_model] != run.config.agent_models:
         clashes.append(f"--agent-model (it ran {' → '.join(run.config.agent_models)})")
     if clashes:
@@ -92,11 +115,19 @@ def select(scenarios: list[Scenario], suite: str, only: list[str] | None) -> lis
     return chosen
 
 
-def pending(done: list[ScenarioResult], todo: list[Scenario]) -> list[Scenario]:
-    """What is left to run. A scenario a quota cut off never got a result, so
-    it runs again from the start, Rezerve reset and all."""
-    finished = {result.id for result in done}
-    return [scenario for scenario in todo if scenario.id not in finished]
+def pending(
+    done: list[ScenarioResult], todo: list[Scenario], trials: int = 1
+) -> list[tuple[Scenario, int]]:
+    """What is left to run, trial by trial: every scenario's first run, then
+    every second one. A scenario a quota cut off never got a result, so it
+    runs again from the start, Rezerve reset and all."""
+    finished = Counter(result.id for result in done)
+    return [
+        (scenario, trial)
+        for trial in range(1, trials + 1)
+        for scenario in todo
+        if finished[scenario.id] < trial
+    ]
 
 
 def settings_for(models: list[str] | None) -> EvalSettings:
@@ -185,6 +216,7 @@ async def execute(args: argparse.Namespace, settings: EvalSettings, run: RunResu
                 id=f"{started:%Y-%m-%dT%H-%M-%SZ}-{suite}",
                 suite=suite,
                 only=only,
+                trials=trials_for(args, None),
                 started_at=started,
                 config=RunConfig(
                     agent_models=[settings.model_primary, *settings.model_fallbacks],
@@ -194,17 +226,22 @@ async def execute(args: argparse.Namespace, settings: EvalSettings, run: RunResu
                 ),
             )
         run.stopped = None
-        repeats = [s for s in scenarios if s.smoke] if suite == "full" else []
+        # A full run's smoke scenarios run once more for the noise band,
+        # unless every scenario already runs several times.
+        once = suite == "full" and run.trials == 1
+        repeats = [s for s in scenarios if s.smoke] if once else []
         try:
-            for results, todo, attempt in (
-                (run.scenarios, scenarios, "1"),
-                (run.repeats, repeats, "2"),
+            for results, todo, trials, again in (
+                (run.scenarios, scenarios, run.trials, False),
+                (run.repeats, repeats, 1, True),
             ):
-                for scenario in pending(results, todo):
+                for scenario, trial in pending(results, todo, trials):
+                    attempt = "2" if again else str(trial)
                     result = await run_scenario(scenario, rig, f"{run.id}.{attempt}")
                     results.append(result)
                     save(run)
-                    print(f"{result.status:7} {scenario.id}", flush=True)
+                    which = f" (run {trial} of {trials})" if trials > 1 else ""
+                    print(f"{result.status:7} {scenario.id}{which}", flush=True)
         except QuotaExhausted as error:
             run.stopped = str(error)
             path = save(run)

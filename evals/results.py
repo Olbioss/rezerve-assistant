@@ -82,6 +82,9 @@ class RunResult(BaseModel):
     suite: Suite
     # The scenarios --only named; None for the whole suite. A resume keeps them.
     only: list[str] | None = None
+    # Runs of each scenario: with more than one, `scenarios` holds them all,
+    # and a scenario counts as passed only if it passed every one.
+    trials: int = 1
     started_at: datetime
     finished_at: datetime | None = None
     config: RunConfig

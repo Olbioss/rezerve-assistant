@@ -3,7 +3,15 @@ from datetime import UTC, datetime
 import pytest
 
 from evals.results import RunConfig, RunResult, ScenarioResult
-from evals.run import agent_models, check_resume, parse_args, pending, select, selection
+from evals.run import (
+    agent_models,
+    check_resume,
+    parse_args,
+    pending,
+    select,
+    selection,
+    trials_for,
+)
 from evals.scenario import Expect, Scenario
 
 
@@ -38,9 +46,21 @@ def test_the_command_line() -> None:
     )
 
 
+def result(id: str) -> ScenarioResult:
+    return ScenarioResult(id=id, tags=["faq"], mode="scripted", status="fail")
+
+
 def test_a_resumed_run_runs_only_what_never_got_a_result() -> None:
-    done = [ScenarioResult(id="a", tags=["faq"], mode="scripted", status="fail")]
-    assert [s.id for s in pending(done, SUITE)] == ["b", "c"]
+    assert [s.id for s, _ in pending([result("a")], SUITE)] == ["b", "c"]
+
+
+def test_several_runs_of_each_scenario_go_trial_by_trial() -> None:
+    # Every scenario's first run, then every second one; a resume picks up mid-trial.
+    assert [(s.id, trial) for s, trial in pending([], SUITE, trials=2)] == [
+        ("a", 1), ("b", 1), ("c", 1), ("a", 2), ("b", 2), ("c", 2)
+    ]  # fmt: skip
+    done = [result("a"), result("b"), result("c"), result("a")]
+    assert [(s.id, trial) for s, trial in pending(done, SUITE, trials=2)] == [("b", 2), ("c", 2)]
 
 
 GROQ_RUN = RunResult(
@@ -77,9 +97,19 @@ def test_a_resumed_run_carries_on_with_what_it_started_with() -> None:
     )  # fmt: skip
 
 
+def test_a_run_is_one_trial_unless_told_and_a_resume_keeps_its_own() -> None:
+    assert trials_for(parse_args([]), None) == 1
+    assert trials_for(parse_args(["--trials", "3"]), None) == 3
+    thrice = GROQ_RUN.model_copy(update={"trials": 3})
+    assert trials_for(parse_args(["--resume", thrice.id]), thrice) == 3
+    with pytest.raises(SystemExit):
+        parse_args(["--trials", "0"])
+
+
 @pytest.mark.parametrize(
     ("flags", "refused"),
     [
+        (["--trials", "2"], "--trials"),
         (["--suite", "smoke"], "--suite smoke"),
         (["--only", "a"], "--only"),
         (["--agent-model", "google:gemini-3.5-flash-lite"], "--agent-model"),
