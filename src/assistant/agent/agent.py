@@ -9,7 +9,7 @@ model request.
 import json
 import logging
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, DeferredToolRequests, RunContext, ToolOutput
@@ -149,8 +149,16 @@ def turn_context(ctx: RunContext[TurnDeps]) -> str:
 
 async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, str | None]:
     """Göreli bir tarih ifadesinin ("yarın akşam", "haftaya salı", "ayın 17'si",
-    "28 Ekim") tarihini, gününü ve söylendiyse gün parçasının saat aralığını verir."""
-    found = when.resolve_when(expression, date.fromisoformat(ctx.deps.business.today))
+    "28 Ekim", "perşembe 10:00") tarihini, gününü ve söylendiyse gün parçasının
+    saat aralığını verir. Müşteri bir saat söylediyse onu da ifadeye kat."""
+    business = ctx.deps.business
+    now = datetime.fromisoformat(business.now_local)
+    soonest = now + timedelta(minutes=business.min_lead_time_minutes)
+    found = when.resolve_when(
+        expression,
+        date.fromisoformat(business.today),
+        soonest.time() if soonest.date() == now.date() else time.max,
+    )
     if found is None:
         return {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."}
     answer: dict[str, str | None] = {
@@ -159,6 +167,10 @@ async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, 
         "en_erken": found.earliest,
         "en_geç": found.latest,
     }
+    if found.hour_gone:
+        answer["not"] = (
+            f"Bu saat bugün geçti: müşteri haftaya {found.weekday.lower()} günü istiyor."
+        )
     if found.or_next_week is not None:
         answer["haftaya_aynı_gün"] = found.or_next_week.isoformat()
         answer["not"] = (

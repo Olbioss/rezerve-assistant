@@ -156,6 +156,17 @@ async def test_every_data_block_is_named_as_data() -> None:
             "bir ara",
             {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."},
         ),
+        # Said at 11:55 on a Thursday, with an hour's notice: 10:00 has gone.
+        (
+            "perşembe 10:00",
+            {
+                "tarih": "2026-10-22",
+                "gün": "Perşembe",
+                "en_erken": None,
+                "en_geç": None,
+                "not": "Bu saat bugün geçti: müşteri haftaya perşembe günü istiyor.",
+            },
+        ),
         # Said on a Thursday: today, or a week today once the hour has gone.
         (
             "perşembe",

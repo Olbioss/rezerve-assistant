@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 import pytest
 
@@ -75,3 +75,29 @@ THURSDAY = date(2026, 10, 15)
 )
 def test_a_turkish_day_is_resolved_by_rule(expression: str, expected: When | None) -> None:
     assert resolve_when(expression, THURSDAY) == expected
+
+
+# 11:55 on Thursday 15 October with an hour's notice: 12:55 is the soonest bookable.
+SOONEST = time(12, 55)
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        # Today's own weekday with an hour already gone: a week today.
+        ("perşembe 10:00", When(date(2026, 10, 22), "Perşembe", hour_gone=True)),
+        (
+            "perşembe sabah 11:00",
+            When(date(2026, 10, 22), "Perşembe", "09:00", "12:00", hour_gone=True),
+        ),
+        # An hour still ahead: today, or a week today.
+        ("perşembe 18:00", When(date(2026, 10, 15), "Perşembe", or_next_week=date(2026, 10, 22))),
+        # "bu perşembe" is today, gone hour or not; and another weekday is unaffected.
+        ("bu perşembe 10:00", When(date(2026, 10, 15), "Perşembe")),
+        ("cuma 10:00", When(date(2026, 10, 16), "Cuma")),
+    ],
+)
+def test_a_gone_hour_on_todays_own_weekday_means_a_week_today(
+    expression: str, expected: When
+) -> None:
+    assert resolve_when(expression, THURSDAY, SOONEST) == expected

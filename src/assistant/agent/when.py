@@ -11,7 +11,7 @@ none: the model asks.
 
 import re
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 from assistant.agent.format import MONTHS, WEEKDAYS
 
@@ -58,6 +58,8 @@ class When:
     # Today's own weekday named alone ("perşembe" on a Thursday): the same day
     # next week, which is what it means once the hour asked for has gone.
     or_next_week: date | None = None
+    # The hour named had gone today, so `day` is already a week today.
+    hour_gone: bool = False
 
 
 def _normalise(text: str) -> str:
@@ -65,9 +67,10 @@ def _normalise(text: str) -> str:
     return " ".join("".join(ch if ch.isalnum() else " " for ch in folded).split())
 
 
-def resolve_when(expression: str, today: date) -> When | None:
+def resolve_when(expression: str, today: date, soonest: time | None = None) -> When | None:
     """The date `expression` names, seen from `today`; None if it names none,
-    or more than one."""
+    or more than one. `soonest` is the earliest time still bookable today: an
+    hour before it, on today's own weekday named alone, means a week today."""
     text = _normalise(expression)
     span: tuple[str, str] | None = None
     for phrase, hours in _DAY_PARTS.items():
@@ -82,8 +85,22 @@ def resolve_when(expression: str, today: date) -> When | None:
     if day is None:
         return None
     earliest, latest = span or (None, None)
-    later = day + timedelta(days=7) if day == today and _weekday_alone(text, today) else None
-    return When(day, WEEKDAYS[day.weekday()], earliest, latest, later)
+    if not (day == today and _weekday_alone(text, today)):
+        return When(day, WEEKDAYS[day.weekday()], earliest, latest)
+    hour = _clock(expression)
+    if soonest is not None and hour is not None and hour < soonest:
+        later = day + timedelta(days=7)
+        return When(later, WEEKDAYS[later.weekday()], earliest, latest, hour_gone=True)
+    return When(day, WEEKDAYS[day.weekday()], earliest, latest, day + timedelta(days=7))
+
+
+_CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
+
+
+def _clock(expression: str) -> time | None:
+    """The first hour written as "10:00" in `expression`."""
+    match = _CLOCK.search(expression)
+    return time(int(match[1]), int(match[2])) if match else None
 
 
 def _weekday_alone(text: str, today: date) -> bool:
