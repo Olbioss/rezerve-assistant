@@ -1,0 +1,17 @@
+id: challenge-same-weekday-kapora
+tags: [booking, kapora, date, challenge]
+mode: scripted
+persona: "Elif — kısa yazar"
+turns:
+  - "{weekday:today} 10:30'a cilt bakımı için yer var mı? Elif Kaya, elif@example.com"
+  - "10:30 olsun"
+  - "evet"
+# Today's own weekday, an hour gone by midday, and a kapora: a week today,
+# held until the kapora is paid.
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "next same weekday"
+      at: "10:30"
+      status: pending
+      name: "Elif Kaya"

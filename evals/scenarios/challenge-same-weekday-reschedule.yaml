@@ -1,0 +1,20 @@
+id: challenge-same-weekday-reschedule
+tags: [reschedule, date, challenge]
+mode: scripted
+persona: "Can — kısa yazar"
+seed:
+  - key: mine
+    service: "Saç Kesimi"
+    day: "tuesday next week"
+    at: "15:00"
+turns:
+  - "randevumu {weekday:today} 10:00'a alabilir miyiz?"
+  - "10:00 olsun"
+  - "evet"
+# A booking moved to today's own weekday at an hour that has gone today: a
+# week today, after a yes.
+expect:
+  moved:
+    - key: mine
+      day: "next same weekday"
+      at: "10:00"
