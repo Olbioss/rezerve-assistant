@@ -1,0 +1,16 @@
+id: challenge-same-weekday-morning-gone
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Ece — kısa yazar"
+turns:
+  - "{weekday:today} sabah 11:00'de manikür yaptırabilir miyim? adım Ece Demir"
+  - "11:00 olsun"
+  - "evet"
+# Today's own weekday and a morning hour: a week today once 11:00 has gone,
+# today before then; never another day of this week.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "next same weekday"
+      at: "11:00"
+      name: "Ece Demir"

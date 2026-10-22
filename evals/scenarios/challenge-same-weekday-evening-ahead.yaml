@@ -1,0 +1,16 @@
+id: challenge-same-weekday-evening-ahead
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Mert — kısa yazar"
+turns:
+  - "{weekday:today} akşam 18:00'e saç kesimi alabilir miyim? adım Mert Aydın"
+  - "18:00 olsun"
+  - "evet"
+# Today's own weekday and an hour still ahead: today, not next week. (Run
+# after 17:00, it becomes a week today like any other gone hour.)
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "next same weekday"
+      at: "18:00"
+      name: "Mert Aydın"
