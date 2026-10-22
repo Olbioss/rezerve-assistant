@@ -21,7 +21,12 @@ THURSDAY = date(2026, 10, 15)
         ("gelecek hafta pazartesi", When(date(2026, 10, 19), "Pazartesi")),
         ("haftaya perşembe", When(date(2026, 10, 22), "Perşembe")),
         ("bu cuma", When(date(2026, 10, 16), "Cuma")),
-        ("perşembe", When(date(2026, 10, 15), "Perşembe")),
+        # Today's own weekday, named alone: today, or a week today once the
+        # hour asked for has gone. "bu" and "bugün" mean today.
+        ("perşembe", When(date(2026, 10, 15), "Perşembe", or_next_week=date(2026, 10, 22))),
+        ("perşembe günü", When(date(2026, 10, 15), "Perşembe", or_next_week=date(2026, 10, 22))),
+        ("bu perşembe", When(date(2026, 10, 15), "Perşembe")),
+        ("bugün perşembe", When(date(2026, 10, 15), "Perşembe")),
         ("pazar", When(date(2026, 10, 18), "Pazar")),
         ("cumartesiye", When(date(2026, 10, 17), "Cumartesi")),
         ("cumartesi öğleden sonra", When(date(2026, 10, 17), "Cumartesi", "14:00", "18:00")),
@@ -39,7 +44,10 @@ THURSDAY = date(2026, 10, 15)
         ("yarin", When(date(2026, 10, 16), "Cuma")),
         ("bugun", When(date(2026, 10, 15), "Perşembe")),
         ("haftaya sali", When(date(2026, 10, 20), "Salı")),
-        ("persembe ogleden sonra", When(date(2026, 10, 15), "Perşembe", "14:00", "18:00")),
+        (
+            "persembe ogleden sonra",
+            When(date(2026, 10, 15), "Perşembe", "14:00", "18:00", or_next_week=date(2026, 10, 22)),
+        ),
         ("carsambaya", When(date(2026, 10, 21), "Çarşamba")),
         ("obur gun sabah", When(date(2026, 10, 17), "Cumartesi", "09:00", "12:00")),
         # Phrases that start like another one.

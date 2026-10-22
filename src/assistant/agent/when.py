@@ -55,6 +55,9 @@ class When:
     # The part of the day named, if any: "14:00"–"18:00" for "öğleden sonra".
     earliest: str | None = None
     latest: str | None = None
+    # Today's own weekday named alone ("perşembe" on a Thursday): the same day
+    # next week, which is what it means once the hour asked for has gone.
+    or_next_week: date | None = None
 
 
 def _normalise(text: str) -> str:
@@ -79,7 +82,19 @@ def resolve_when(expression: str, today: date) -> When | None:
     if day is None:
         return None
     earliest, latest = span or (None, None)
-    return When(day, WEEKDAYS[day.weekday()], earliest, latest)
+    later = day + timedelta(days=7) if day == today and _weekday_alone(text, today) else None
+    return When(day, WEEKDAYS[day.weekday()], earliest, latest, later)
+
+
+def _weekday_alone(text: str, today: date) -> bool:
+    """Today's own weekday named without "bu" before it, and without "bugün"."""
+    words = text.split()
+    if "bugun" in words:
+        return False
+    return any(
+        _weekday(word) == today.weekday() and (i == 0 or words[i - 1] != "bu")
+        for i, word in enumerate(words)
+    )
 
 
 def _figures(expression: str, today: date) -> list[date | None]:

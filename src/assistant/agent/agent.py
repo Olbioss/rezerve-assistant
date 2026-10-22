@@ -153,12 +153,19 @@ async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, 
     found = when.resolve_when(expression, date.fromisoformat(ctx.deps.business.today))
     if found is None:
         return {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."}
-    return {
+    answer: dict[str, str | None] = {
         "tarih": found.day.isoformat(),
         "gün": found.weekday,
         "en_erken": found.earliest,
         "en_geç": found.latest,
     }
+    if found.or_next_week is not None:
+        answer["haftaya_aynı_gün"] = found.or_next_week.isoformat()
+        answer["not"] = (
+            "Müşteri bugünün gün adını söyledi: istediği saat bugün geçtiyse ya da "
+            "bugün boş değilse haftaya_aynı_gün tarihine bak. Geçmiş bir saate 'dolu' deme."
+        )
+    return answer
 
 
 def build_agent(model: Model) -> Agent[TurnDeps, AgentOutput]:

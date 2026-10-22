@@ -156,6 +156,22 @@ async def test_every_data_block_is_named_as_data() -> None:
             "bir ara",
             {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."},
         ),
+        # Said on a Thursday: today, or a week today once the hour has gone.
+        (
+            "perşembe",
+            {
+                "tarih": "2026-10-15",
+                "gün": "Perşembe",
+                "en_erken": None,
+                "en_geç": None,
+                "haftaya_aynı_gün": "2026-10-22",
+                "not": (
+                    "Müşteri bugünün gün adını söyledi: istediği saat bugün geçtiyse ya da "
+                    "bugün boş değilse haftaya_aynı_gün tarihine bak. Geçmiş bir saate "
+                    "'dolu' deme."
+                ),
+            },
+        ),
     ],
 )
 async def test_the_model_resolves_a_day_by_rule_not_by_arithmetic(
