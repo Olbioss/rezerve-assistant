@@ -42,11 +42,14 @@ class Simulator:
         self._model_name = model.model_name
         self._cache = cache
 
-    async def next_message(self, scenario: Scenario, lines: list[Line], today: date) -> str | None:
+    async def next_message(
+        self, scenario: Scenario, lines: list[Line], today: date, trial: int = 1
+    ) -> str | None:
         """What the customer writes next, or None once they are done. The
         customer knows the date, as a person would, so it can tell a wrong day
         when it is offered; and on another day the cache asks again, since
-        "haftaya perşembe" is another Thursday."""
+        "haftaya perşembe" is another Thursday. Each trial of a run meets a
+        customer of its own: a later trial adds its number to the cache key."""
         instructions = INSTRUCTIONS.format(
             today=f"{today.day} {MONTHS[today.month - 1]} {today.year} {WEEKDAYS[today.weekday()]}",
             persona=scenario.persona,
@@ -67,9 +70,8 @@ class Simulator:
             result = await self._agent.run(prompt, instructions=instructions)
             return result.output
 
-        text: str = await self._cache.get_or_compute(
-            "simulator", [self._model_name, instructions, prompt], ask
-        )
+        key = [self._model_name, instructions, prompt] + ([f"trial {trial}"] if trial > 1 else [])
+        text: str = await self._cache.get_or_compute("simulator", key, ask)
         if DONE in text or not text.strip():
             return None
         return text.strip()

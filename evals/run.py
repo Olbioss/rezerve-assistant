@@ -237,7 +237,9 @@ async def execute(args: argparse.Namespace, settings: EvalSettings, run: RunResu
             ):
                 for scenario, trial in pending(results, todo, trials):
                     attempt = "2" if again else str(trial)
-                    result = await run_scenario(scenario, rig, f"{run.id}.{attempt}")
+                    result = await run_scenario(
+                        scenario, rig, f"{run.id}.{attempt}", trial=1 if again else trial
+                    )
                     results.append(result)
                     save(run)
                     which = f" (run {trial} of {trials})" if trials > 1 else ""

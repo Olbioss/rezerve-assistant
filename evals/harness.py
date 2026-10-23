@@ -177,7 +177,7 @@ def allowed_amounts(business: Business) -> set[int]:
 
 
 async def run_scenario(
-    scenario: Scenario, rig: Rig, attempt: str, now: datetime | None = None
+    scenario: Scenario, rig: Rig, attempt: str, now: datetime | None = None, trial: int = 1
 ) -> ScenarioResult:
     """Every call is a new customer, unknown to Rezerve and to the store, even
     under an `attempt` seen before: a resumed run repeats the scenario a quota
@@ -201,7 +201,7 @@ async def run_scenario(
     await rig.rezerve.reset(scenario.business_notes)
     ids = await rig.rezerve.seed(resolved.seeds)
     before = await rig.rezerve.snapshot()
-    talk = await _converse(scenario, rig, customer, me, clock, resolved.meanwhile)
+    talk = await _converse(scenario, rig, customer, me, clock, resolved.meanwhile, trial)
     lines, conversation_id = talk.lines, talk.conversation_id
     after = await rig.rezerve.snapshot()
     runs = await rig.store.runs(conversation_id) if conversation_id is not None else []
@@ -265,6 +265,7 @@ async def _converse(
     me: str,
     clock: Clock,
     meanwhile: list[NewBooking],
+    trial: int = 1,
 ) -> Talk:
     lines: list[Line] = []
     waits: list[float] = []
@@ -277,7 +278,7 @@ async def _converse(
             text: str | None = render(scenario.turns[turn], clock)
         else:
             assert rig.simulator is not None, "a simulated scenario needs the simulator"
-            text = await rig.simulator.next_message(scenario, lines, clock.today)
+            text = await rig.simulator.next_message(scenario, lines, clock.today, trial)
             if text is None:
                 return Talk(lines, conversation_id, True, waits, seeded)
         lines.append(Line("customer", text))

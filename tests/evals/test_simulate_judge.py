@@ -59,6 +59,19 @@ async def test_the_customer_knows_the_date_and_keeps_the_goals_day_words(tmp_pat
     assert len(seen) == 2
 
 
+async def test_each_trial_meets_a_customer_of_its_own(tmp_path: Path) -> None:
+    # Three runs of a scenario are three customers, not one replayed: a
+    # customer who wanders off its goal once must not fail every run.
+    model, seen = speaking("merhaba", "selam", "iyi günler")
+    simulator = Simulator(model, DiskCache(tmp_path))
+    first = await simulator.next_message(SCENARIO, [], MONDAY)
+    assert await simulator.next_message(SCENARIO, [], MONDAY, trial=1) == first
+    assert await simulator.next_message(SCENARIO, [], MONDAY, trial=2) == "selam"
+    # A resumed run's trial asks its own customer again, from the cache.
+    assert await simulator.next_message(SCENARIO, [], MONDAY, trial=2) == "selam"
+    assert len(seen) == 2
+
+
 async def test_the_same_conversation_is_answered_from_the_cache(tmp_path: Path) -> None:
     cache = DiskCache(tmp_path)
     model, seen = speaking("merhaba")
