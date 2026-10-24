@@ -1,0 +1,19 @@
+id: challenge-new-time-means-move
+tags: [reschedule, challenge]
+mode: simulated
+persona: "Elif — meşgul, kısa yazar; 'taşı' demeyi akıl etmez"
+goal: >-
+  Haftaya salı 11:30'daki saç kesimi randevunu haftaya perşembe 15:00'e
+  almak istiyorsun, ama ilk mesajında "taşı" deme; "haftaya perşembe 15:00'e
+  saç kesimi alabilir miyim?" gibi sor. Asistan bunun ikinci bir randevu
+  olacağını söylerse ya da taşımak isteyip istemediğini sorarsa, salıdakini
+  taşımak istediğini söyle. Taşıma için onay sorulunca onayla.
+facts:
+  ad soyad: "Elif Kaya"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+# A new time asked for without "move", by a customer who has that service
+# booked: the move she meant, not a second booking.
+expect:
+  moved:
+    - { key: mine, day: "thursday next week", at: "15:00" }

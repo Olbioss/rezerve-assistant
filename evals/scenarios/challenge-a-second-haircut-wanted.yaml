@@ -1,0 +1,18 @@
+id: challenge-a-second-haircut-wanted
+tags: [booking, challenge]
+mode: scripted
+persona: "Elif — iki randevu istiyor"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+turns:
+  - "haftaya perşembe 15:00'e bir saç kesimi randevusu daha alabilir miyim? adım Elif Kaya"
+  - "evet, ikisi de kalsın"
+  - "evet"
+# Asked plainly for one more: a second booking, the first left as it is.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "thursday next week"
+      at: "15:00"
+      name: "Elif Kaya"
+  writes: [create_booking]
