@@ -90,8 +90,9 @@ SOONEST = time(12, 55)
             "perşembe sabah 11:00",
             When(date(2026, 10, 22), "Perşembe", "09:00", "12:00", hour_gone=True),
         ),
-        # An hour still ahead: today, or a week today.
-        ("perşembe 18:00", When(date(2026, 10, 15), "Perşembe", or_next_week=date(2026, 10, 22))),
+        # An hour still ahead: today, and nothing else. Offered next week as
+        # well, the model booked it (Saturday 24 October, "cumartesi akşam 18:00").
+        ("perşembe 18:00", When(date(2026, 10, 15), "Perşembe")),
         # "bu perşembe" is today, gone hour or not; and another weekday is unaffected.
         ("bu perşembe 10:00", When(date(2026, 10, 15), "Perşembe")),
         ("cuma 10:00", When(date(2026, 10, 16), "Cuma")),

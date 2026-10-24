@@ -88,9 +88,12 @@ def resolve_when(expression: str, today: date, soonest: time | None = None) -> W
     if not (day == today and _weekday_alone(text, today)):
         return When(day, WEEKDAYS[day.weekday()], earliest, latest)
     hour = _clock(expression)
-    if soonest is not None and hour is not None and hour < soonest:
-        later = day + timedelta(days=7)
-        return When(later, WEEKDAYS[later.weekday()], earliest, latest, hour_gone=True)
+    if soonest is not None and hour is not None:
+        if hour < soonest:
+            later = day + timedelta(days=7)
+            return When(later, WEEKDAYS[later.weekday()], earliest, latest, hour_gone=True)
+        # The hour is still ahead today: today, and nothing else to choose from.
+        return When(day, WEEKDAYS[day.weekday()], earliest, latest)
     return When(day, WEEKDAYS[day.weekday()], earliest, latest, day + timedelta(days=7))
 
 
