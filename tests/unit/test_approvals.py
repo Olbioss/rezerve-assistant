@@ -113,7 +113,7 @@ async def test_a_booking_without_kapora_shows_the_price(
     assert proposal.args["expect_deposit_cents"] is None
 
 
-async def test_a_second_booking_of_the_same_service_names_the_one_that_stays(
+async def test_a_second_booking_of_the_same_service_is_asked_about_first(
     fake: FakeRezerve, rezerve: RezerveSession
 ) -> None:
     # "Perşembe 15:00'e saç kesimi alabilir miyim?", from a customer with a
@@ -127,9 +127,15 @@ async def test_a_second_booking_of_the_same_service_names_the_one_that_stays(
         bookings=await rezerve.my_bookings(),
     )
     call = create(service_id=SAC, starts_at="2026-10-22T12:00:00Z", customer_name="Elif Kaya")
-    proposal = await propose(call, deps, rezerve, NOW)
-    assert isinstance(proposal, Proposal)
     stays = local_label(tuesday, TIMEZONE)
+    # Not asked yet: back to the model, to ask whether this is a move.
+    first = await propose(call, deps, rezerve, NOW)
+    assert isinstance(first, Refusal)
+    assert f"Saç Kesimi · {stays}" in first.reason
+    assert "Yeni bir randevu mu istediğini" in first.reason
+    # Asked: the confirmation still names the booking that stays.
+    proposal = await propose(call, deps, rezerve, NOW, asked=True)
+    assert isinstance(proposal, Proposal)
     assert proposal.text == (
         "Elif Kaya adına: Saç Kesimi · Perşembe 22 Ekim 15:00 · 45 dk · ₺800. "
         f"Bu ikinci bir randevu olur; duran randevunuz: Saç Kesimi · {stays}. "

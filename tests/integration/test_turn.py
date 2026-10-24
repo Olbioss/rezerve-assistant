@@ -204,6 +204,35 @@ async def test_what_code_cannot_confirm_goes_back_to_the_model_first(store: Stor
     assert await store.open_approval(turn.conversation_id) is None
 
 
+async def test_a_second_booking_waits_for_the_customer_to_say_it_is_not_a_move(
+    store: Store,
+) -> None:
+    # A customer with a haircut on Tuesday asks for one on Thursday. Code sends
+    # the booking back until the customer has been asked, in an earlier turn,
+    # whether they meant to move Tuesday's: retrying at once does not count.
+    thursday = {
+        "service_id": SAC,
+        "starts_at": "2026-10-22T12:00:00Z",
+        "customer_name": "Elif Kaya",
+    }
+    asking = "Salıdaki randevunuzu mu taşıyalım, yoksa yeni bir randevu mu?"
+    turn = Harness(
+        store,
+        Script(
+            calls("create_booking", thursday),
+            calls("create_booking", thursday, "c2"),
+            says(asking),
+            calls("create_booking", thursday, "c3"),
+        ),
+    )
+    turn.fake.add_booking(SAC, datetime(2026, 10, 20, 8, 30, tzinfo=UTC))
+    assert await turn.say("perşembe 15:00 saç kesimi, adım Elif Kaya") == [asking]
+    assert await store.open_approval(turn.conversation_id) is None
+    [confirmation] = await turn.say("yeni bir randevu olsun")
+    assert confirmation.startswith("Elif Kaya adına: Saç Kesimi · ")
+    assert "Bu ikinci bir randevu olur" in confirmation
+
+
 async def test_two_writes_at_once_are_confirmed_one_at_a_time(store: Store) -> None:
     booking = None
     two = ModelResponse(

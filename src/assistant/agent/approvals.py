@@ -18,9 +18,12 @@ from pydantic_ai import (
     AgentRunResult,
     DeferredToolRequests,
     DeferredToolResults,
+    ModelMessage,
+    ModelRequest,
     ToolApproved,
     ToolCallPart,
     ToolDenied,
+    ToolReturnPart,
 )
 from pydantic_ai.models import Model
 
@@ -49,6 +52,12 @@ EXPIRED = (
 )
 ONE_AT_A_TIME = (
     "Aynı anda yalnızca bir değişiklik onaylanabilir; bu işlem yapılmadı. Gerekirse ayrıca öner."
+)
+# A new booking of a service the customer already has coming up may be a move.
+_NEW_OR_MOVE = "Yeni bir randevu mu istediğini, yoksa o randevuyu mu taşımak istediğini sor"
+SECOND_BOOKING = (
+    "Müşterinin bu hizmette yaklaşan bir randevusu var: {booking}. "
+    f"{_NEW_OR_MOVE}; taşımak isterse reschedule_booking kullan."
 )
 
 CLASSIFIER_INSTRUCTIONS = """\
@@ -108,12 +117,30 @@ class Refusal:
     reason: str
 
 
+def asked_about_a_second_booking(history: Sequence[ModelMessage]) -> bool:
+    """Whether the model was already sent back, in this conversation, to ask
+    whether a second booking of the same service was meant as a move."""
+    return any(
+        isinstance(part, ToolReturnPart) and _NEW_OR_MOVE in str(part.content)
+        for message in history
+        if isinstance(message, ModelRequest)
+        for part in message.parts
+    )
+
+
 async def propose(
-    call: ToolCallPart, deps: TurnDeps, rezerve: RezerveSession, now: datetime
+    call: ToolCallPart,
+    deps: TurnDeps,
+    rezerve: RezerveSession,
+    now: datetime,
+    *,
+    asked: bool = False,
 ) -> Proposal | Refusal:
+    """`asked`: the customer has been asked, in an earlier turn, whether a
+    second booking of the same service is a move."""
     args = call.args_as_dict()
     if call.tool_name == "create_booking":
-        return _propose_create(args, deps)
+        return _propose_create(args, deps, asked)
     if call.tool_name == "reschedule_booking":
         return await _propose_reschedule(args, deps, rezerve, now)
     if call.tool_name == "cancel_booking":
@@ -130,7 +157,7 @@ def _instant(value: Any) -> datetime | None:
     return instant if instant.tzinfo is not None else None
 
 
-def _propose_create(args: dict[str, Any], deps: TurnDeps) -> Proposal | Refusal:
+def _propose_create(args: dict[str, Any], deps: TurnDeps, asked: bool) -> Proposal | Refusal:
     service = next((s for s in deps.services if s.id == args.get("service_id")), None)
     if service is None:
         return Refusal(
@@ -146,6 +173,13 @@ def _propose_create(args: dict[str, Any], deps: TurnDeps) -> Proposal | Refusal:
         return Refusal("Randevu için müşterinin adını sor.")
     if service.deposit_cents and not args.get("customer_email"):
         return Refusal("Bu hizmet kapora alıyor; önce müşterinin e-posta adresini iste.")
+    # A new time from a customer who already has this service booked may be
+    # a move: the model asks first, then the confirmation names the one that stays.
+    same = [b for b in deps.bookings if b.service_id == service.id and b.status != "cancelled"]
+    if same and not asked:
+        return Refusal(
+            SECOND_BOOKING.format(booking=f"{same[0].service_name} · {same[0].local_label}")
+        )
     if service.deposit_cents:
         terms = (
             f"{format_money(service.deposit_cents, service.currency)} kapora "
@@ -154,9 +188,6 @@ def _propose_create(args: dict[str, Any], deps: TurnDeps) -> Proposal | Refusal:
     else:
         terms = format_money(service.price_cents, service.currency)
     when = local_label(starts_at, deps.business.timezone)
-    # A new time from a customer who already has this service booked may be
-    # a move: say which booking stays, and let them say so before it's written.
-    same = [b for b in deps.bookings if b.service_id == service.id and b.status != "cancelled"]
     second = (
         f" Bu ikinci bir randevu olur; duran randevunuz: {same[0].service_name} · "
         f"{same[0].local_label}. Onu taşımak isterseniz söyleyin."

@@ -36,6 +36,7 @@ from assistant.agent.approvals import (
     Refusal,
     ReplyClassifier,
     Resolution,
+    asked_about_a_second_booking,
     classify_by_lexicon,
     propose,
     refusal,
@@ -297,6 +298,11 @@ class TurnProcessor:
     ) -> TurnResult:
         text = "\n".join(message.text for message in batch)
         approval = await self._store.open_approval(conversation.id)
+        # Asked in an earlier turn only: a retry straight after the refusal
+        # must not count as the customer having answered.
+        asked = asked_about_a_second_booking(conversation.history) or (
+            approval is not None and asked_about_a_second_booking(approval.history)
+        )
         if approval is None:
             run = await self._run(
                 deps, rezerve, turn, text, history.close_open_calls(conversation.history)
@@ -332,7 +338,7 @@ class TurnProcessor:
                 reply = Reply(output, write_actions(turn.writes))
                 return turn.finish([reply], "reply", messages=run.all_messages())
             first, *others = output.approvals
-            proposal = await propose(first, deps, rezerve, self._clock())
+            proposal = await propose(first, deps, rezerve, self._clock(), asked=asked)
             if isinstance(proposal, Refusal):
                 turn.meter.tool_errors += 1
                 run = await self._run(
