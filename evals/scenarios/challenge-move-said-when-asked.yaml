@@ -1,0 +1,16 @@
+id: challenge-move-said-when-asked
+tags: [reschedule, challenge]
+mode: scripted
+persona: "Ece — kısa yazar"
+seed:
+  - { key: mine, service: "Manikür", day: "wednesday next week", at: "14:00" }
+turns:
+  - "haftaya cuma 16:00'ya manikür olur mu?"
+  - "evet, çarşambakini cumaya taşıyalım"
+  - "evet"
+# Asked whether a new time is a move, the customer says it is: the Wednesday
+# booking moves, and nothing new is written.
+expect:
+  moved:
+    - { key: mine, day: "friday next week", at: "16:00" }
+  writes: [reschedule_booking]
