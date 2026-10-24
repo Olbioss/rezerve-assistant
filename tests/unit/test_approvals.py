@@ -113,6 +113,45 @@ async def test_a_booking_without_kapora_shows_the_price(
     assert proposal.args["expect_deposit_cents"] is None
 
 
+async def test_a_second_booking_of_the_same_service_names_the_one_that_stays(
+    fake: FakeRezerve, rezerve: RezerveSession
+) -> None:
+    # "Perşembe 15:00'e saç kesimi alabilir miyim?", from a customer with a
+    # haircut on Tuesday, may mean a move: the confirmation asks before a
+    # second booking is written.
+    tuesday = datetime(2026, 10, 20, 8, 30, tzinfo=UTC)
+    fake.add_booking(SAC, tuesday)
+    deps = TurnDeps(
+        business=await rezerve.business_info(),
+        services=await rezerve.services(),
+        bookings=await rezerve.my_bookings(),
+    )
+    call = create(service_id=SAC, starts_at="2026-10-22T12:00:00Z", customer_name="Elif Kaya")
+    proposal = await propose(call, deps, rezerve, NOW)
+    assert isinstance(proposal, Proposal)
+    stays = local_label(tuesday, TIMEZONE)
+    assert proposal.text == (
+        "Elif Kaya adına: Saç Kesimi · Perşembe 22 Ekim 15:00 · 45 dk · ₺800. "
+        f"Bu ikinci bir randevu olur; duran randevunuz: Saç Kesimi · {stays}. "
+        f"Onu taşımak isterseniz söyleyin. {QUESTION}"
+    )
+
+
+async def test_a_booking_of_another_service_needs_no_word_about_the_first(
+    fake: FakeRezerve, rezerve: RezerveSession
+) -> None:
+    fake.add_booking(CILT, datetime(2026, 10, 20, 8, 30, tzinfo=UTC))
+    deps = TurnDeps(
+        business=await rezerve.business_info(),
+        services=await rezerve.services(),
+        bookings=await rezerve.my_bookings(),
+    )
+    call = create(service_id=SAC, starts_at="2026-10-22T12:00:00Z", customer_name="Elif Kaya")
+    proposal = await propose(call, deps, rezerve, NOW)
+    assert isinstance(proposal, Proposal)
+    assert "ikinci" not in proposal.text
+
+
 @pytest.mark.parametrize(
     ("args", "reason"),
     [

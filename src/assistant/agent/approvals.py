@@ -154,9 +154,18 @@ def _propose_create(args: dict[str, Any], deps: TurnDeps) -> Proposal | Refusal:
     else:
         terms = format_money(service.price_cents, service.currency)
     when = local_label(starts_at, deps.business.timezone)
+    # A new time from a customer who already has this service booked may be
+    # a move: say which booking stays, and let them say so before it's written.
+    same = [b for b in deps.bookings if b.service_id == service.id and b.status != "cancelled"]
+    second = (
+        f" Bu ikinci bir randevu olur; duran randevunuz: {same[0].service_name} · "
+        f"{same[0].local_label}. Onu taşımak isterseniz söyleyin."
+        if same
+        else ""
+    )
     return Proposal(
-        text=f"{name} adına: {service.name} · {when} · {service.duration_minutes} dk · {terms}. "
-        f"{QUESTION}",
+        text=f"{name} adına: {service.name} · {when} · {service.duration_minutes} dk · {terms}."
+        f"{second} {QUESTION}",
         args={**args, "customer_name": name, "expect_deposit_cents": service.deposit_cents},
     )
 
