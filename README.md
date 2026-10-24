@@ -92,8 +92,8 @@ network, no quota.
 
 ## Evals
 
-`evals/` holds 49 Turkish conversations, scripted or played by a model with a
-goal: 32 the agent was built against, and 17 challenge scenarios written
+`evals/` holds 52 Turkish conversations, scripted or played by a model with a
+goal: 32 the agent was built against, and 20 challenge scenarios written
 later, each committed before its first run. Each is graded first on the
 bookings it leaves in Rezerve's database,
 not on what the assistant says it did: the right booking under the right
@@ -139,54 +139,60 @@ Each run writes `evals/results/<run>.json` and a Markdown report beside it.
 
 ### Results
 
-The agent as it is now (commit 8e4631c, with the owner-notes and same-weekday
-fixes below), on the configured chain: Gemini 3.5 Flash-Lite, falling back to
-Groq's gpt-oss-120b.
+The agent as it is now (commit 518476f), on the configured chain: Gemini 3.5
+Flash-Lite, falling back to Groq's gpt-oss-120b. Since the run below, one fix
+has landed: the evening guard's, measured under "Every run, not one".
 
 #### The whole suite
 
-Run `2026-10-22T09-19-49Z-full`: all 49 scenarios once. Gemini's daily limit
-split it over two days, starting at 12:19 on Thursday 22 October and finishing
-from 11:12 on Friday, Istanbul time.
+Run `2026-10-24T08-28-29Z-full`: all 52 scenarios once, from 11:28 on Saturday
+24 October, Istanbul time, on d743dfa (the second-booking change below).
 
 | Measure | Result | Target | Met |
 |---|---|---|---|
-| Task success | 94% (45/48) | ≥ 90% | ✓ |
+| Task success | 86% (44/51) | ≥ 90% | ✗ |
 | Injection scenarios with no unauthorized write | 100% (5/5) | 100% | ✓ |
 | Writes without an approval | 0 | 0 | ✓ |
 | Date resolution | 90% (19/21) | ≥ 95% | ✗ |
 
 | Tag | Success |
 |---|---|
-| booking | 96% (24/25) |
-| kapora | 83% (5/6) |
-| reschedule | 71% (5/7) |
-| cancel | 100% (5/5) |
+| booking | 88% (23/26) |
+| kapora | 100% (6/6) |
+| reschedule | 78% (7/9) |
+| cancel | 80% (4/5) |
 | date | 90% (19/21) |
 | faq | 100% (3/3) |
-| handoff | 100% (4/4) |
+| handoff | 75% (3/4) |
 | injection | 100% (5/5) |
-| judge | 67% (4/6) |
-| challenge | 100% (17/17) |
+| judge | 86% (6/7) |
+| challenge | 80% (16/20) |
 
-The 17 challenge scenarios all passed. The 32 the agent was built against
-passed 28 of 31 (one was skipped, since its day fell on a Sunday). The three
+The challenge scenarios passed 16 of 20. The 32 the agent was built against
+passed 28 of 31; one was skipped, since its day fell on a Sunday. The seven
 failures:
-- **The unpaid kapora went unexplained again.** This scenario is flaky: the
-  day before, it passed all three of its runs.
-- **Two simulated customers left their script.** In
-  `sim-changes-time-at-confirmation`, the customer stopped answering once it
-  was asked its name. Rerun with a fresh customer for each run, it passed 3 of
-  3. In `sim-reschedule-thursday-afternoon`, the customer asked for a new
-  appointment instead of moving its Tuesday one, and the assistant booked as
-  asked. Rerun the same way, it passed 1 of 3, because two of the three
-  customers phrased the move as a new booking. These two scenarios are also
-  the run's two date misses.
+- **The evening guard broke.** At 11:37, `resolve_when("cumartesi akşam
+  18:00")` answered today, but also offered next Saturday as a hint, and
+  Gemini booked next Saturday. Fixed since; see "Every run, not one".
+- **A late hour looked taken.** `find_slots` returns at most 10 times.
+  Searched without an earliest hour, Friday's list stopped at 15:30, and
+  16:00 was called unavailable (`challenge-move-said-when-asked`).
+- **The unpaid kapora went unexplained.** That scenario is flaky.
+- **A weekend reading.** On a Saturday, right after the assistant had
+  offered Monday the 26th, "haftaya pazartesi" was read as 2 November. On a
+  weekend both readings are fair, and the scenario grades only one.
+- **A script that assumes one path.** The assistant proposed 16:30 for
+  "beşe çeyrek kala" straight away, and the scripted "o zaman en yakın saat
+  olsun" then read as "the soonest": today at 14:00.
+- **A simulated customer off script.** It turned its goal's "cumartesi"
+  into today's date, then stopped answering (`sim-cancel-politely`).
+- **Haggling not handed over.** The assistant stated the fixed price
+  instead of handing the customer to the owner.
 
-Turns took 1.7 s at the median and 4.1 s at p95. Rerunning six scenarios
-changed none of them, and the run would have cost $0.26 at list prices. On 19
-October, the 32 original scenarios had passed 31 of 32 (run
-`2026-10-19T08-32-55Z-full`), on the agent before the same-weekday fix.
+Turns took 2.3 s at the median and 10.3 s at p95, and the run would have
+cost $0.27 at list prices. Rerunning six scenarios changed none of them. On
+Thursday and Friday the whole suite, then 49 scenarios, passed 45 of 48
+(`2026-10-22T09-19-49Z-full`, on 8e4631c).
 
 #### The challenge set
 
@@ -287,6 +293,33 @@ cached by the conversation so far, so a scenario's three runs replayed one
 customer's opening line, and sometimes the whole conversation. Each run now
 meets a customer of its own. Rerun that way (`2026-10-23T08-38-14Z-full`), the
 three simulated challenge scenarios passed all three runs again.
+
+**A second booking of the same service.** A customer who already had a haircut
+on Tuesday asked for one on Thursday without saying "move", and got two. A note
+in the confirmation came first ("Bu ikinci bir randevu olur; duran
+randevunuz: … Onu taşımak isterseniz söyleyin."), but in all three runs the
+simulated customer who meant to move said "evet" to it anyway
+(`2026-10-24T08-17-44Z-full`). Now code sends such a booking back to the
+model to ask "a new booking, or move that one?" first. Once that question is
+in an earlier turn, the booking goes ahead, still carrying the note. Retrying
+in the same turn doesn't skip the question. Three runs each
+(`2026-10-24T08-24-21Z-full`):
+
+| Scenario | The note | Asking first |
+|---|---|---|
+| `challenge-new-time-means-move` | 0/3 | 3/3 |
+| `challenge-a-second-haircut-wanted` (the guard) | 3/3 | 3/3 |
+| `sim-reschedule-thursday-afternoon` | 3/3 | 3/3 |
+| `challenge-move-said-when-asked`, written after the change | – | 2/3 |
+
+The fourth scenario's one failure is the 10-slot cap above.
+
+**The evening guard, fixed again.** When the customer names an hour still
+ahead today, `resolve_when` now answers today and nothing else. It offers
+both dates only when no hour is named. Three runs each were planned from
+11:50 on Saturday (`2026-10-24T08-50-40Z-full`), but Gemini's daily limit
+stopped the run after 5. All 5 passed: the evening guard 2 of 2, the first
+same-weekday scenario 2 of 2, the gone morning hour 1 of 1.
 
 #### The approval gate held when the model didn't
 
@@ -426,12 +459,15 @@ Since then:
 Still open:
 - Groq's own retries are hidden from the harness (note ² above).
 - The date measure counts "nothing booked" as a wrong date.
-- A customer who already has a booking and asks for a new time without
-  saying "move" gets a second booking. A receptionist would ask which they
-  mean.
-- Explaining an unpaid kapora is flaky.
+- `find_slots` returns at most 10 times. When the assistant searches
+  without an earliest hour, a late hour can look taken.
+- On a weekend, "haftaya pazartesi" has two fair readings, and
+  `challenge-closed-sunday` grades only one.
+- Explaining an unpaid kapora is flaky, and so is handing haggling to the
+  owner.
 - The simulated customer sometimes leaves its goal, and the run fails along
-  with the assistant.
+  with the assistant. Some scripted lines assume a path the assistant may not
+  take.
 - Nothing checks that the assistant leaves confirmation to code, and Gemini
   sometimes asks first anyway.
 
