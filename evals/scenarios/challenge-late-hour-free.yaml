@@ -1,0 +1,16 @@
+id: challenge-late-hour-free
+tags: [booking, challenge]
+mode: scripted
+persona: "Ece — kısa yazar"
+turns:
+  - "haftaya cuma 18:00'e manikür olur mu? adım Ece Demir"
+  - "18:00 olsun"
+  - "evet"
+# A free late hour on a day whose earliest times alone fill a short list:
+# booked at 18:00, never called taken.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "friday next week"
+      at: "18:00"
+      name: "Ece Demir"

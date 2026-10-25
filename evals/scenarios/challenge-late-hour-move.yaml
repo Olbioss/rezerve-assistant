@@ -1,0 +1,16 @@
+id: challenge-late-hour-move
+tags: [reschedule, challenge]
+mode: scripted
+persona: "Can — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "10:00" }
+turns:
+  - "salı randevumu aynı gün 18:00'e alabilir miyiz?"
+  - "18:00 olsun"
+  - "evet"
+# A move to a late hour the same day: 18:00 is free, and the booking moves
+# there after a yes.
+expect:
+  moved:
+    - { key: mine, day: "tuesday next week", at: "18:00" }
+  writes: [reschedule_booking]
