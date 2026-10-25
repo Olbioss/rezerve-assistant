@@ -9,9 +9,10 @@ same session to build the instructions and the confirmations.
 import dataclasses
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import TracebackType
 from typing import Any, Literal, Self, cast
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel
 from pydantic_ai import (
@@ -154,6 +155,45 @@ class _WriteRecorder(WrapperToolset[Any]):
         return result
 
 
+# The most find_slots returns in one call.
+MAX_SLOTS = 20
+
+
+@dataclass
+class _WholeDays(WrapperToolset[Any]):
+    """One day's free times in full. Rezerve returns the earliest few and says
+    the list was cut; searched without an earliest hour, a free late hour then
+    looked taken. A search over one day is paged to its end; a search over
+    several days keeps Rezerve's earliest times, which is what it is for."""
+
+    async def call_tool(
+        self, name: str, tool_args: dict[str, Any], ctx: RunContext[Any], tool: ToolsetTool[Any]
+    ) -> Any:
+        one_day = tool_args.get("from_date") == tool_args.get("to_date")
+        business = getattr(ctx.deps, "business", None)
+        if name != "find_slots" or not one_day or business is None:
+            return await super().call_tool(name, tool_args, ctx, tool)
+        zone = ZoneInfo(business.timezone)
+        args = {**tool_args, "limit": MAX_SLOTS}
+        found = _as_object(await super().call_tool(name, args, ctx, tool)) or {}
+        slots: list[dict[str, Any]] = list(found.get("slots", []))
+        truncated = bool(found.get("truncated"))
+        for _ in range(10):
+            if not (truncated and slots):
+                break
+            last = datetime.fromisoformat(slots[-1]["starts_at"]).astimezone(zone)
+            after = last + timedelta(minutes=1)
+            if after.date() != last.date():
+                break
+            more = await super().call_tool(
+                name, {**args, "earliest_time": f"{after:%H:%M}"}, ctx, tool
+            )
+            page = _as_object(more) or {}
+            slots += page.get("slots", [])
+            truncated = bool(page.get("truncated"))
+        return {**found, "slots": slots, "truncated": truncated}
+
+
 def _as_object(value: object) -> dict[str, Any] | None:
     return cast(dict[str, Any], value) if isinstance(value, dict) else None
 
@@ -163,7 +203,7 @@ class RezerveSession:
 
     def __init__(self, mcp: MCPToolset[Any]) -> None:
         self._mcp = mcp
-        self._recorder = _WriteRecorder(mcp)
+        self._recorder = _WriteRecorder(_WholeDays(mcp))
         self.toolset: AbstractToolset[Any] = PreparedToolset(
             ApprovalRequiredToolset(self._recorder, approval_required_func=requires_approval),
             _slim_tools,
