@@ -22,7 +22,7 @@ from pydantic_ai.providers.groq import GroqProvider
 
 from assistant.agent import when
 from assistant.agent.calendar import calendar_block
-from assistant.agent.format import format_money
+from assistant.agent.format import MONTHS, format_money
 from assistant.config import Settings
 from assistant.mcp import BookingView, BusinessInfo, ServiceInfo
 
@@ -147,6 +147,11 @@ def turn_context(ctx: RunContext[TurnDeps]) -> str:
 """
 
 
+def _day(day: date) -> str:
+    """A date the way a customer reads it: "26 Ekim"."""
+    return f"{day.day} {MONTHS[day.month - 1]}"
+
+
 async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, str | None]:
     """Göreli bir tarih ifadesinin ("yarın akşam", "haftaya salı", "ayın 17'si",
     "28 Ekim", "perşembe 10:00") tarihini, gününü ve söylendiyse gün parçasının
@@ -161,6 +166,18 @@ async def resolve_when(ctx: RunContext[TurnDeps], expression: str) -> dict[str, 
     )
     if found is None:
         return {"hata": "Bu ifadeden bir tarih çıkmadı; müşteriye hangi günü kastettiğini sor."}
+    if found.two_readings:
+        later = found.day + timedelta(days=7)
+        return {
+            "gün": found.weekday,
+            "tarih_1": found.day.isoformat(),
+            "tarih_2": later.isoformat(),
+            "not": (
+                f"Hafta sonu söylenen 'haftaya {found.weekday.lower()}' iki güne denk "
+                f"gelebilir: {_day(found.day)} ya da {_day(later)}. Müşteriye hangisini "
+                "kastettiğini sor."
+            ),
+        }
     answer: dict[str, str | None] = {
         "tarih": found.day.isoformat(),
         "gün": found.weekday,

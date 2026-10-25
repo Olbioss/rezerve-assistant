@@ -204,6 +204,37 @@ async def test_the_model_resolves_a_day_by_rule_not_by_arithmetic(
     assert [part.content for part in returned] == [answer]
 
 
+async def test_next_weeks_monday_said_at_the_weekend_is_asked_about() -> None:
+    # Saturday 24 October: "haftaya pazartesi" may be the 26th or 2 November.
+    # No single date comes back, so the model has nothing to book but a question.
+    returned: list[ToolReturnPart] = []
+
+    def model(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        request = messages[-1]
+        assert isinstance(request, ModelRequest)
+        returns = [part for part in request.parts if isinstance(part, ToolReturnPart)]
+        if not returns:
+            call = ToolCallPart("resolve_when", {"expression": "haftaya pazartesi"})
+            return ModelResponse(parts=[call])
+        returned.extend(returns)
+        return ModelResponse(parts=[TextPart("Tamam.")])
+
+    saturday = BUSINESS.model_copy(update={"today": "2026-10-24", "now_local": "2026-10-24T11:00"})
+    deps = TurnDeps(business=saturday, services=[CILT], bookings=[])
+    await build_agent(FunctionModel(model)).run("haftaya pazartesi", deps=deps)
+    assert [part.content for part in returned] == [
+        {
+            "gün": "Pazartesi",
+            "tarih_1": "2026-10-26",
+            "tarih_2": "2026-11-02",
+            "not": (
+                "Hafta sonu söylenen 'haftaya pazartesi' iki güne denk gelebilir: "
+                "26 Ekim ya da 2 Kasım. Müşteriye hangisini kastettiğini sor."
+            ),
+        }
+    ]
+
+
 def settings(**overrides: object) -> Settings:
     values: dict[str, object] = {
         "assistant_mcp_token": "t",

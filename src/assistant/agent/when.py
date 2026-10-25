@@ -60,6 +60,9 @@ class When:
     or_next_week: date | None = None
     # The hour named had gone today, so `day` is already a week today.
     hour_gone: bool = False
+    # Said at the weekend, "haftaya pazartesi" is `day` to some and a week
+    # later to others: nothing is chosen, the customer is asked.
+    two_readings: bool = False
 
 
 def _normalise(text: str) -> str:
@@ -85,6 +88,8 @@ def resolve_when(expression: str, today: date, soonest: time | None = None) -> W
     if day is None:
         return None
     earliest, latest = span or (None, None)
+    if _two_readings(text, today, day):
+        return When(day, WEEKDAYS[day.weekday()], earliest, latest, two_readings=True)
     if not (day == today and _weekday_alone(text, today)):
         return When(day, WEEKDAYS[day.weekday()], earliest, latest)
     hour = _clock(expression)
@@ -95,6 +100,17 @@ def resolve_when(expression: str, today: date, soonest: time | None = None) -> W
         # The hour is still ahead today: today, and nothing else to choose from.
         return When(day, WEEKDAYS[day.weekday()], earliest, latest)
     return When(day, WEEKDAYS[day.weekday()], earliest, latest, day + timedelta(days=7))
+
+
+def _two_readings(text: str, today: date, day: date) -> bool:
+    """Next week's day, named at the weekend, at most three days off: so near
+    that some mean the same day a week later."""
+    return (
+        today.weekday() >= 5
+        and any(marker in text for marker in _NEXT_WEEK)
+        and any(_weekday(word) is not None for word in text.split())
+        and 0 < (day - today).days <= 3
+    )
 
 
 _CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")

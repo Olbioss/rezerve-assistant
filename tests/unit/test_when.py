@@ -102,3 +102,29 @@ def test_a_gone_hour_on_todays_own_weekday_means_a_week_today(
     expression: str, expected: When
 ) -> None:
     assert resolve_when(expression, THURSDAY, SOONEST) == expected
+
+
+SATURDAY = date(2026, 10, 24)
+SUNDAY = date(2026, 10, 25)
+
+
+@pytest.mark.parametrize(
+    ("expression", "today", "expected"),
+    [
+        # Said at the weekend, "haftaya pazartesi" is the coming Monday to some
+        # and the one after to others: neither is chosen, the assistant asks.
+        ("haftaya pazartesi", SATURDAY, When(date(2026, 10, 26), "Pazartesi", two_readings=True)),
+        ("haftaya pazartesi", SUNDAY, When(date(2026, 10, 26), "Pazartesi", two_readings=True)),
+        ("haftaya salı", SATURDAY, When(date(2026, 10, 27), "Salı", two_readings=True)),
+        ("haftaya çarşamba", SUNDAY, When(date(2026, 10, 28), "Çarşamba", two_readings=True)),
+        # Later in that week, or said on a weekday, there is one reading.
+        ("haftaya çarşamba", SATURDAY, When(date(2026, 10, 28), "Çarşamba")),
+        ("haftaya cuma", SUNDAY, When(date(2026, 10, 30), "Cuma")),
+        ("haftaya pazartesi", THURSDAY, When(date(2026, 10, 19), "Pazartesi")),
+        ("pazartesi", SATURDAY, When(date(2026, 10, 26), "Pazartesi")),
+    ],
+)
+def test_next_weeks_first_days_said_at_the_weekend_have_two_readings(
+    expression: str, today: date, expected: When
+) -> None:
+    assert resolve_when(expression, today) == expected
