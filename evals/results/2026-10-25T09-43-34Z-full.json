@@ -1,0 +1,1370 @@
+{
+ "version": 1,
+ "id": "2026-10-25T09-43-34Z-full",
+ "suite": "full",
+ "only": [
+  "challenge-late-hour-free",
+  "challenge-late-hour-move",
+  "challenge-move-said-when-asked"
+ ],
+ "trials": 3,
+ "started_at": "2026-10-25T09:43:34.075773Z",
+ "finished_at": "2026-10-25T09:47:05.757526Z",
+ "config": {
+  "agent_models": [
+   "google:gemini-3.5-flash-lite",
+   "groq:openai/gpt-oss-120b"
+  ],
+  "simulator_model": "groq:openai/gpt-oss-120b",
+  "judge_model": "groq:openai/gpt-oss-120b",
+  "commit": "5624605"
+ },
+ "scenarios": [
+  {
+   "id": "challenge-late-hour-free",
+   "tags": [
+    "booking",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:43:34.099595+03:00",
+   "expected": [
+    "Manikür Fri 30 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-free.2026-10-25T09-43-34Z-full.1.44fabebb",
+   "conversation_id": 499,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3833,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 7880,
+     "output_tokens": 242,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 3361,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3114,
+     "output_tokens": 106,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2789,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3113,
+     "output_tokens": 31,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 18:00'e manikür olur mu? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz 30 Ekim Cuma saat 18:00 için başarıyla oluşturuldu. Başka bir arzunuz var mıydı?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-late-hour-move",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:43:44.232027+03:00",
+   "expected": [
+    "Tue 27 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-move.2026-10-25T09-43-34Z-full.1.fecf759a",
+   "conversation_id": 500,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 5845,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8279,
+     "output_tokens": 261,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2064,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3243,
+     "output_tokens": 100,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2787,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3251,
+     "output_tokens": 30,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "salı randevumu aynı gün 18:00'e alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç Kesimi randevunuz Salı 27 Ekim 10:00 → Salı 27 Ekim 18:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç Kesimi randevunuz Salı 27 Ekim 10:00 → Salı 27 Ekim 18:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç kesimi randevunuzu 27 Ekim Salı günü saat 18:00'e başarıyla taşıdık."
+    }
+   ]
+  },
+  {
+   "id": "challenge-move-said-when-asked",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:43:55.078829+03:00",
+   "expected": [
+    "Fri 30 Oct 16:00"
+   ],
+   "customer": "challenge-move-said-when-asked.2026-10-25T09-43-34Z-full.1.070cce08",
+   "conversation_id": 501,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 2853,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8801,
+     "output_tokens": 148,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2475,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3503,
+     "output_tokens": 82,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 975,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3708,
+     "output_tokens": 49,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 16:00'ya manikür olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Maalesef belirttiğiniz saat dolu, ancak aynı gün 16:00 uygun. Bu saate randevu oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet, çarşambakini cumaya taşıyalım"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Çarşamba 28 Ekim 14:00 → Cuma 30 Ekim 16:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Çarşamba 28 Ekim 14:00'ten Cuma 30 Ekim 16:00'ya taşınmıştır. Başka bir arzu var mıydı?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-late-hour-free",
+   "tags": [
+    "booking",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:44:01.617331+03:00",
+   "expected": [
+    "Manikür Fri 30 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-free.2026-10-25T09-43-34Z-full.2.678f1048",
+   "conversation_id": 502,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 64176,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 7880,
+     "output_tokens": 242,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 59027
+    },
+    {
+     "duration_ms": 3276,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3114,
+     "output_tokens": 106,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1073,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3114,
+     "output_tokens": 32,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 18:00'e manikür olur mu? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz 30 Ekim Cuma günü saat 18:00 için başarıyla oluşturulmuştur. Başka bir arzunuz var mı?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-late-hour-move",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:45:10.357227+03:00",
+   "expected": [
+    "Tue 27 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-move.2026-10-25T09-43-34Z-full.2.e8b28831",
+   "conversation_id": 503,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 4463,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8279,
+     "output_tokens": 261,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2120,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3334,
+     "output_tokens": 44,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1862,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3167,
+     "output_tokens": 6,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "salı randevumu aynı gün 18:00'e alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç Kesimi randevunuz Salı 27 Ekim 10:00 → Salı 27 Ekim 18:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu salı akşamı saat 18:00'e aldık. Başka bir arzunuz var mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Nasıl yardımcı olabilirim?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-move-said-when-asked",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:45:19.005476+03:00",
+   "expected": [
+    "Fri 30 Oct 16:00"
+   ],
+   "customer": "challenge-move-said-when-asked.2026-10-25T09-43-34Z-full.2.2f052a6e",
+   "conversation_id": 504,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3655,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8798,
+     "output_tokens": 145,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1050,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3499,
+     "output_tokens": 81,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 38260,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3702,
+     "output_tokens": 37,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 36884
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 16:00'ya manikür olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cuma günü saat 16:00 uygundur. Randevunuzu bu saat için oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet, çarşambakini cumaya taşıyalım"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Çarşamba 28 Ekim 14:00 → Cuma 30 Ekim 16:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz 30 Ekim Cuma günü saat 16:00'ya başarıyla taşınmıştır. Başka bir arzu var mıydı?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-late-hour-free",
+   "tags": [
+    "booking",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:46:02.128206+03:00",
+   "expected": [
+    "Manikür Fri 30 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-free.2026-10-25T09-43-34Z-full.3.61cc78d2",
+   "conversation_id": 505,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3309,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8208,
+     "output_tokens": 242,
+     "tool_calls": 3,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1690,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3253,
+     "output_tokens": 114,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 995,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3254,
+     "output_tokens": 35,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 18:00'e manikür olur mu? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cuma 30 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz 30 Ekim Cuma saat 18:00 için başarıyla oluşturulmuştur. Başka bir arzunuz var mıydı?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-late-hour-move",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:46:08.331680+03:00",
+   "expected": [
+    "Tue 27 Oct 18:00"
+   ],
+   "customer": "challenge-late-hour-move.2026-10-25T09-43-34Z-full.3.dc0d3135",
+   "conversation_id": 506,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3038,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8551,
+     "output_tokens": 250,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2076,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 3379,
+     "output_tokens": 100,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 979,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3387,
+     "output_tokens": 22,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "salı randevumu aynı gün 18:00'e alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç Kesimi randevunuz Salı 27 Ekim 10:00 → Salı 27 Ekim 18:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Saç Kesimi randevunuz Salı 27 Ekim 10:00 → Salı 27 Ekim 18:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu salı akşamı saat 18:00'e güncelledim."
+    }
+   ]
+  },
+  {
+   "id": "challenge-move-said-when-asked",
+   "tags": [
+    "reschedule",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-25T12:46:14.611157+03:00",
+   "expected": [
+    "Fri 30 Oct 16:00"
+   ],
+   "customer": "challenge-move-said-when-asked.2026-10-25T09-43-34Z-full.3.ceb70d18",
+   "conversation_id": 507,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "writes",
+     "passed": true,
+     "detail": "reschedule_booking"
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 47462,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 11208,
+     "output_tokens": 246,
+     "tool_calls": 2,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 43212
+    },
+    {
+     "duration_ms": 2266,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 6254,
+     "output_tokens": 235,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1259,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3444,
+     "output_tokens": 33,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "haftaya cuma 16:00'ya manikür olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu oluşturabilmem için adınızı öğrenebilir miyim?"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet, çarşambakini cumaya taşıyalım"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Çarşamba 28 Ekim 14:00 → Cuma 30 Ekim 16:00 olarak değişecek. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Cuma 30 Ekim 16:00 olarak güncellenmiştir. Başka bir arzus var mıydı?"
+    }
+   ]
+  }
+ ],
+ "repeats": [],
+ "stopped": null
+}

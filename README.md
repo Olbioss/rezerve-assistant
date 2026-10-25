@@ -92,8 +92,8 @@ network, no quota.
 
 ## Evals
 
-`evals/` holds 52 Turkish conversations, scripted or played by a model with a
-goal: 32 the agent was built against, and 20 challenge scenarios written
+`evals/` holds 54 Turkish conversations, scripted or played by a model with a
+goal: 32 the agent was built against, and 22 challenge scenarios written
 later, each committed before its first run. Each is graded first on the
 bookings it leaves in Rezerve's database,
 not on what the assistant says it did: the right booking under the right
@@ -139,60 +139,50 @@ Each run writes `evals/results/<run>.json` and a Markdown report beside it.
 
 ### Results
 
-The agent as it is now (commit 518476f), on the configured chain: Gemini 3.5
-Flash-Lite, falling back to Groq's gpt-oss-120b. Since the run below, one fix
-has landed: the evening guard's, measured under "Every run, not one".
+The agent as it is now (commit 5624605), on the configured chain: Gemini 3.5
+Flash-Lite, falling back to Groq's gpt-oss-120b.
 
 #### The whole suite
 
-Run `2026-10-24T08-28-29Z-full`: all 52 scenarios once, from 11:28 on Saturday
-24 October, Istanbul time, on d743dfa (the second-booking change below).
+Run `2026-10-25T09-47-07Z-full`: all 54 scenarios once, from 12:47 on Sunday
+25 October, Istanbul time. The five that name today's weekday were skipped,
+since the business is closed on Sundays.
 
 | Measure | Result | Target | Met |
 |---|---|---|---|
-| Task success | 86% (44/51) | ≥ 90% | ✗ |
+| Task success | 96% (47/49) | ≥ 90% | ✓ |
 | Injection scenarios with no unauthorized write | 100% (5/5) | 100% | ✓ |
 | Writes without an approval | 0 | 0 | ✓ |
-| Date resolution | 90% (19/21) | ≥ 95% | ✗ |
+| Date resolution | 88% (15/17) | ≥ 95% | ✗ |
 
 | Tag | Success |
 |---|---|
-| booking | 88% (23/26) |
-| kapora | 100% (6/6) |
-| reschedule | 78% (7/9) |
-| cancel | 80% (4/5) |
-| date | 90% (19/21) |
+| booking | 92% (22/24) |
+| kapora | 80% (4/5) |
+| reschedule | 100% (9/9) |
+| cancel | 100% (5/5) |
+| date | 88% (15/17) |
 | faq | 100% (3/3) |
-| handoff | 75% (3/4) |
+| handoff | 100% (4/4) |
 | injection | 100% (5/5) |
-| judge | 86% (6/7) |
-| challenge | 80% (16/20) |
+| judge | 100% (7/7) |
+| challenge | 94% (16/17) |
 
-The challenge scenarios passed 16 of 20. The 32 the agent was built against
-passed 28 of 31; one was skipped, since its day fell on a Sunday. The seven
-failures:
-- **The evening guard broke.** At 11:37, `resolve_when("cumartesi akşam
-  18:00")` answered today, but also offered next Saturday as a hint, and
-  Gemini booked next Saturday. Fixed since; see "Every run, not one".
-- **A late hour looked taken.** `find_slots` returns at most 10 times.
-  Searched without an earliest hour, Friday's list stopped at 15:30, and
-  16:00 was called unavailable (`challenge-move-said-when-asked`).
-- **The unpaid kapora went unexplained.** That scenario is flaky.
-- **A weekend reading.** On a Saturday, right after the assistant had
-  offered Monday the 26th, "haftaya pazartesi" was read as 2 November. On a
-  weekend both readings are fair, and the scenario grades only one.
-- **A script that assumes one path.** The assistant proposed 16:30 for
-  "beşe çeyrek kala" straight away, and the scripted "o zaman en yakın saat
-  olsun" then read as "the soonest": today at 14:00.
-- **A simulated customer off script.** It turned its goal's "cumartesi"
-  into today's date, then stopped answering (`sim-cancel-politely`).
-- **Haggling not handed over.** The assistant stated the fixed price
-  instead of handing the customer to the owner.
+The 32 the agent was built against passed 31; the challenge scenarios that
+ran passed 16 of 17. Both failures were date misses:
+- **A weekend reading.** On a Sunday, "haftaya pazartesi" was read as 2
+  November. With Monday the very next day, that reading is fair, but
+  `challenge-closed-sunday` grades the other one.
+- **A slip with the right data.** `resolve_when` gave Friday 6 November, and
+  `find_slots` listed 14:00 as free. Gemini still told the customer 14:00 was
+  taken and called the day Thursday (`book-skin-care-on-a-date`). It had
+  passed in every earlier run.
 
-Turns took 2.3 s at the median and 10.3 s at p95, and the run would have
-cost $0.27 at list prices. Rerunning six scenarios changed none of them. On
-Thursday and Friday the whole suite, then 49 scenarios, passed 45 of 48
-(`2026-10-22T09-19-49Z-full`, on 8e4631c).
+Turns took 1.6 s at the median and 4.8 s at p95, and the run would have cost
+$0.28 at list prices. Rerunning six scenarios changed none of them. Earlier
+runs of the whole suite: Saturday 24 October on d743dfa, 86% (44/51), with
+each failure explained in commit 518476f and two of them fixed since (the
+evening guard and the cut list); Thursday and Friday on 8e4631c, 45 of 48.
 
 #### The challenge set
 
@@ -312,7 +302,7 @@ in the same turn doesn't skip the question. Three runs each
 | `sim-reschedule-thursday-afternoon` | 3/3 | 3/3 |
 | `challenge-move-said-when-asked`, written after the change | – | 2/3 |
 
-The fourth scenario's one failure is the 10-slot cap above.
+The fourth scenario's one failure is the 10-slot cap, below.
 
 **The evening guard, fixed again.** When the customer names an hour still
 ahead today, `resolve_when` now answers today and nothing else. It offers
@@ -320,6 +310,26 @@ both dates only when no hour is named. Three runs each were planned from
 11:50 on Saturday (`2026-10-24T08-50-40Z-full`), but Gemini's daily limit
 stopped the run after 5. All 5 passed: the evening guard 2 of 2, the first
 same-weekday scenario 2 of 2, the gone morning hour 1 of 1.
+
+**One day, whole.** `find_slots` returns at most 10 times unless asked for
+more, and at most 20. Searching one Friday without an earliest hour, the
+assistant got 10:00 to 15:30 and called a free 16:00 taken. A search over one
+day now asks for 20 and, while Rezerve says the list was cut, asks again from
+just after the last time, so the whole day comes back. Searches over several
+days keep Rezerve's earliest times. Three runs each
+(`2026-10-25T09-43-34Z-full`):
+
+| Scenario | Before | After |
+|---|---|---|
+| `challenge-move-said-when-asked` | 2/3 | 3/3 |
+| `challenge-late-hour-free`, written before the fix ran | – | 3/3 |
+| `challenge-late-hour-move`, written before the fix ran | – | 3/3 |
+
+In two of `challenge-move-said-when-asked`'s runs, the assistant made the very
+search that had failed and got 13 times back. The two fresh scenarios
+searched narrow windows around 18:00, so they would have passed without the
+fix. The second request for a cut list never fired: no day at the eval
+business has more than 20 times. A unit test covers it.
 
 #### The approval gate held when the model didn't
 
@@ -459,10 +469,11 @@ Since then:
 Still open:
 - Groq's own retries are hidden from the harness (note ² above).
 - The date measure counts "nothing booked" as a wrong date.
-- `find_slots` returns at most 10 times. When the assistant searches
-  without an earliest hour, a late hour can look taken.
 - On a weekend, "haftaya pazartesi" has two fair readings, and
-  `challenge-closed-sunday` grades only one.
+  `challenge-closed-sunday` grades only one. It failed on both Saturday and
+  Sunday.
+- Once, Gemini contradicted the tools: it called a free 14:00 taken and a
+  Friday a Thursday.
 - Explaining an unpaid kapora is flaky, and so is handing haggling to the
   owner.
 - The simulated customer sometimes leaves its goal, and the run fails along
