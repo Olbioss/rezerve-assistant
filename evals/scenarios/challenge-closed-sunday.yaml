@@ -5,9 +5,11 @@ persona: "Selin — kısa yazar"
 turns:
   - "pazar 14:00'e manikür yaptırabilir miyim? adım Selin Yurt"
   - "o zaman haftaya pazartesi 14:00 olsun"
+  - "{date:monday next week} olsun"
   - "evet"
 # The business is closed on Sundays: nothing is booked for a Sunday, and the
-# Monday the customer then names is the one booked.
+# Monday the customer then names is the one booked. At the weekend, which
+# Monday "haftaya pazartesi" is gets asked, and the third line answers it.
 expect:
   bookings:
     - service: "Manikür"

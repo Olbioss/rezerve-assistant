@@ -1,0 +1,19 @@
+id: challenge-weekend-which-monday
+tags: [booking, date, challenge]
+mode: simulated
+persona: "Ayşe — kısa yazar"
+goal: >-
+  "Haftaya pazartesi" saat 15:00'e saç kesimi iste; bununla önümüzdeki
+  haftanın pazartesisini kastediyorsun. Asistan hangi pazartesi olduğunu
+  sorarsa önümüzdeki haftanın pazartesisini seç. Onay sorulduğunda tarih o
+  pazartesi değilse düzeltmesini iste; doğruysa onayla.
+facts:
+  ad soyad: "Ayşe Demir"
+# Next week's Monday, whichever day it is said on: at the weekend by asking,
+# on a weekday by the plain reading.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "monday next week"
+      at: "15:00"
+      name: "Ayşe Demir"
