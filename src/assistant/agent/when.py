@@ -103,13 +103,14 @@ def resolve_when(expression: str, today: date, soonest: time | None = None) -> W
 
 
 def _two_readings(text: str, today: date, day: date) -> bool:
-    """Next week's day, named at the weekend, at most three days off: so near
-    that some mean the same day a week later."""
+    """Said at the weekend, "haftaya pazartesi" names a Monday a day or two
+    off, so near that some mean the Monday after. Later days of that week keep
+    their one reading."""
     return (
         today.weekday() >= 5
+        and day.weekday() == 0
         and any(marker in text for marker in _NEXT_WEEK)
-        and any(_weekday(word) is not None for word in text.split())
-        and 0 < (day - today).days <= 3
+        and any(_weekday(word) == 0 for word in text.split())
     )
 
 

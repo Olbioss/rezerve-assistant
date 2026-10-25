@@ -115,16 +115,16 @@ SUNDAY = date(2026, 10, 25)
         # and the one after to others: neither is chosen, the assistant asks.
         ("haftaya pazartesi", SATURDAY, When(date(2026, 10, 26), "Pazartesi", two_readings=True)),
         ("haftaya pazartesi", SUNDAY, When(date(2026, 10, 26), "Pazartesi", two_readings=True)),
-        ("haftaya salı", SATURDAY, When(date(2026, 10, 27), "Salı", two_readings=True)),
-        ("haftaya çarşamba", SUNDAY, When(date(2026, 10, 28), "Çarşamba", two_readings=True)),
-        # Later in that week, or said on a weekday, there is one reading.
+        # Only Monday, the one that failed; later days keep the plain reading.
+        ("haftaya salı", SATURDAY, When(date(2026, 10, 27), "Salı")),
+        ("haftaya salı", SUNDAY, When(date(2026, 10, 27), "Salı")),
         ("haftaya çarşamba", SATURDAY, When(date(2026, 10, 28), "Çarşamba")),
         ("haftaya cuma", SUNDAY, When(date(2026, 10, 30), "Cuma")),
         ("haftaya pazartesi", THURSDAY, When(date(2026, 10, 19), "Pazartesi")),
         ("pazartesi", SATURDAY, When(date(2026, 10, 26), "Pazartesi")),
     ],
 )
-def test_next_weeks_first_days_said_at_the_weekend_have_two_readings(
+def test_next_weeks_monday_said_at_the_weekend_has_two_readings(
     expression: str, today: date, expected: When
 ) -> None:
     assert resolve_when(expression, today) == expected
