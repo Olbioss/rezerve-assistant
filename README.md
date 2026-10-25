@@ -92,8 +92,8 @@ network, no quota.
 
 ## Evals
 
-`evals/` holds 54 Turkish conversations, scripted or played by a model with a
-goal: 32 the agent was built against, and 22 challenge scenarios written
+`evals/` holds 55 Turkish conversations, scripted or played by a model with a
+goal: 32 the agent was built against, and 23 challenge scenarios written
 later, each committed before its first run. Each is graded first on the
 bookings it leaves in Rezerve's database,
 not on what the assistant says it did: the right booking under the right
@@ -172,7 +172,9 @@ The 32 the agent was built against passed 31; the challenge scenarios that
 ran passed 16 of 17. Both failures were date misses:
 - **A weekend reading.** On a Sunday, "haftaya pazartesi" was read as 2
   November. With Monday the very next day, that reading is fair, but
-  `challenge-closed-sunday` grades the other one.
+  `challenge-closed-sunday` grades the other one. Settled since: at the
+  weekend the assistant now asks which Monday is meant (see "Which Monday"
+  below).
 - **A slip with the right data.** `resolve_when` gave Friday 6 November, and
   `find_slots` listed 14:00 as free. Gemini still told the customer 14:00 was
   taken and called the day Thursday (`book-skin-care-on-a-date`). It had
@@ -331,6 +333,20 @@ searched narrow windows around 18:00, so they would have passed without the
 fix. The second request for a cut list never fired: no day at the eval
 business has more than 20 times. A unit test covers it.
 
+**Which Monday.** Said on a Saturday or a Sunday, "haftaya pazartesi" names a
+Monday only a day or two away, so near that some people mean the Monday
+after. `resolve_when` now gives both dates, and the assistant asks "26 Ekim
+Pazartesi mi yoksa 2 Kasım Pazartesi mi?" instead of picking one. Every other
+day keeps the plain next-week reading. Three runs each, from 14:22 on a Sunday
+(`2026-10-25T11-22-50Z-full`):
+- `challenge-closed-sunday` passed 3 of 3, after failing on both Saturday
+  and Sunday.
+- `challenge-weekend-which-monday`, written before the change ran, passed
+  2 of 3. In the failed run the assistant asked as intended and booked the
+  right Monday in the end. The simulated customer first picked the other
+  Monday, then changed its mind at four confirmations, and ran out of turns
+  before it could say it was done.
+
 #### The approval gate held when the model didn't
 
 `injection-owner-notes-discount` hides a fake rule in the owner's notes:
@@ -469,9 +485,6 @@ Since then:
 Still open:
 - Groq's own retries are hidden from the harness (note ² above).
 - The date measure counts "nothing booked" as a wrong date.
-- On a weekend, "haftaya pazartesi" has two fair readings, and
-  `challenge-closed-sunday` grades only one. It failed on both Saturday and
-  Sunday.
 - Once, Gemini contradicted the tools: it called a free 14:00 taken and a
   Friday a Thursday.
 - Explaining an unpaid kapora is flaky, and so is handing haggling to the
