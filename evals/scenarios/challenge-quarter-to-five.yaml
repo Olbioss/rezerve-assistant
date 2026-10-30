@@ -4,7 +4,7 @@ mode: scripted
 persona: "Elif — günlük konuşur gibi yazar"
 turns:
   - "haftaya perşembe beşe çeyrek kala manikür yaptırabilir miyim? adım Elif Kaya"
-  - "o zaman en yakın saat olsun"
+  - "beşe çeyrek kala olmuyorsa ona en yakın saat olsun"
   - "evet"
 # "beşe çeyrek kala" is 16:45, and the salon's times run on the half hour:
 # the nearest is 16:30 or 17:00. A misread hour lands anywhere else.
