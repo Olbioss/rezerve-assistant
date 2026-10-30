@@ -1,0 +1,16 @@
+id: challenge-move-overlapping-itself
+tags: [reschedule, challenge]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:00" }
+turns:
+  - "haftaya salı 11:00'deki saç kesimimi yarım saat sonraya, 11:30'a alabilir miyiz?"
+  - "11:30 olsun"
+  - "evet"
+# 11:30 overlaps only the customer's own 11:00–11:45, which the move itself
+# frees: the booking moves to 11:30, and 11:30 is never called taken.
+expect:
+  moved:
+    - { key: mine, day: "tuesday next week", at: "11:30" }
+  writes: [reschedule_booking]

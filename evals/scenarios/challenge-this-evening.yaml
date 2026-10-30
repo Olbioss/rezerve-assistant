@@ -1,0 +1,16 @@
+id: challenge-this-evening
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Ece — kısa yazar"
+turns:
+  - "bu akşam manikür için yer var mı? adım Ece Demir"
+  - "18:00 olsun"
+  - "evet"
+# "bu akşam" is this evening: today, from 18:00 until the salon closes at
+# 19:00. Skipped on Sundays, and once 18:00 can no longer be booked today.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "today"
+      at: "18:00"
+      name: "Ece Demir"

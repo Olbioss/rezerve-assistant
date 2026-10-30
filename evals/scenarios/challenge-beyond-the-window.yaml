@@ -1,0 +1,11 @@
+id: challenge-beyond-the-window
+tags: [booking, challenge]
+mode: scripted
+persona: "Deniz — erkenden plan yapar"
+turns:
+  - "{date:in 45 days} saat 14:00'e manikür ayırabilir misiniz? adım Deniz Aydın"
+# Bookings open only 30 days ahead: nothing is booked, and the customer hears
+# that the day is too far off, not that it is full.
+expect:
+  says: ["30 gün"]
+  never_says: ["dolu"]

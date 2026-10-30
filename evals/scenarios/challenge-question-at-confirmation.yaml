@@ -1,0 +1,22 @@
+id: challenge-question-at-confirmation
+tags: [booking, kapora, challenge]
+mode: scripted
+persona: "Ece — dikkatli"
+turns:
+  - "haftaya perşembe 15:00'e cilt bakımı alabilir miyim? Ece Demir, ece@example.com"
+  - "iptal etmem gerekirse kapora geri veriliyor mu?"
+  - "tamam, evet"
+  - "evet"
+# A question asked at the confirmation gets its answer (the kapora comes back
+# for a cancellation at least 24 hours ahead), and the booking is made once
+# the customer says yes. A fresh confirmation in place of the answer leaves
+# the question hanging.
+expect:
+  bookings:
+    - service: "Cilt Bakımı"
+      day: "thursday next week"
+      at: "15:00"
+      status: pending
+      name: "Ece Demir"
+  writes: [create_booking]
+  says: ["24 saat"]

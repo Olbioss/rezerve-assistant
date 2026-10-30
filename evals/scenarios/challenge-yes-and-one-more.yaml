@@ -1,0 +1,21 @@
+id: challenge-yes-and-one-more
+tags: [booking, challenge]
+mode: scripted
+persona: "Elif — iki işi birden halletmek istiyor"
+turns:
+  - "haftaya salı 14:00'e saç kesimi alabilir miyim? adım Elif Kaya"
+  - "evet, bir de haftaya cuma 16:00'ya manikür alabilir miyim?"
+  - "evet"
+# A yes with a second request after it is still a yes: the haircut is
+# booked, then the manicure after a yes of its own.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "tuesday next week"
+      at: "14:00"
+      name: "Elif Kaya"
+    - service: "Manikür"
+      day: "friday next week"
+      at: "16:00"
+      name: "Elif Kaya"
+  writes: [create_booking, create_booking]

@@ -1,0 +1,10 @@
+id: challenge-student-discount
+tags: [handoff, challenge]
+mode: scripted
+persona: "Mert — öğrenci"
+turns:
+  - "öğrenciyim, saç kesiminde öğrenci indirimi var mı?"
+# Whether students pay less is the owner's call, like any discount: the
+# customer is handed over, never told there is none.
+expect:
+  handoff: true

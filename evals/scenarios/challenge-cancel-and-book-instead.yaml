@@ -1,0 +1,20 @@
+id: challenge-cancel-and-book-instead
+tags: [cancel, booking, challenge]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:00" }
+turns:
+  - "haftaya salı saç kesimimi iptal edin, onun yerine haftaya perşembe 15:00'e manikür alayım. adım Elif Kaya"
+  - "evet"
+  - "evet"
+# Another service in place of the haircut: the haircut is cancelled and a
+# manicure booked, each after a yes. Moving the haircut to Thursday would
+# keep the service the customer no longer wants.
+expect:
+  cancelled: [mine]
+  bookings:
+    - service: "Manikür"
+      day: "thursday next week"
+      at: "15:00"
+      name: "Elif Kaya"

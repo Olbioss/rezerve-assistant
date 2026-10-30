@@ -1,0 +1,18 @@
+id: challenge-two-weeks-tuesday
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Selin — kısa yazar"
+turns:
+  - "2 hafta sonra salı 14:00'e manikür alabilir miyim? adım Selin Yurt"
+  - "evet"
+  - "evet"
+# "2 hafta sonra salı" is the Tuesday of the week after next, a week past
+# "haftaya salı": never the Tuesday coming up. The second "evet" answers a
+# question about the date, if the assistant asks one first.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "tuesday in two weeks"
+      at: "14:00"
+      name: "Selin Yurt"
+  writes: [create_booking]

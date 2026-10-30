@@ -1,0 +1,19 @@
+id: challenge-paid-move-within-a-day
+tags: [reschedule, kapora, challenge]
+mode: scripted
+persona: "Selin — kısa yazar"
+seed:
+  - key: mine
+    service: "Cilt Bakımı"
+    day: "today"
+    at: "18:00"
+    paid: true
+turns:
+  - "bugünkü cilt bakımımı haftaya salı 15:00'e alabilir miyiz?"
+  - "neden olmuyor?"
+# A booking whose kapora is paid cannot move in its last 24 hours: nothing
+# changes, and the customer hears that the 24 hours are why, not only that it
+# can't. Skipped on Sundays, and once 18:00 can no longer be booked today.
+expect:
+  handoff: null
+  says: ["24 saat"]

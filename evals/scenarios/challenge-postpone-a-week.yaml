@@ -1,0 +1,16 @@
+id: challenge-postpone-a-week
+tags: [reschedule, date, challenge]
+mode: scripted
+persona: "Elif — kısa yazar"
+seed:
+  - { key: mine, service: "Saç Kesimi", day: "tuesday next week", at: "11:30" }
+turns:
+  - "haftaya salı saç kesimi randevumu bir hafta erteleyebilir miyiz? saat aynı kalsın"
+  - "evet"
+  - "evet"
+# A week later at the same hour: the Tuesday after, at 11:30, after a yes.
+# The second "evet" answers a question about the new date, if one comes first.
+expect:
+  moved:
+    - { key: mine, day: "tuesday in two weeks", at: "11:30" }
+  writes: [reschedule_booking]
