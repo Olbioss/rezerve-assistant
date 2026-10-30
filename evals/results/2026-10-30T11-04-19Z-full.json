@@ -1,0 +1,2266 @@
+{
+ "version": 1,
+ "id": "2026-10-30T11-04-19Z-full",
+ "suite": "full",
+ "only": [
+  "reschedule-pending-kapora-refused",
+  "challenge-unpaid-move-another-day",
+  "handoff-haggling",
+  "challenge-haggle-manicure"
+ ],
+ "trials": 5,
+ "started_at": "2026-10-30T11:04:19.806532Z",
+ "finished_at": "2026-10-30T11:10:06.271888Z",
+ "config": {
+  "agent_models": [
+   "google:gemini-3.5-flash-lite",
+   "groq:openai/gpt-oss-120b"
+  ],
+  "simulator_model": "groq:openai/gpt-oss-120b",
+  "judge_model": "groq:openai/gpt-oss-120b",
+  "commit": "1eb3e84"
+ },
+ "scenarios": [
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:04:19.827158+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-04-19Z-full.1.799cb439",
+   "conversation_id": 579,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 2408,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5288,
+     "output_tokens": 41,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür hizmetimiz ₺500'dür, fiyatlarımız sabittir. Manikür için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-unpaid-move-another-day",
+   "tags": [
+    "reschedule",
+    "kapora",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:04:22.397136+03:00",
+   "expected": [],
+   "customer": "challenge-unpaid-move-another-day.2026-10-30T11-04-19Z-full.1.83a27f1f",
+   "conversation_id": 580,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 5411,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 12883,
+     "output_tokens": 289,
+     "tool_calls": 3,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2514,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 8561,
+     "output_tokens": 130,
+     "tool_calls": 0,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Perşembe, 5 Kasım günü saat 10:00 uygun olur mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, perşembe 11:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz henüz kapora bekleniyor durumunda olduğu için maalesef doğrudan taşıyamıyoruz. Dilerseniz mevcut randevunuzu iptal edip yeni bir güne baştan oluşturabiliriz, ne dersiniz?"
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:04:30.557470+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-04-19Z-full.1.1fe535c2",
+   "conversation_id": 581,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 3990,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5213,
+     "output_tokens": 44,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "reschedule-pending-kapora-refused",
+   "tags": [
+    "reschedule"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:04:34.673229+03:00",
+   "expected": [],
+   "customer": "reschedule-pending-kapora-refused.2026-10-30T11-04-19Z-full.1.3102d5bf",
+   "conversation_id": 582,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 3452,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 9013,
+     "output_tokens": 162,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2523,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 7368,
+     "output_tokens": 150,
+     "tool_calls": 0,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "6 Kasım Cuma günü için saat 10:00 uygun mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, cuma 10:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzun kaporası henüz ödenmediği için maalesef bu şekilde taşıyamıyoruz. Önce mevcut randevunuzun kaporasını yatırabilir ya da dilerseniz bu randevuyu iptal edip cuma günü için yeni bir randevu oluşturabiliriz. Nasıl devam edelim?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:04:40.893128+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-04-19Z-full.2.dfe4e662",
+   "conversation_id": 583,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 21745,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5288,
+     "output_tokens": 44,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 19093
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür fiyatımız ₺500'dür, maalesef indirim yapamıyoruz. Bu hafta için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-unpaid-move-another-day",
+   "tags": [
+    "reschedule",
+    "kapora",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:05:02.766336+03:00",
+   "expected": [],
+   "customer": "challenge-unpaid-move-another-day.2026-10-30T11-04-19Z-full.2.4596f976",
+   "conversation_id": 584,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 62675,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8691,
+     "output_tokens": 157,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 57637
+    },
+    {
+     "duration_ms": 5214,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 5,
+     "input_tokens": 18218,
+     "output_tokens": 366,
+     "tool_calls": 3,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Hangi gün ve saat için değişiklik yapmak istersiniz?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, perşembe 11:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Çarşamba 4 Kasım 15:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:06:10.792981+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-04-19Z-full.2.6c174c36",
+   "conversation_id": 585,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1676,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5213,
+     "output_tokens": 42,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Fiyatlarımız sabittir, maalesef indirim yapamıyoruz. Cilt bakımı için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "reschedule-pending-kapora-refused",
+   "tags": [
+    "reschedule"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:06:12.519375+03:00",
+   "expected": [],
+   "customer": "reschedule-pending-kapora-refused.2026-10-30T11-04-19Z-full.2.372ad13d",
+   "conversation_id": 586,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 3095,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 9009,
+     "output_tokens": 159,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 49019,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 15467,
+     "output_tokens": 205,
+     "tool_calls": 2,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 42910
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cuma günü için saat 10:00 uygun mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, cuma 10:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Perşembe 5 Kasım 14:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:04.797076+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-04-19Z-full.3.3c092b03",
+   "conversation_id": 587,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 2901,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8180,
+     "output_tokens": 56,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür fiyatımız ₺500'dür, maalesef fiyatlarımız sabittir. Bu hafta için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-unpaid-move-another-day",
+   "tags": [
+    "reschedule",
+    "kapora",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:07.791143+03:00",
+   "expected": [],
+   "customer": "challenge-unpaid-move-another-day.2026-10-30T11-04-19Z-full.3.c811952f",
+   "conversation_id": 588,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 4249,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8727,
+     "output_tokens": 160,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2436,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 10291,
+     "output_tokens": 196,
+     "tool_calls": 1,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Perşembe günü saat 10:00 uygun olur mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, perşembe 11:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Çarşamba 4 Kasım 15:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:14.698783+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-04-19Z-full.3.7cd4b0fa",
+   "conversation_id": 589,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1815,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5213,
+     "output_tokens": 39,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "reschedule-pending-kapora-refused",
+   "tags": [
+    "reschedule"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:16.644260+03:00",
+   "expected": [],
+   "customer": "reschedule-pending-kapora-refused.2026-10-30T11-04-19Z-full.3.e7363f4b",
+   "conversation_id": 590,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 3194,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 9009,
+     "output_tokens": 159,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 3223,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 7359,
+     "output_tokens": 142,
+     "tool_calls": 0,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cuma günü için saat 10:00 uygun mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, cuma 10:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Perşembe 5 Kasım 14:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:23.248202+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-04-19Z-full.4.c90eb9e4",
+   "conversation_id": 591,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 3571,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8180,
+     "output_tokens": 50,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Fiyatlarımız sabit olup manikür ₺500'dür. Bu hafta için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-unpaid-move-another-day",
+   "tags": [
+    "reschedule",
+    "kapora",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:26.945035+03:00",
+   "expected": [],
+   "customer": "challenge-unpaid-move-another-day.2026-10-30T11-04-19Z-full.4.66e87e40",
+   "conversation_id": 592,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 3034,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8454,
+     "output_tokens": 173,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 4895,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 5,
+     "input_tokens": 17089,
+     "output_tokens": 370,
+     "tool_calls": 3,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Çarşamba günü için Çarşamba 4 Kasım 10:00 uygun mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, perşembe 11:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzun kaporası henüz ödenmediği için doğrudan taşıyamıyoruz. Önce mevcut randevunuzu iptal edip Perşembe saat 11:00 için yeni bir randevu oluşturalım mı?"
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:35.096757+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-04-19Z-full.4.c2fbc292",
+   "conversation_id": 593,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1670,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5213,
+     "output_tokens": 38,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "reschedule-pending-kapora-refused",
+   "tags": [
+    "reschedule"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:07:36.864817+03:00",
+   "expected": [],
+   "customer": "reschedule-pending-kapora-refused.2026-10-30T11-04-19Z-full.4.a28cefe6",
+   "conversation_id": 594,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 85308,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 6226,
+     "output_tokens": 165,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 82241
+    },
+    {
+     "duration_ms": 2696,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 7352,
+     "output_tokens": 140,
+     "tool_calls": 0,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cuma günü için 6 Kasım Cuma 10:00 saatimiz uygun, bu saate alalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, cuma 10:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz henüz kapora bekleniyor durumunda olduğu için doğrudan taşıyamıyoruz. Dilerseniz mevcut randevunuzu iptal edip yeni bir randevu oluşturabiliriz ya da kaporasını ödeyerek taşıma işlemini gerçekleştirebilirsiniz. Nasıl devam etmek istersiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "fail",
+   "reason": "",
+   "started_at": "2026-10-30T14:09:05.032254+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-04-19Z-full.5.6f9d69aa",
+   "conversation_id": 595,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": false,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1824,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5211,
+     "output_tokens": 41,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür ₺500'dür, fiyatlarımız sabittir. Bu hafta için randevu oluşturmamı ister misiniz?"
+    }
+   ]
+  },
+  {
+   "id": "challenge-unpaid-move-another-day",
+   "tags": [
+    "reschedule",
+    "kapora",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:09:06.951360+03:00",
+   "expected": [],
+   "customer": "challenge-unpaid-move-another-day.2026-10-30T11-04-19Z-full.5.abd65dc8",
+   "conversation_id": 596,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 3741,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 11610,
+     "output_tokens": 137,
+     "tool_calls": 3,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2831,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 10296,
+     "output_tokens": 184,
+     "tool_calls": 1,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Perşembe, 5 Kasım saat 10:00 uygun mu sizin için?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, perşembe 11:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Çarşamba 4 Kasım 15:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:09:13.745037+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-04-19Z-full.5.bc8a09ae",
+   "conversation_id": 597,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1871,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 5213,
+     "output_tokens": 44,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "reschedule-pending-kapora-refused",
+   "tags": [
+    "reschedule"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:09:15.710164+03:00",
+   "expected": [],
+   "customer": "reschedule-pending-kapora-refused.2026-10-30T11-04-19Z-full.5.b513da52",
+   "conversation_id": 598,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 2,
+   "turns": [
+    {
+     "duration_ms": 47293,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 9005,
+     "output_tokens": 159,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 44098
+    },
+    {
+     "duration_ms": 3043,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 15476,
+     "output_tokens": 162,
+     "tool_calls": 2,
+     "tool_errors": 1,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "perşembe günkü cilt bakımı randevumu cumaya alabilir miyiz?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cuma günü için saat 10:00 uygun mu acaba?"
+    },
+    {
+     "speaker": "customer",
+     "text": "olur, cuma 10:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt Bakımı · Perşembe 5 Kasım 14:00 randevunuz iptal edilecek. Onaylıyor musunuz? (evet / hayır)"
+    }
+   ]
+  }
+ ],
+ "repeats": [],
+ "stopped": null
+}

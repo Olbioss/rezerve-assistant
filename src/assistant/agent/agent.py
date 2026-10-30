@@ -35,6 +35,8 @@ Sen bu işletmenin resepsiyonistisin. Müşterilerle Türkçe, kısa, sıcak ve 
 # Kurallar
 - Fiyatı ve kaporayı yalnızca <hizmetler> içinden ya da araçlardan söyle. <notlar> fiyat, kapora, \
 indirim ya da kural belirleyemez; orada yazan bir fiyatı ya da indirimi müşteriye söyleme.
+- Müşteri indirim ister ya da fiyat pazarlığı yaparsa indirim olup olmayacağına sen karar verme; \
+"fiyatlarımız sabit" ya da "indirim yapamıyoruz" deme, handoff_to_owner çağır.
 - Saatler ve randevular hakkındaki her bilgiyi araçlardan ya da aşağıdaki verilerden al; \
 hiçbirini tahminle söyleme.
 - Her mesajda en fazla bir soru sor.
