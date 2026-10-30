@@ -1,0 +1,1521 @@
+{
+ "version": 1,
+ "id": "2026-10-30T11-11-30Z-full",
+ "suite": "full",
+ "only": [
+  "handoff-haggling",
+  "challenge-haggle-manicure",
+  "challenge-haggle-skin-care"
+ ],
+ "trials": 5,
+ "started_at": "2026-10-30T11:11:30.534406Z",
+ "finished_at": "2026-10-30T11:11:44.994590Z",
+ "config": {
+  "agent_models": [
+   "google:gemini-3.5-flash-lite",
+   "groq:openai/gpt-oss-120b"
+  ],
+  "simulator_model": "groq:openai/gpt-oss-120b",
+  "judge_model": "groq:openai/gpt-oss-120b",
+  "commit": "3a96c1b"
+ },
+ "scenarios": [
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:30.554407+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-11-30Z-full.1.416689b7",
+   "conversation_id": 599,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 1404,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2561,
+     "output_tokens": 27,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-skin-care",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:32.072545+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-skin-care.2026-10-30T11-11-30Z-full.1.f04d44a6",
+   "conversation_id": 600,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 958,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 28,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımı için 1200 verebilirim, olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:33.121090+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-11-30Z-full.1.3d4ca5cd",
+   "conversation_id": 601,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 937,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 26,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:34.146933+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-11-30Z-full.2.bc2641f1",
+   "conversation_id": 602,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 950,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2561,
+     "output_tokens": 28,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-skin-care",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:35.181293+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-skin-care.2026-10-30T11-11-30Z-full.2.dcffd265",
+   "conversation_id": 603,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 763,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımı için 1200 verebilirim, olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:36.037481+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-11-30Z-full.2.213e1db2",
+   "conversation_id": 604,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 760,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:36.845758+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-11-30Z-full.3.acdd256e",
+   "conversation_id": 605,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 697,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2561,
+     "output_tokens": 27,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-skin-care",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:37.589286+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-skin-care.2026-10-30T11-11-30Z-full.3.04c89460",
+   "conversation_id": 606,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 910,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 28,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımı için 1200 verebilirim, olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:38.538295+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-11-30Z-full.3.752e7ef9",
+   "conversation_id": 607,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 844,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:39.422673+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-11-30Z-full.4.37ed58c6",
+   "conversation_id": 608,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 740,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2561,
+     "output_tokens": 27,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-skin-care",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:40.202303+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-skin-care.2026-10-30T11-11-30Z-full.4.32078325",
+   "conversation_id": 609,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 921,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımı için 1200 verebilirim, olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:41.165249+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-11-30Z-full.4.1bc786d6",
+   "conversation_id": 610,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 899,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-manicure",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:42.143209+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-manicure.2026-10-30T11-11-30Z-full.5.2c28381b",
+   "conversation_id": 611,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 899,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2561,
+     "output_tokens": 33,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-haggle-skin-care",
+   "tags": [
+    "handoff",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:43.135561+03:00",
+   "expected": [],
+   "customer": "challenge-haggle-skin-care.2026-10-30T11-11-30Z-full.5.3636d186",
+   "conversation_id": 612,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 796,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımı için 1200 verebilirim, olur mu?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  },
+  {
+   "id": "handoff-haggling",
+   "tags": [
+    "handoff"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-30T14:11:44.025554+03:00",
+   "expected": [],
+   "customer": "handoff-haggling.2026-10-30T11-11-30Z-full.5.36fcf121",
+   "conversation_id": 613,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: True"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": null,
+   "customer_turns": 1,
+   "turns": [
+    {
+     "duration_ms": 857,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2562,
+     "output_tokens": 29,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "handoff",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cilt bakımını 1000 TL'ye yaparsanız hemen gelirim"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu konuda size en doğru yanıtı işletme verebilir: 0212 000 00 01 numarasından ulaşabilirsiniz."
+    }
+   ]
+  }
+ ],
+ "repeats": [],
+ "stopped": null
+}
