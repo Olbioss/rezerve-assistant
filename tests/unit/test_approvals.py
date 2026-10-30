@@ -227,6 +227,21 @@ async def test_an_unpaid_hold_or_a_paid_booking_inside_a_day_is_not_moved(
         assert isinstance(await propose(call, deps, rezerve, NOW), Refusal)
 
 
+async def test_an_unpaid_hold_refused_a_move_carries_a_word_for_the_customer(
+    fake: FakeRezerve, deps: TurnDeps, rezerve: RezerveSession
+) -> None:
+    hold = fake.add_booking(CILT, NOW + timedelta(days=2), status="pending")
+    call = ToolCallPart(
+        "reschedule_booking",
+        {"booking_id": hold.id, "new_starts_at": (NOW + timedelta(days=4)).isoformat()},
+        tool_call_id="c1",
+    )
+    refused = await propose(call, deps, rezerve, NOW)
+    assert isinstance(refused, Refusal)
+    assert refused.tell == "Bu randevunun kaporası henüz ödenmediği için taşınamıyor."
+    assert refused.unless == "kapora"
+
+
 @pytest.mark.parametrize(
     ("hours_ahead", "paid", "sentence", "refund"),
     [

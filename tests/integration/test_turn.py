@@ -233,6 +233,34 @@ async def test_a_second_booking_waits_for_the_customer_to_say_it_is_not_a_move(
     assert "Bu ikinci bir randevu olur" in confirmation
 
 
+async def test_an_unpaid_hold_refused_a_move_is_explained_whatever_the_model_says(
+    store: Store,
+) -> None:
+    # Refused a move of a booking whose kapora is unpaid, Gemini sometimes
+    # went on to other plans without a word about the kapora. Code says it.
+    turn = Harness(store, Script())
+    hold = turn.fake.add_booking(CILT, turn.clock() + timedelta(days=2), status="pending")
+    move = {"booking_id": hold.id, "new_starts_at": (turn.clock() + timedelta(days=3)).isoformat()}
+    turn.script = Script(
+        calls("reschedule_booking", move), says("Cuma için yeni bir saat bakalım mı?")
+    )
+    assert await turn.say("perşembe randevumu cumaya alalım") == [
+        "Bu randevunun kaporası henüz ödenmediği için taşınamıyor.",
+        "Cuma için yeni bir saat bakalım mı?",
+    ]
+
+
+async def test_a_reply_that_explains_the_kapora_itself_gets_no_second_word(
+    store: Store,
+) -> None:
+    turn = Harness(store, Script())
+    hold = turn.fake.add_booking(CILT, turn.clock() + timedelta(days=2), status="pending")
+    move = {"booking_id": hold.id, "new_starts_at": (turn.clock() + timedelta(days=3)).isoformat()}
+    reply = "Kaporanız ödenmediği için randevunuzu taşıyamıyorum."
+    turn.script = Script(calls("reschedule_booking", move), says(reply))
+    assert await turn.say("perşembe randevumu cumaya alalım") == [reply]
+
+
 async def test_two_writes_at_once_are_confirmed_one_at_a_time(store: Store) -> None:
     booking = None
     two = ModelResponse(

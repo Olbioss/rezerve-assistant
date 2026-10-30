@@ -112,9 +112,13 @@ class Proposal:
 
 @dataclass(frozen=True)
 class Refusal:
-    """Why a call could not even be proposed — told to the model, never to the customer."""
+    """Why a call could not even be proposed, told to the model. `tell` is said
+    to the customer as well, whatever the model goes on to say, unless one of
+    its replies already uses the word `unless`."""
 
     reason: str
+    tell: str | None = None
+    unless: str | None = None
 
 
 def asked_about_a_second_booking(history: Sequence[ModelMessage]) -> bool:
@@ -222,7 +226,13 @@ async def _propose_reschedule(
     if isinstance(booking, Refusal):
         return booking
     if booking.status == "pending":
-        return Refusal("Kaporası henüz ödenmemiş bir randevu taşınamaz.")
+        # The model, refused, went on to propose a cancellation without a word
+        # about why: the customer hears it from code.
+        return Refusal(
+            "Kaporası henüz ödenmemiş bir randevu taşınamaz.",
+            tell="Bu randevunun kaporası henüz ödenmediği için taşınamıyor.",
+            unless="kapora",
+        )
     notice = timedelta(hours=deps.business.refund_notice_hours)
     if booking.paid and booking.starts_at - now < notice:
         return Refusal(

@@ -38,6 +38,7 @@ from assistant.agent.approvals import (
     Resolution,
     asked_about_a_second_booking,
     classify_by_lexicon,
+    normalise,
     propose,
     refusal,
     resolution,
@@ -156,6 +157,9 @@ class _Turn:
     business: BusinessInfo | None = None
     # The session's record of the writes that ran this turn.
     writes: list[CompletedWrite] = field(default_factory=list[CompletedWrite])
+    # What refusals this turn had code tell the customer, and the word that
+    # shows a reply already said it.
+    told: list[tuple[str, str | None]] = field(default_factory=list[tuple[str, str | None]])
     _clock_start: float = field(default_factory=time.monotonic)
 
     def finish(
@@ -172,6 +176,10 @@ class _Turn:
             # ending — a hand-off, a new proposal, a failure — would not, and
             # a booking made must never go unsaid or lose its payment button.
             replies = [Reply(receipt, write_actions(self.writes)), *replies]
+        for note, unless in self.told:
+            said = " ".join(normalise(reply.text) for reply in replies)
+            if unless is None or normalise(unless) not in said:
+                replies = [Reply(note), *replies]
         meter = self.meter
         run = RunRecord(
             started_at=self.started_at,
@@ -341,6 +349,8 @@ class TurnProcessor:
             proposal = await propose(first, deps, rezerve, self._clock(), asked=asked)
             if isinstance(proposal, Refusal):
                 turn.meter.tool_errors += 1
+                if proposal.tell is not None:
+                    turn.told.append((proposal.tell, proposal.unless))
                 run = await self._run(
                     deps, rezerve, turn, None, run.all_messages(), refusal(output, proposal.reason)
                 )

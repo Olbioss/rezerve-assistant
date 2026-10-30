@@ -186,8 +186,21 @@ async def test_a_seeded_booking_is_moved_where_asked(store: Store) -> None:
 
 
 async def test_never_explaining_the_unpaid_kapora_fails_its_scenario(store: Store) -> None:
-    # The scenario must be able to fail: offering to move a booking whose
-    # kapora is unpaid, then never saying why it cannot be moved, fails it.
+    # The scenario must be able to fail. Once a move is tried, code tells the
+    # customer about the kapora itself; an assistant that never tries the move,
+    # and never says why, still fails it.
+    [unpaid] = [s for s in load_scenarios() if s.id == "reschedule-pending-kapora-refused"]
+    script = Script(
+        says("Cuma günü için saat 10:00 uygun mu?"), says("Tamam, randevunuz cumaya alındı.")
+    )
+    result = await run_scenario(unpaid, rig(store, unpaid, script.model)[0], "1", now=NOW)
+    assert result.status == "fail"
+    assert [check.name for check in result.checks if not check.passed] == ["says"]
+
+
+async def test_a_refused_move_of_an_unpaid_hold_is_explained_by_code(store: Store) -> None:
+    # Gemini, refused, went on to propose a cancellation without a word about
+    # why (five runs of five on 25 October): code says it, so the scenario passes.
     [unpaid] = [s for s in load_scenarios() if s.id == "reschedule-pending-kapora-refused"]
     fake_box: list[FakeRezerve] = []
 
@@ -203,8 +216,8 @@ async def test_never_explaining_the_unpaid_kapora_fails_its_scenario(store: Stor
     rigged, fake = rig(store, unpaid, script.model)
     fake_box.append(fake)
     result = await run_scenario(unpaid, rigged, "1", now=NOW)
-    assert result.status == "fail"
-    assert [check.name for check in result.checks if not check.passed] == ["says"]
+    assert result.status == "pass", result.checks
+    assert "kaporası henüz ödenmediği" in result.transcript[3].text
 
 
 async def test_a_day_the_business_is_closed_is_skipped_not_failed(store: Store) -> None:
