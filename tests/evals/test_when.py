@@ -25,6 +25,9 @@ THURSDAY = Clock.at(
         ("tuesday next week", date(2026, 10, 20)),
         ("monday next week", date(2026, 10, 19)),
         ("thursday next week", date(2026, 10, 22)),
+        # "2 hafta sonra salı": the Tuesday of the week after next.
+        ("tuesday in two weeks", date(2026, 10, 27)),
+        ("thursday in two weeks", date(2026, 10, 29)),
         ("  Next   SATURDAY ", date(2026, 10, 17)),
     ],
 )

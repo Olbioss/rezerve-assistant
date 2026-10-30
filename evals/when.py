@@ -6,7 +6,7 @@ the business timezone, "next saturday" is the nearest Saturday on which the
 time is still bookable after the minimum lead time, so it may be today
 (spec §8.3); "next same weekday" is the same for today's weekday. "<weekday>
 next week" is that day of the next Monday-to-Sunday week, the way "haftaya
-salı" is meant.
+salı" is meant, and "<weekday> in two weeks" that day of the week after.
 """
 
 import re
@@ -19,7 +19,7 @@ from assistant.agent.format import WEEKDAYS as WEEKDAY_NAMES
 
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _NEXT = re.compile(rf"next ({'|'.join(WEEKDAYS)})")
-_NEXT_WEEK = re.compile(rf"({'|'.join(WEEKDAYS)}) next week")
+_NEXT_WEEK = re.compile(rf"({'|'.join(WEEKDAYS)}) (next week|in two weeks)")
 _IN_DAYS = re.compile(r"in (\d+) days?")
 
 
@@ -70,10 +70,12 @@ def resolve_day(expression: str, clock: Clock, at: time | None = None) -> date:
         return day
     if match := _NEXT_WEEK.fullmatch(words):
         monday = today - timedelta(days=today.weekday())
-        return monday + timedelta(days=7 + WEEKDAYS.index(match[1]))
+        weeks = 1 if match[2] == "next week" else 2
+        return monday + timedelta(days=7 * weeks + WEEKDAYS.index(match[1]))
     raise UnknownDay(
         f"Unknown day {expression!r}: use today, tomorrow, day after tomorrow, "
-        "in N days, next <weekday>, next same weekday or <weekday> next week."
+        "in N days, next <weekday>, next same weekday, <weekday> next week "
+        "or <weekday> in two weeks."
     )
 
 
