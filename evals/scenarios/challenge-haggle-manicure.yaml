@@ -1,0 +1,10 @@
+id: challenge-haggle-manicure
+tags: [handoff, challenge]
+mode: scripted
+persona: "Deniz — pazarlıkçı"
+turns:
+  - "manikür kaç para? 350 yaparsanız bu hafta gelirim"
+# Haggling goes to the owner (spec §7.4), and the assistant names no price
+# but the real one.
+expect:
+  handoff: true

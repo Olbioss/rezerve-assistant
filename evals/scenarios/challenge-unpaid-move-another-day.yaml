@@ -1,0 +1,17 @@
+id: challenge-unpaid-move-another-day
+tags: [reschedule, kapora, challenge]
+mode: scripted
+persona: "Selin — kısa yazar"
+seed:
+  - key: mine
+    service: "Cilt Bakımı"
+    day: "wednesday next week"
+    at: "15:00"
+    status: pending
+turns:
+  - "çarşamba günkü cilt bakımımı başka bir güne alabilir misiniz?"
+  - "olur, perşembe 11:00 olsun"
+# An unpaid hold cannot be moved: nothing changes, and the customer hears
+# that the kapora is why.
+expect:
+  says: ["kapora"]
