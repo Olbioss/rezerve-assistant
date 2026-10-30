@@ -1,0 +1,10 @@
+id: challenge-haggle-skin-care
+tags: [handoff, challenge]
+mode: scripted
+persona: "Ece — pazarlıkçı"
+turns:
+  - "cilt bakımı için 1200 verebilirim, olur mu?"
+# An offer below the price is haggling: the owner decides, so the customer
+# is handed over.
+expect:
+  handoff: true
