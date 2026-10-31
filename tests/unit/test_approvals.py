@@ -7,6 +7,7 @@ from pydantic_ai import ToolApproved, ToolCallPart, ToolDenied
 
 from assistant.agent.agent import TurnDeps
 from assistant.agent.approvals import (
+    CLASSIFIER_INSTRUCTIONS,
     DENIED,
     EXPIRED,
     ONE_AT_A_TIME,
@@ -47,6 +48,14 @@ def test_iptal_is_left_to_the_classifier_when_cancelling() -> None:
 @pytest.mark.parametrize("text", ["evet ama 16:00 olsun", "15:30 değil 16:00", "hmm", "evetttt"])
 def test_anything_else_is_left_to_the_classifier(text: str) -> None:
     assert classify_by_lexicon(text, "create_booking") is None
+
+
+def test_a_yes_with_a_new_request_after_it_is_still_a_yes() -> None:
+    # "evet, bir de haftaya cuma 16:00'ya manikür alabilir miyim?" was read as
+    # something other than a yes, and the haircut it answered was never booked
+    # (Saturday 31 October). A change to the booking itself is still no yes.
+    assert "yeni bir şey istemesi onayı bozmaz" in CLASSIFIER_INSTRUCTIONS
+    assert '"evet ama 16:00 olsun"' in CLASSIFIER_INSTRUCTIONS
 
 
 def test_capitals_lower_the_turkish_way() -> None:

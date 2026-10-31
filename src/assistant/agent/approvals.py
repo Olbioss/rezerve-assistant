@@ -62,9 +62,11 @@ SECOND_BOOKING = (
 
 CLASSIFIER_INSTRUCTIONS = """\
 Bir randevu asistanı müşteriye bir işlem için onay sordu. Müşterinin cevabını sınıflandır:
-- approve: işlemi açıkça onaylıyor;
+- approve: işlemi açıkça onaylıyor. Onayladıktan sonra ayrıca yeni bir şey istemesi onayı \
+bozmaz ("evet, bir de cuma günü manikür istiyorum");
 - deny: işlemi açıkça istemiyor;
-- other: başka bir şey istiyor, bir değişiklik öneriyor ya da cevabı belirsiz."""
+- other: bu işlemde bir değişiklik istiyor ("evet ama 16:00 olsun"), onaylamadan bir şey \
+soruyor ya da istiyor, ya da cevabı belirsiz."""
 
 
 def normalise(text: str) -> str:
