@@ -1,0 +1,16 @@
+id: challenge-same-weekday-afternoon
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Ece — kısa yazar"
+turns:
+  - "{weekday:today} öğleden sonra manikür için yer var mı? adım Ece Demir"
+  - "en erken hangisiyse o olsun"
+  - "evet"
+# Today's own weekday and a part of the day, with no hour: this afternoon
+# while it can still be booked, otherwise a week today. Skipped on Sundays.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "next same weekday"
+      between: ["14:00", "18:00"]
+      name: "Ece Demir"

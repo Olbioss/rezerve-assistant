@@ -1,0 +1,18 @@
+id: challenge-two-weeks-friday
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Can — kısa yazar"
+turns:
+  - "iki hafta sonra cuma 16:00'ya saç kesimi alabilir miyim? adım Can Yıldız"
+  - "evet"
+  - "evet"
+# "iki hafta sonra cuma" is the Friday of the week after next. Said at the
+# weekend, some people mean the Friday after that, as with
+# challenge-two-weeks-tuesday: a weekday run is the one that settles it.
+expect:
+  bookings:
+    - service: "Saç Kesimi"
+      day: "friday in two weeks"
+      at: "16:00"
+      name: "Can Yıldız"
+  writes: [create_booking]

@@ -1,0 +1,16 @@
+id: challenge-this-afternoon
+tags: [booking, date, challenge]
+mode: scripted
+persona: "Selin — kısa yazar"
+turns:
+  - "bu öğleden sonra manikür olur mu? adım Selin Yurt"
+  - "en erken hangisiyse o olsun"
+  - "evet"
+# "bu öğleden sonra" is this afternoon: today, from 14:00 to 18:00. Skipped
+# on Sundays, and once the afternoon can no longer be booked.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "today"
+      between: ["14:00", "18:00"]
+      name: "Selin Yurt"

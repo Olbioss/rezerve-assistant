@@ -1,0 +1,21 @@
+id: challenge-okay-and-another-booking
+tags: [booking, challenge]
+mode: scripted
+persona: "Ece — iki işi birden halletmek istiyor"
+turns:
+  - "haftaya çarşamba 15:00'e manikür alabilir miyim? adım Ece Demir"
+  - "olur, ayrıca haftaya cuma 11:00'e saç kesimi de istiyorum"
+  - "evet"
+# A yes with another booking asked for after it: the manicure it said yes to
+# is booked, then the haircut after a yes of its own.
+expect:
+  bookings:
+    - service: "Manikür"
+      day: "wednesday next week"
+      at: "15:00"
+      name: "Ece Demir"
+    - service: "Saç Kesimi"
+      day: "friday next week"
+      at: "11:00"
+      name: "Ece Demir"
+  writes: [create_booking, create_booking]
