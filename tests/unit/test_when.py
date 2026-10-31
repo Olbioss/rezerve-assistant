@@ -59,6 +59,18 @@ THURSDAY = date(2026, 10, 15)
             "hafta sonu, haftaya cumartesi öğlen",
             When(date(2026, 10, 24), "Cumartesi", "12:00", "14:00"),
         ),
+        # "bu" before a part of the day: that part of today.
+        ("bu akşam", When(date(2026, 10, 15), "Perşembe", "18:00", "21:00")),
+        ("bu öğleden sonra", When(date(2026, 10, 15), "Perşembe", "14:00", "18:00")),
+        ("bu sabah", When(date(2026, 10, 15), "Perşembe", "09:00", "12:00")),
+        # Weeks counted ahead: that day of the week, as "haftaya" is next week's.
+        ("2 hafta sonra salı", When(date(2026, 10, 27), "Salı")),
+        ("iki hafta sonra cuma", When(date(2026, 10, 30), "Cuma")),
+        ("3 hafta sonra pazartesi", When(date(2026, 11, 2), "Pazartesi")),
+        ("bir hafta sonra bugün", When(date(2026, 10, 22), "Perşembe")),
+        ("haftaya değil, 2 hafta sonra salı", When(date(2026, 10, 27), "Salı")),
+        ("2 hafta sonra", When(date(2026, 10, 29), "Perşembe")),
+        ("iki hafta sonra bugün", When(date(2026, 10, 29), "Perşembe")),
         ("Salim Bey için", None),
         ("pazarlık", None),
         # "The next day" after what? And two days at once: ask.
@@ -93,6 +105,14 @@ SOONEST = time(12, 55)
         # An hour still ahead: today, and nothing else. Offered next week as
         # well, the model booked it (Saturday 24 October, "cumartesi akşam 18:00").
         ("perşembe 18:00", When(date(2026, 10, 15), "Perşembe")),
+        # A part of the day with no hour counts by its end: the afternoon is still
+        # ahead, the morning is over. Offered both dates, the model searched only
+        # next week's (Saturday 31 October, "cumartesi öğleden sonra" at 12:38).
+        ("perşembe öğleden sonra", When(date(2026, 10, 15), "Perşembe", "14:00", "18:00")),
+        (
+            "perşembe sabah",
+            When(date(2026, 10, 22), "Perşembe", "09:00", "12:00", hour_gone=True),
+        ),
         # "bu perşembe" is today, gone hour or not; and another weekday is unaffected.
         ("bu perşembe 10:00", When(date(2026, 10, 15), "Perşembe")),
         ("cuma 10:00", When(date(2026, 10, 16), "Cuma")),
@@ -120,6 +140,8 @@ SUNDAY = date(2026, 10, 25)
         ("haftaya salı", SUNDAY, When(date(2026, 10, 27), "Salı")),
         ("haftaya çarşamba", SATURDAY, When(date(2026, 10, 28), "Çarşamba")),
         ("haftaya cuma", SUNDAY, When(date(2026, 10, 30), "Cuma")),
+        # And two weeks on is a week past "haftaya".
+        ("2 hafta sonra salı", SATURDAY, When(date(2026, 11, 3), "Salı")),
         ("haftaya pazartesi", THURSDAY, When(date(2026, 10, 19), "Pazartesi")),
         ("pazartesi", SATURDAY, When(date(2026, 10, 26), "Pazartesi")),
     ],

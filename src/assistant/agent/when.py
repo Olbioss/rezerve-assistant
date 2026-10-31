@@ -1,7 +1,8 @@
 """Turkish day expressions to dates, by rule rather than by the model's
-arithmetic (spec §8.6): "haftaya salı", "ayın 17'si", "cumartesi öğleden
-sonra". Built because the evals showed the calendar block alone was not
-enough; the model calls it as the `resolve_when` tool.
+arithmetic (spec §8.6): "haftaya salı", "2 hafta sonra cuma", "ayın 17'si",
+"cumartesi öğleden sonra", "bu akşam". Built because the evals showed the
+calendar block alone was not enough; the model calls it as the
+`resolve_when` tool.
 
 Customers type without Turkish letters ("yarin", "haftaya sali"), so the
 expression and every word below are compared with those letters folded. An
@@ -44,6 +45,9 @@ _DAY_OF_MONTH = re.compile(r"\bayin (\d{1,2})")
 # "28.10", "28/10/2026"; not a time: "saat 12.10".
 _FIGURES = re.compile(r"(?<![\d:.])(\d{1,2})[./](\d{1,2})(?:[./](\d{4}))?(?![\d:])")
 _NEXT_WEEK = ("haftaya", "gelecek hafta", "onumuzdeki hafta")
+# "2 hafta sonra", "iki hafta sonra": that many weeks on, as "haftaya" is one.
+_WEEKS_LATER = re.compile(r"\b(\d|bir|iki|uc|dort) hafta sonra")
+_COUNTS = {"bir": 1, "iki": 2, "uc": 3, "dort": 4}
 # A day of the year that passed this recently was a slip, not a wish for next year.
 _JUST_PASSED = timedelta(days=183)
 
@@ -73,15 +77,21 @@ def _normalise(text: str) -> str:
 def resolve_when(expression: str, today: date, soonest: time | None = None) -> When | None:
     """The date `expression` names, seen from `today`; None if it names none,
     or more than one. `soonest` is the earliest time still bookable today: an
-    hour before it, on today's own weekday named alone, means a week today."""
+    hour before it, on today's own weekday named alone, means a week today,
+    and so does a part of the day over by then."""
     text = _normalise(expression)
     span: tuple[str, str] | None = None
+    this_part = False
     for phrase, hours in _DAY_PARTS.items():
         if phrase in text:
             span = hours
+            # "bu akşam", "bu öğleden sonra": that part of today.
+            this_part = re.search(rf"\bbu {phrase}", text) is not None
             text = text.replace(phrase, " ")
             break
     days = set(_days(text, today)) or set(_figures(expression, today))
+    if this_part:
+        days.add(today)
     if len(days) != 1:
         return None
     [day] = days
@@ -93,6 +103,10 @@ def resolve_when(expression: str, today: date, soonest: time | None = None) -> W
     if not (day == today and _weekday_alone(text, today)):
         return When(day, WEEKDAYS[day.weekday()], earliest, latest)
     hour = _clock(expression)
+    if hour is None and latest is not None:
+        # A part of the day with no hour counts by its end: "cumartesi öğleden
+        # sonra", said on a Saturday at noon, is this afternoon.
+        hour = time.fromisoformat(latest)
     if soonest is not None and hour is not None:
         if hour < soonest:
             later = day + timedelta(days=7)
@@ -109,9 +123,17 @@ def _two_readings(text: str, today: date, day: date) -> bool:
     return (
         today.weekday() >= 5
         and day.weekday() == 0
-        and any(marker in text for marker in _NEXT_WEEK)
+        and _weeks_ahead(text) == 1
         and any(_weekday(word) == 0 for word in text.split())
     )
+
+
+def _weeks_ahead(text: str) -> int:
+    """How many weeks on from this one `text` names a day in: 2 for "2 hafta
+    sonra", 1 for "haftaya", 0 for neither."""
+    if match := _WEEKS_LATER.search(text):
+        return _COUNTS.get(match[1]) or int(match[1])
+    return 1 if any(marker in text for marker in _NEXT_WEEK) else 0
 
 
 _CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
@@ -155,14 +177,15 @@ def _figures(expression: str, today: date) -> list[date | None]:
 def _days(text: str, today: date) -> list[date | None]:
     """Every day `text` names in words; None for one that has just passed."""
     found: list[date | None] = []
-    next_week = any(marker in text for marker in _NEXT_WEEK)
+    weeks = _weeks_ahead(text)
     monday = today - timedelta(days=today.weekday())
     if "yarindan sonra" in text or "obur gun" in text or "oburgun" in text:
         found.append(today + timedelta(days=2))
         text = text.replace("yarindan sonra", " ")
     words = text.split()
     if "bugun" in words:
-        found.append(today + timedelta(days=7) if "haftaya bugun" in text else today)
+        # "haftaya bugün", "iki hafta sonra bugün": the same weekday, weeks on.
+        found.append(today + timedelta(days=7 * weeks))
     if any(word.startswith("yarin") for word in words):
         found.append(today + timedelta(days=1))
     for match in _MONTH.finditer(text):
@@ -179,15 +202,18 @@ def _days(text: str, today: date) -> list[date | None]:
         weekday = _weekday(word)
         if weekday is None:
             continue
-        if next_week:
-            found.append(monday + timedelta(days=7 + weekday))
+        if weeks:
+            found.append(monday + timedelta(days=7 * weeks + weekday))
         else:
             # "bu cuma", or a weekday alone: the nearest one from today on.
             found.append(today + timedelta(days=(weekday - today.weekday()) % 7))
+    if not found and _WEEKS_LATER.search(text):
+        # "2 hafta sonra" alone: two weeks from today.
+        found.append(today + timedelta(days=7 * weeks))
     if not found and ("hafta sonu" in text or "haftasonu" in text):
         # The weekend's Saturday, unless a day was named: "hafta sonu, haftaya cumartesi".
-        if next_week:
-            found.append(monday + timedelta(days=12))
+        if weeks:
+            found.append(monday + timedelta(days=7 * weeks + 5))
         else:
             found.append(today + timedelta(days=(5 - today.weekday()) % 7))
     return found
