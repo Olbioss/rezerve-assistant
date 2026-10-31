@@ -1,0 +1,1857 @@
+{
+ "version": 1,
+ "id": "2026-10-31T10-37-01Z-full",
+ "suite": "full",
+ "only": [
+  "book-skin-care-saturday-kapora",
+  "challenge-same-weekday-afternoon",
+  "challenge-this-evening",
+  "challenge-this-afternoon"
+ ],
+ "trials": 3,
+ "started_at": "2026-10-31T10:37:01.575954Z",
+ "finished_at": "2026-10-31T10:44:07.994229Z",
+ "config": {
+  "agent_models": [
+   "google:gemini-3.5-flash-lite",
+   "groq:openai/gpt-oss-120b"
+  ],
+  "simulator_model": "groq:openai/gpt-oss-120b",
+  "judge_model": "groq:openai/gpt-oss-120b",
+  "commit": "4c2d02d"
+ },
+ "scenarios": [
+  {
+   "id": "book-skin-care-saturday-kapora",
+   "tags": [
+    "booking",
+    "date",
+    "kapora"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:37:01.599604+03:00",
+   "expected": [
+    "Cilt Bakımı Sat 31 Oct 15:30"
+   ],
+   "customer": "book-skin-care-saturday-kapora.2026-10-31T10-37-01Z-full.1.fc55539b",
+   "conversation_id": 757,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 4,
+   "turns": [
+    {
+     "duration_ms": 30341,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8319,
+     "output_tokens": 152,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 8348,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3150,
+     "output_tokens": 8,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 10467,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3169,
+     "output_tokens": 115,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 12413,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3483,
+     "output_tokens": 34,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "merhaba cumartesi öğleden sonra cilt bakımı için yer var mı"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bugün saat 15:00 için boş yerimiz var, bu saat size uyar mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "15:30 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Adınızı öğrenebilir miyim?"
+    },
+    {
+     "speaker": "customer",
+     "text": "Elif Kaya, elif@example.com"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Elif Kaya adına: Cilt Bakımı · Cumartesi 31 Ekim 15:30 · 60 dk · ₺300 kapora (ödeme linki 30 dk geçerli). Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu oluşturdum. Cilt bakımı için ₺300 kapora ödemeniz gerekiyor, aşağıdaki bağlantıdan tamamlayabilirsiniz.\n[Kaporayı öde]"
+    }
+   ]
+  },
+  {
+   "id": "challenge-same-weekday-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:38:03.531714+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-same-weekday-afternoon.2026-10-31T10-37-01Z-full.1.1a471a47",
+   "conversation_id": 758,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 32445,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8327,
+     "output_tokens": 154,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 9249,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3157,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 8382,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3356,
+     "output_tokens": 27,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cumartesi öğleden sonra manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cumartesi günü saat 15:00 için manikür randevunuzu oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz Cumartesi saat 15:00 için başarıyla oluşturuldu. Görüşmek üzere!"
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:38:53.870200+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-this-afternoon.2026-10-31T10-37-01Z-full.1.444efe18",
+   "conversation_id": 759,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 33887,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 11447,
+     "output_tokens": 162,
+     "tool_calls": 3,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 6988,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3341,
+     "output_tokens": 99,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 9137,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3539,
+     "output_tokens": 20,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu öğleden sonra manikür olur mu? adım Selin Yurt"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bugün saat 15:00 uygun, bu saate randevunuzu oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Selin Yurt adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz bugün saat 15:00 için başarıyla oluşturuldu."
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-evening",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:39:44.048947+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 18:00"
+   ],
+   "customer": "challenge-this-evening.2026-10-31T10-37-01Z-full.1.1ab5416d",
+   "conversation_id": 760,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 29594,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8052,
+     "output_tokens": 151,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 7855,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2893,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 6677,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3090,
+     "output_tokens": 21,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu akşam manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu akşam 18:00 veya 18:30 saatleri uygun, hangisini tercih edersiniz?"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz bu akşam 18:00 için başarıyla oluşturuldu, bekleriz."
+    }
+   ]
+  },
+  {
+   "id": "book-skin-care-saturday-kapora",
+   "tags": [
+    "booking",
+    "date",
+    "kapora"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:40:28.332260+03:00",
+   "expected": [
+    "Cilt Bakımı Sat 31 Oct 15:30"
+   ],
+   "customer": "book-skin-care-saturday-kapora.2026-10-31T10-37-01Z-full.2.0901ba06",
+   "conversation_id": 761,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 4,
+   "turns": [
+    {
+     "duration_ms": 31184,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8319,
+     "output_tokens": 177,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 14965,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 2,
+     "input_tokens": 6476,
+     "output_tokens": 118,
+     "tool_calls": 0,
+     "tool_errors": 1,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2417,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3328,
+     "output_tokens": 115,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 4466,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3646,
+     "output_tokens": 59,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "merhaba cumartesi öğleden sonra cilt bakımı için yer var mı"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Merhaba, bu cumartesi öğleden sonra cilt bakımı için 15:00, 15:30 ve 16:00 saatleri müsait. Bu saatlerden hangisi size uyar?"
+    },
+    {
+     "speaker": "customer",
+     "text": "15:30 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu oluşturabilmem için adınızı öğrenebilir miyim?"
+    },
+    {
+     "speaker": "customer",
+     "text": "Elif Kaya, elif@example.com"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Elif Kaya adına: Cilt Bakımı · Cumartesi 31 Ekim 15:30 · 60 dk · ₺300 kapora (ödeme linki 30 dk geçerli). Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt bakımı randevunuzu 31 Ekim Cumartesi günü saat 15:30 için oluşturduk. İşlemin tamamlanması ve randevunun kesinleşmesi için ₺300 kapora ödemesini yukarıdaki bağlantı üzerinden yapabilirsiniz.\n[Kaporayı öde]"
+    }
+   ]
+  },
+  {
+   "id": "challenge-same-weekday-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:41:21.630395+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-same-weekday-afternoon.2026-10-31T10-37-01Z-full.2.547023f1",
+   "conversation_id": 762,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 6300,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8327,
+     "output_tokens": 197,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1270,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3200,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1899,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3396,
+     "output_tokens": 26,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cumartesi öğleden sonra manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cumartesi günü için saat 15:00, 15:30, 16:00, 16:30, 17:00, 17:30 ve 18:00'de boş yerimiz var, hangisini tercih edersiniz?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz Cumartesi 31 Ekim 15:00 için başarıyla oluşturuldu, bekleriz!"
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:41:31.279556+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-this-afternoon.2026-10-31T10-37-01Z-full.2.dc1cda1f",
+   "conversation_id": 763,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 4028,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8314,
+     "output_tokens": 151,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1137,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3151,
+     "output_tokens": 99,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1021,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3346,
+     "output_tokens": 21,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu öğleden sonra manikür olur mu? adım Selin Yurt"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bugün öğleden sonra saat 15:00'te müsaitiz, bu saat size uygun mu?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Selin Yurt adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuz bugün saat 15:00 için başarıyla oluşturuldu, bekleriz!"
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-evening",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:41:37.628524+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 18:00"
+   ],
+   "customer": "challenge-this-evening.2026-10-31T10-37-01Z-full.2.008bf37f",
+   "conversation_id": 764,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3052,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8052,
+     "output_tokens": 147,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 21714,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2889,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 19716
+    },
+    {
+     "duration_ms": 968,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3087,
+     "output_tokens": 27,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu akşam manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu akşam saat 18:00 için manikür randevusu oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz bu akşam saat 18:00 için başarıyla onaylanmıştır. Görüşmek üzere!"
+    }
+   ]
+  },
+  {
+   "id": "book-skin-care-saturday-kapora",
+   "tags": [
+    "booking",
+    "date",
+    "kapora"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:42:03.533737+03:00",
+   "expected": [
+    "Cilt Bakımı Sat 31 Oct 15:30"
+   ],
+   "customer": "book-skin-care-saturday-kapora.2026-10-31T10-37-01Z-full.3.055cda04",
+   "conversation_id": 765,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 4,
+   "turns": [
+    {
+     "duration_ms": 3085,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8319,
+     "output_tokens": 164,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1303,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3162,
+     "output_tokens": 20,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1093,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3193,
+     "output_tokens": 115,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1138,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3507,
+     "output_tokens": 42,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "merhaba cumartesi öğleden sonra cilt bakımı için yer var mı"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bugün için 15:00, 15:30 veya 16:00 saatleri uygun, hangisini tercih edersiniz?"
+    },
+    {
+     "speaker": "customer",
+     "text": "15:30 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Randevunuzu oluşturabilmem için adınızı ve soyadınızı öğrenebilir miyim?"
+    },
+    {
+     "speaker": "customer",
+     "text": "Elif Kaya, elif@example.com"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Elif Kaya adına: Cilt Bakımı · Cumartesi 31 Ekim 15:30 · 60 dk · ₺300 kapora (ödeme linki 30 dk geçerli). Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cilt bakımı randevunuz bugün saat 15:30 için oluşturuldu. ₺300 kapora ödemesini tamamlayarak randevunuzu kesinleştirebilirsiniz.\n[Kaporayı öde]"
+    }
+   ]
+  },
+  {
+   "id": "challenge-same-weekday-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:42:10.359619+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-same-weekday-afternoon.2026-10-31T10-37-01Z-full.3.54100f82",
+   "conversation_id": 766,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3861,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 4,
+     "input_tokens": 11505,
+     "output_tokens": 163,
+     "tool_calls": 3,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 2357,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3424,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 1024,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3620,
+     "output_tokens": 32,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "cumartesi öğleden sonra manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cumartesi günü saat 15:00 için manikür randevusu oluşturalım mı?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz 31 Ekim Cumartesi günü saat 15:00 için başarıyla oluşturuldu. Görüşmek üzere!"
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-afternoon",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:42:17.716410+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 14:00–18:00"
+   ],
+   "customer": "challenge-this-afternoon.2026-10-31T10-37-01Z-full.3.23a22820",
+   "conversation_id": 767,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 3353,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8314,
+     "output_tokens": 148,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 100802,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3148,
+     "output_tokens": 99,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 98992
+    },
+    {
+     "duration_ms": 1198,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3349,
+     "output_tokens": 24,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu öğleden sonra manikür olur mu? adım Selin Yurt"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bugün saat 15:00 uygun, bu saati rezerve edelim mi?"
+    },
+    {
+     "speaker": "customer",
+     "text": "en erken hangisiyse o olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Selin Yurt adına: Manikür · Cumartesi 31 Ekim 15:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz bugün saat 15:00 için başarıyla oluşturuldu, bekleriz."
+    }
+   ]
+  },
+  {
+   "id": "challenge-this-evening",
+   "tags": [
+    "booking",
+    "date",
+    "challenge"
+   ],
+   "mode": "scripted",
+   "status": "pass",
+   "reason": "",
+   "started_at": "2026-10-31T13:44:03.238680+03:00",
+   "expected": [
+    "Manikür Sat 31 Oct 18:00"
+   ],
+   "customer": "challenge-this-evening.2026-10-31T10-37-01Z-full.3.0704892a",
+   "conversation_id": 768,
+   "checks": [
+    {
+     "name": "created",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "moved",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "cancelled",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "nothing_else",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "handoff",
+     "passed": true,
+     "detail": "handed off: False"
+    },
+    {
+     "name": "says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "never_says",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "amounts",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "privacy",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "approved_writes",
+     "passed": true,
+     "detail": ""
+    },
+    {
+     "name": "finished",
+     "passed": true,
+     "detail": ""
+    }
+   ],
+   "dates_right": true,
+   "customer_turns": 3,
+   "turns": [
+    {
+     "duration_ms": 2673,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 3,
+     "input_tokens": 8052,
+     "output_tokens": 159,
+     "tool_calls": 2,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 949,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 2901,
+     "output_tokens": 98,
+     "tool_calls": 0,
+     "tool_errors": 0,
+     "outcome": "confirmation",
+     "waited_ms": 0
+    },
+    {
+     "duration_ms": 966,
+     "model_used": "gemini-3.5-flash-lite",
+     "models_tried": [
+      "gemini-3.5-flash-lite"
+     ],
+     "requests": 1,
+     "input_tokens": 3098,
+     "output_tokens": 26,
+     "tool_calls": 1,
+     "tool_errors": 0,
+     "outcome": "reply",
+     "waited_ms": 0
+    }
+   ],
+   "judge": null,
+   "transcript": [
+    {
+     "speaker": "customer",
+     "text": "bu akşam manikür için yer var mı? adım Ece Demir"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Bu akşam saat 18:00 veya 18:30 için manikür randevusu oluşturabilirim, hangisini tercih edersiniz?"
+    },
+    {
+     "speaker": "customer",
+     "text": "18:00 olsun"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ece Demir adına: Manikür · Cumartesi 31 Ekim 18:00 · 30 dk · ₺500. Onaylıyor musunuz? (evet / hayır)"
+    },
+    {
+     "speaker": "customer",
+     "text": "evet"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Manikür randevunuz bu akşam saat 18:00 için başarıyla oluşturuldu. Görüşmek üzere!"
+    }
+   ]
+  }
+ ],
+ "repeats": [],
+ "stopped": null
+}
