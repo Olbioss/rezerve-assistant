@@ -92,8 +92,8 @@ network, no quota.
 
 ## Evals
 
-`evals/` holds 68 Turkish conversations, scripted or played by a model with a
-goal: 32 the agent was built against, and 36 challenge scenarios written
+`evals/` holds 72 Turkish conversations, scripted or played by a model with a
+goal: 32 the agent was built against, and 40 challenge scenarios written
 later, each committed before its first run. Each is graded first on the
 bookings it leaves in Rezerve's database,
 not on what the assistant says it did: the right booking under the right
@@ -139,59 +139,52 @@ Each run writes `evals/results/<run>.json` and a Markdown report beside it.
 
 ### Results
 
-The agent as it is now (its code unchanged since 330352b), on the configured
-chain: Gemini 3.5 Flash-Lite, falling back to Groq's gpt-oss-120b.
+The agent as it is now (commit 4c2d02d), on the configured chain: Gemini 3.5
+Flash-Lite, falling back to Groq's gpt-oss-120b.
 
 #### The whole suite
 
-Run `2026-10-31T08-27-03Z-full`, on 910126a: all 68 scenarios once, from
-11:27 on Saturday 31 October, Istanbul time. One was skipped: its day,
-tomorrow, was a Sunday.
+Run `2026-11-01T07-21-11Z-full`, on the agent at 4c2d02d: all 72 scenarios
+once, from 10:21 on Sunday 1 November, Istanbul time. Nine were skipped,
+since their day was that Sunday, when the business is closed. Run on Monday
+(`2026-11-02T09-40-05Z-full`), all nine passed.
 
 | Measure | Result | Target | Met |
 |---|---|---|---|
-| Task success | 93% (62/67) | ≥ 90% | ✓ |
+| Task success | 97% (61/63) | ≥ 90% | ✓ |
 | Injection scenarios with no unauthorized write | 100% (5/5) | 100% | ✓ |
 | Writes without an approval | 0 | 0 | ✓ |
-| Date resolution | 88% (22/25) | ≥ 95% | ✗ |
+| Date resolution | 95% (20/21) | ≥ 95% | ✓ |
 
 | Tag | Success |
 |---|---|
-| booking | 85% (29/34) |
-| kapora | 89% (8/9) |
-| reschedule | 100% (14/14) |
-| cancel | 100% (6/6) |
-| date | 88% (22/25) |
+| booking | 94% (30/32) |
+| kapora | 100% (7/7) |
+| reschedule | 100% (12/12) |
+| cancel | 83% (5/6) |
+| date | 95% (20/21) |
 | faq | 100% (3/3) |
 | handoff | 100% (7/7) |
 | injection | 100% (5/5) |
-| judge | 100% (7/7) |
-| challenge | 89% (32/36) |
+| judge | 86% (6/7) |
+| challenge | 97% (30/31) |
 
-Five scenarios failed. Three of them fail on any reading:
-- **`challenge-yes-and-one-more` and `challenge-this-evening`**, from the
-  third round below.
-- **`challenge-quarter-to-five`.** Asked to confirm 16:30, the customer
-  answered "beşe çeyrek kala olmuyorsa ona en yakın saat olsun". Gemini then
-  asked "oluşturalım mı?" itself, which its rules forbid. The customer's
-  "evet" answered that question instead of a confirmation, and the script ran
-  out one turn short.
+Two scenarios failed:
+- **`challenge-cancel-and-book-instead`.** Gemini called `find_slots` for 12
+  November in the same reply as its `resolve_when` call, so before the tool
+  answered 5 November. It then booked the 12th over the tool's answer, though
+  it read "haftaya salı" in the same message as 3 November. Run three times on
+  the Monday, it passed all three.
+- **`sim-typos-morning-haircut`.** The simulated customer asked for "öbür
+  gün", was offered that day, then asked for "yarın" instead, and the
+  assistant booked what it was asked.
 
-Two failed on a day named at the weekend, where people differ:
-- **`book-skin-care-saturday-kapora`.** On a Saturday at midday, "cumartesi
-  öğleden sonra" got today's date from `resolve_when`, with next Saturday
-  beside it and a note to look at today first. In both of its runs Gemini
-  searched only next Saturday and booked 7 November. Last Saturday it booked
-  the same day twice. The first baseline below already found that
-  "cumartesi", said on a Saturday, may mean either.
-- **`challenge-two-weeks-tuesday`**, in the third round below.
-
-Of the three date misses, two are those weekend readings, and the third
-booked nothing (`challenge-this-evening`). Turns took 1.5 s at the median and
-3.9 s at p95, and the run would have cost $0.36 at list prices. Rerunning six
-scenarios changed none of them.
+Turns took 1.3 s at the median and 3.7 s at p95, and the run would have cost
+$0.35 at list prices. Rerunning six scenarios changed none of them.
 
 Earlier runs of the whole suite:
+- Saturday 31 October on 910126a, 93% (62/67), dates 88% (22/25): the third
+  round's first run, before its fixes (below).
 - Friday 30 October on 3a96c1b, 95% (53/56). Its three failures were
   scripts, fixed in bfd619c without changing what they expect; rerun, all 7
   runs that finished passed (`2026-10-30T14-32-14Z-full`).
@@ -251,10 +244,11 @@ and `2026-10-21T20-01-34Z-full`; round two `2026-10-21T20-17-19Z-full`,
 
 Friday's 95% left the suite little room to move. So ten more scenarios were
 written, each aimed at a gap read from the code rather than one a run had
-shown, and committed before their first run (910126a). They ran once, in the
-whole-suite run above.
+shown, and committed before their first run (910126a). They first ran in the
+whole suite on Saturday 31 October (`2026-10-31T08-27-03Z-full`), from 11:27,
+on the agent before the fixes below: 93% (62/67), dates 88% (22/25).
 
-| Scenario | The gap it aims at | Chain |
+| Scenario | The gap it aims at | Saturday |
 |---|---|---|
 | `challenge-yes-and-one-more` | "evet, bir de … manikür" at a confirmation | ✗ |
 | `challenge-this-evening` | `resolve_when` finds no day in "bu akşam" | ✗ |
@@ -280,8 +274,20 @@ Each failure hit the gap it aimed at:
   November. Gemini asked again with "haftaya salı", got the same date, and
   added two weeks itself: 17 November. By the suite's reading of "haftaya
   salı", that is a week late. Said at the weekend, though, some people mean
-  the 17th, the same doubt as "haftaya pazartesi". A weekday run would
-  settle it.
+  the 17th, the same doubt as "haftaya pazartesi".
+
+The same run failed two older scenarios:
+- **`book-skin-care-saturday-kapora`.** At midday on a Saturday, "cumartesi
+  öğleden sonra" got today's date from `resolve_when`, with next Saturday
+  beside it and a note to look at today first. In both of its runs Gemini
+  searched only next Saturday. A week earlier it had booked the same day
+  twice. The first baseline below found that "cumartesi", said on a
+  Saturday, may mean either.
+- **`challenge-quarter-to-five`.** Asked to confirm 16:30, the customer
+  answered "beşe çeyrek kala olmuyorsa ona en yakın saat olsun". Gemini then
+  asked "oluşturalım mı?" itself, which its rules forbid. The customer's
+  "evet" answered that question instead of a confirmation, and the script ran
+  out one turn short.
 
 Three of the seven passes got around their gap rather than avoiding it:
 - **Postponing a week.** `resolve_when` gave the booking's own Tuesday, and
@@ -294,6 +300,42 @@ Three of the seven passes got around their gap rather than avoiding it:
   business with no reason given. The 24 hours came only when the customer
   asked why. That second answer exists only because the assistant still
   replies after a handoff; the owner relay in phase 4 changes that.
+
+**The fixes.** Three changes, each measured on scenarios written before it
+ran (b4c8722):
+- **Counted weeks, and "bu".** `resolve_when` reads "2 hafta sonra salı" as
+  the Tuesday two weeks on, the way "haftaya salı" is next week's, and "iki
+  hafta sonra bugün" as two weeks from today. "bu akşam" and "bu öğleden
+  sonra" are that part of today.
+- **A part of today's own weekday.** Named without an hour, it is decided in
+  code the way an hour is: "cumartesi öğleden sonra", said on a Saturday at
+  noon, is this afternoon, and a week today once the afternoon is over.
+- **A yes, then something new.** The classifier is told that asking for
+  something new after a yes keeps the yes. A change to the booking itself
+  ("evet ama 16:00 olsun") still isn't one.
+
+Three runs each, on Saturday afternoon (`2026-10-31T10-37-01Z-full`,
+`2026-10-31T10-44-09Z-full`) and on Monday (`2026-11-02T09-52-55Z-full`):
+
+| Scenario | Saturday morning | After |
+|---|---|---|
+| `book-skin-care-saturday-kapora` | 0/2 | 3/3 |
+| `challenge-this-evening` | 0/1 | 3/3 |
+| `challenge-yes-and-one-more` | 0/1 | 3/3 |
+| `challenge-two-weeks-tuesday` | 0/1 | 3/3, on a Monday |
+| `challenge-same-weekday-afternoon`, written before the fix ran | – | 3/3 |
+| `challenge-this-afternoon`, written before the fix ran | – | 3/3 |
+| `challenge-okay-and-another-booking`, written before the fix ran | – | 3/3 |
+| `challenge-two-weeks-friday`, written before the fix ran | – | 3/3, on a Monday |
+| `challenge-yes-but-another-time`, a guard: still not a yes | – | 3/3 |
+| `challenge-question-at-confirmation`, a guard: still not a yes | – | 3/3 |
+
+On the Monday, `resolve_when` gave 17 November for "2 hafta sonra salı", and
+Gemini searched and booked that date in every run. At the weekend the code
+gives the week after next, as the suite reads "haftaya", and both scenarios
+passed Sunday's whole-suite run; some people would still mean a week later.
+Gemini still asked "oluşturalım mı?" itself in two of the Saturday afternoon
+runs, where the scripts had a line to spare.
 
 #### Every run, not one
 
@@ -573,18 +615,17 @@ Since then:
 Still open:
 - Groq's own retries are hidden from the harness (note ² above).
 - The date measure counts "nothing booked" as a wrong date.
-- Once, Gemini contradicted the tools: it called a free 14:00 taken and a
-  Friday a Thursday.
+- Gemini sometimes contradicts the tools. Once it called a free 14:00 taken
+  and a Friday a Thursday. On 1 November it searched a date it had guessed
+  alongside its `resolve_when` call, then booked it over the tool's answer.
 - The simulated customer sometimes leaves its goal, and the run fails along
   with the assistant. Some scripted lines assume a path the assistant may not
   take.
 - Nothing checks that the assistant leaves confirmation to code. Gemini
   sometimes asks first anyway, and on 31 October that cost
   `challenge-quarter-to-five`.
-- Found on 31 October: a yes followed by a second request is not read as a
-  yes; `resolve_when` reads neither "2 hafta sonra" nor "bu akşam"; and
-  today's own weekday with a part of the day but no hour still leaves today
-  or next week to the model, which chose next week twice.
+- A lost lease stops a whole eval run, not just its scenario: on 2 November a
+  Mac that slept in the middle of a turn ended one.
 
 #### The first baseline
 
