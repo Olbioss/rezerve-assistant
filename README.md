@@ -2,7 +2,7 @@
 
 An AI receptionist for Turkish local businesses. A customer writes in Turkish
 in the chat widget on a business's [Rezerve](https://github.com/Olbioss/rezerve)
-booking page (Telegram and WhatsApp come later). The assistant finds a free
+booking page or on Telegram (WhatsApp comes later). The assistant finds a free
 time and books it, taking a kapora when the service asks for one. It moves
 and cancels bookings under the business's policy, answers from the
 business's own information, and steps aside when it should not answer.
@@ -12,24 +12,32 @@ Rezerve's own booking code and its Postgres exclusion constraint. No write
 happens without the customer's "evet" to a confirmation that code rendered
 from the exact arguments that will run.
 
-**Status:** phase 3 of 5. The agent core, the web channel and the evals run locally.
+**Status:** phase 4 of 5. The agent, the widget and Telegram, and the evals run
+locally, and the service has what a public deployment needs: budgets, Cloud
+Tasks, the owner relay, reminders, Rezerve's kapora event and traces.
+Deploying it to Cloud Run is next.
 The design is in
 [docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md](docs/superpowers/specs/2026-10-14-rezerve-assistant-design.md).
 
 ## How a message is answered
 
-1. **Stored once.** The widget posts a message and gets `202`; a redelivery
-   with the same `client_message_id` is stored once.
-2. **One handler per conversation.** A turn is queued and claims the
-   conversation's lease (a row, renewed while it works).
+1. **Stored once.** The widget, or Telegram's webhook, posts a message and
+   gets a 2xx; a redelivery (the same `client_message_id` or Telegram
+   `update_id`) is stored once.
+2. **One handler per conversation.** A turn is queued, in process or as a
+   Cloud Task, and claims the conversation's lease (a row, renewed while it
+   works).
 3. **One answer per burst.** Everything written since the last answer is
    handled in one Pydantic AI run with Rezerve's tools. Who the customer is
    travels in MCP headers, never in arguments the model writes.
 4. **Writes wait for a yes.** A write ends the run. Code shows the
    confirmation, and the customer's next message, written after the
    confirmation appeared, approves it, denies it, or changes the plan.
-5. **Every customer gets an answer.** If every model fails, the reply is a
-   link to the booking page.
+5. **Every customer gets an answer.** If every model fails, or a daily
+   budget is spent, the reply is a link to the booking page.
+6. **The owner can step in.** With an owner chat linked, a handoff goes to
+   the business owner on Telegram, who answers by replying and hands the
+   conversation back with `/bitir`.
 
 ## The race the confirmation gate had
 
@@ -88,7 +96,52 @@ uv run ruff check && uv run ruff format --check && uv run pyright
 ```
 
 The agent tests use scripted models and an in-process fake Rezerve: no
-network, no quota.
+network, no quota. CI (`.github/workflows/ci.yml`) runs the same checks
+against a Postgres service container, and builds the image.
+
+## In production
+
+The same service, with what a public demo needs:
+
+- **Configuration.** Every setting comes from one Secret Manager secret: a
+  JSON object keyed like the environment (`DATABASE_URL`,
+  `TELEGRAM_BOT_TOKEN`, …), mounted as a file that `CONFIG_FILE` names. The
+  environment still overrides it.
+- **Queue.** With `QUEUE_BACKEND=cloud_tasks`, each turn is a named Cloud
+  Task that calls the service back at `/internal/turn/{conversation}`. The
+  call must carry an OIDC token Google signed for `TASKS_INVOKER_SA`, with
+  `PUBLIC_BASE_URL` as its audience; anything else gets a 401 or a 403. A
+  conversation another handler holds answers 429, and Cloud Tasks retries.
+- **Budgets** (spec §7.5). 400 model requests a day across the service,
+  40,000 tokens a day per conversation, 20 messages per sender in 10
+  minutes, and 60 widget posts per client address. Past a daily cap the
+  customer gets the booking page; past the sender limit, one "biraz
+  yavaşlayalım", then silence until they slow down.
+- **Telegram.** `t.me/<bot>?start=<slug>` binds a chat to a business; a
+  later one switches it. The webhook checks Telegram's
+  `X-Telegram-Bot-Api-Secret-Token`. Photos and stickers get a "text only"
+  reply, and group chats are ignored.
+- **The owner relay.** `uv run assistant owners link <slug> <chat_id>`
+  sends a business's handoffs to its owner's Telegram chat; the owner learns
+  the chat id by sending `/id` to the bot. The customer's next messages reach
+  the owner, who answers by replying to them, and `/bitir`, or 24 hours,
+  hands the conversation back. With no owner chat, a handoff gives the
+  business's phone number.
+- **Reminders.** A booking made or moved on Telegram is reminded 24 hours
+  before it starts, by a Cloud Task. When it fires, it reads the booking from
+  Rezerve, and sends nothing if the booking was moved, cancelled or never
+  paid.
+- **Rezerve's kapora event.** `POST /events/rezerve`, signed with
+  `X-Rezerve-Signature: sha256=<HMAC-SHA256 of "<timestamp>.<body>">` under
+  `ASSISTANT_EVENT_SECRET`, and refused unless `X-Rezerve-Timestamp` is
+  within five minutes. A `booking.confirmed` event tells the customer, once:
+  "Kaporanız alındı, randevunuz onaylandı ✅".
+- **Traces.** With `OTEL_TRACES_ENDPOINT` and `OTEL_HEADERS` set, each turn
+  is a trace in Langfuse: the conversation as its session, the customer ref
+  as its user, the model, tokens and outcome. Its id is kept on `agent_runs`,
+  past Langfuse's 30 days. What customers wrote stays out unless
+  `TRACE_CONTENT=true`, and httpx is not traced: Telegram's URLs hold the
+  bot token.
 
 ## Evals
 
