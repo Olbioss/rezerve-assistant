@@ -575,6 +575,49 @@ class Store:
                     .on_conflict_do_nothing()
                 )
 
+    async def relayed_conversation(self, owner_chat_id: int, message_id: int) -> int | None:
+        """The conversation an owner's message speaks for, if it is one of ours."""
+        async with self._sessions() as session:
+            return await session.scalar(
+                sa.select(OwnerRelay.conversation_id).where(
+                    OwnerRelay.owner_chat_id == owner_chat_id,
+                    OwnerRelay.telegram_message_id == message_id,
+                )
+            )
+
+    async def add_reply(self, conversation_id: int, text: str) -> int:
+        """A reply written outside a turn (the owner's, say), waiting to be sent."""
+        async with self._sessions.begin() as session:
+            channel = await session.scalar(
+                sa.select(Conversation.channel).where(Conversation.id == conversation_id)
+            )
+            message = Message(
+                conversation_id=conversation_id, channel=channel, direction="out", text=text
+            )
+            session.add(message)
+            await session.flush()
+            return message.seq
+
+    async def hand_back(self, conversation_id: int, text: str) -> int | None:
+        """The owner is done: the assistant answers again, and the customer is
+        told so. None if the conversation was not the owner's."""
+        async with self._sessions.begin() as session:
+            handed = await session.execute(
+                sa.update(Conversation)
+                .where(Conversation.id == conversation_id, Conversation.state == "human")
+                .values(state="active", handed_off_at=None)
+                .returning(Conversation.channel)
+            )
+            channel = handed.scalar_one_or_none()
+            if channel is None:
+                return None
+            message = Message(
+                conversation_id=conversation_id, channel=channel, direction="out", text=text
+            )
+            session.add(message)
+            await session.flush()
+            return message.seq
+
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""
         async with self._sessions() as session:

@@ -9,13 +9,14 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from assistant.channels.telegram_webhook import NO_BUSINESS, TEXT_ONLY, WELCOME
+from assistant.agent.handoff import BACK, HANDED_OFF
+from assistant.channels.telegram_webhook import NO_BUSINESS, TEXT_ONLY, WELCOME, chat_id_reply
 from assistant.config import Settings
 from assistant.conversation.store import Store
 from assistant.main import create_app
 from assistant.queue.local import LocalTaskQueue
 from assistant.services import AppServices
-from tests.fakes.models import Script, says
+from tests.fakes.models import Script, calls, says
 from tests.fakes.rezerve import FakeRezerve
 from tests.fakes.telegram import FakeTelegram
 
@@ -50,17 +51,25 @@ class Bot:
         self,
         text: str,
         *,
+        chat: int = CHAT,
         chat_type: str = "private",
         secret: str | None = SECRET,
         update_id: int | None = None,
+        reply_to: int | None = None,
     ) -> httpx.Response:
-        message = {
+        message: dict[str, Any] = {
             "message_id": 1,
-            "from": {"id": CHAT, "is_bot": False, "first_name": "Elif"},
-            "chat": {"id": CHAT, "type": chat_type},
+            "from": {"id": chat, "is_bot": False, "first_name": "Elif"},
+            "chat": {"id": chat, "type": chat_type},
             "date": 1_790_000_000,
             "text": text,
         }
+        if reply_to is not None:
+            message["reply_to_message"] = {
+                "message_id": reply_to,
+                "chat": {"id": chat, "type": chat_type},
+                "date": 1_790_000_000,
+            }
         return await self.deliver(message, secret=secret, update_id=update_id)
 
     async def settle(self) -> None:
@@ -163,3 +172,89 @@ async def test_only_telegram_knows_the_webhook_secret(bot: Bot, secret: str | No
 @pytest.mark.parametrize("bot_overrides", [{"telegram_bot_token": None}])
 async def test_without_a_bot_there_is_no_webhook(bot: Bot) -> None:
     assert (await bot.write("/start demo")).status_code == 404
+
+
+OWNER = 9090
+
+
+async def handed_to_the_owner(bot: Bot, store: Store) -> int:
+    """A customer handed off to the linked owner; returns the notice's message id."""
+    await store.link_owner("demo", OWNER)
+    bot.script.add(calls("handoff_to_owner", {"reason": "şikayet"}))
+    await bot.write("/start demo")
+    await bot.write("berbat bir hizmetti, şikayetçiyim")
+    await bot.settle()
+    assert bot.telegram.texts(CHAT)[-1] == HANDED_OFF
+    return bot.telegram.last_id(OWNER)
+
+
+async def test_the_owner_answers_the_customer_by_replying_to_the_notice(
+    bot: Bot, store: Store
+) -> None:
+    notice = await handed_to_the_owner(bot, store)
+
+    await bot.write("Çok üzgünüz, sizi hemen arıyorum.", chat=OWNER, reply_to=notice)
+    await bot.settle()
+
+    assert bot.telegram.texts(CHAT)[-1] == "İşletme: Çok üzgünüz, sizi hemen arıyorum."
+
+
+async def test_the_customers_next_words_reach_the_owner_who_can_reply_to_them(
+    bot: Bot, store: Store
+) -> None:
+    await handed_to_the_owner(bot, store)
+    await bot.write("ne zaman arayacaksınız?")
+    await bot.settle()
+    assert bot.telegram.texts(OWNER)[-1] == "Müşteri: ne zaman arayacaksınız?"
+
+    await bot.write("10 dakika içinde.", chat=OWNER, reply_to=bot.telegram.last_id(OWNER))
+    await bot.settle()
+    assert bot.telegram.texts(CHAT)[-1] == "İşletme: 10 dakika içinde."
+
+
+async def test_bitir_hands_the_conversation_back_to_the_assistant(bot: Bot, store: Store) -> None:
+    notice = await handed_to_the_owner(bot, store)
+
+    await bot.write("/bitir", chat=OWNER, reply_to=notice)
+    await bot.settle()
+
+    assert bot.telegram.texts(CHAT)[-1] == BACK
+    bot.script.add(says("Buyurun, nasıl yardımcı olabilirim?"))
+    await bot.write("yarın yer var mı?")
+    await bot.settle()
+    assert bot.telegram.texts(CHAT)[-1] == "Buyurun, nasıl yardımcı olabilirim?"
+
+
+async def test_a_reply_to_any_other_message_is_an_ordinary_message(bot: Bot) -> None:
+    bot.script.add(says("Merhaba!"))
+    await bot.write("/start demo")
+    await bot.write("merhaba", reply_to=bot.telegram.last_id(CHAT))
+    await bot.settle()
+    assert bot.telegram.texts(CHAT) == [WELCOME, "Merhaba!"]
+
+
+async def test_id_tells_a_chat_its_own_id(bot: Bot) -> None:
+    # How an owner finds the number `assistant owners link` needs.
+    await bot.write("/id")
+    assert bot.telegram.texts(CHAT) == [chat_id_reply(CHAT)]
+
+
+async def test_an_owner_testing_as_their_own_customer_is_told_apart_by_reply(
+    bot: Bot, store: Store
+) -> None:
+    # The demo's owner tries the bot from the chat that is linked as the
+    # owner's: what they reply to decides which of the two is speaking.
+    await store.link_owner("demo", CHAT)
+    bot.script.add(calls("handoff_to_owner", {"reason": "şikayet"}))
+    await bot.write("/start demo")
+    await bot.write("şikayetçiyim")
+    await bot.settle()
+    notice = bot.telegram.last_id(CHAT)
+
+    await bot.write("orada mısınız?")
+    await bot.settle()
+    assert bot.telegram.texts(CHAT)[-1] == "Müşteri: orada mısınız?"
+
+    await bot.write("Buradayım.", reply_to=notice)
+    await bot.settle()
+    assert bot.telegram.texts(CHAT)[-1] == "İşletme: Buradayım."

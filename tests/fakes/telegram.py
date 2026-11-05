@@ -10,6 +10,8 @@ import httpx
 class FakeTelegram:
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, Any]]] = []
+        # (chat id, message id) of every message delivered, in order.
+        self.delivered: list[tuple[int, int]] = []
         self._next_id = 100
         # An error Telegram returns to every call from now on, as (status, description).
         self.fail_with: tuple[int, str] | None = None
@@ -28,6 +30,7 @@ class FakeTelegram:
                 status, json={"ok": False, "error_code": status, "description": description}
             )
         self._next_id += 1
+        self.delivered.append((int(payload.get("chat_id", 0)), self._next_id))
         return httpx.Response(200, json={"ok": True, "result": {"message_id": self._next_id}})
 
     def sent(self) -> list[dict[str, Any]]:
@@ -36,3 +39,7 @@ class FakeTelegram:
 
     def texts(self, chat_id: int) -> list[str]:
         return [message["text"] for message in self.sent() if message["chat_id"] == chat_id]
+
+    def last_id(self, chat_id: int) -> int:
+        """The message id Telegram gave the last message sent to this chat."""
+        return [message_id for chat, message_id in self.delivered if chat == chat_id][-1]

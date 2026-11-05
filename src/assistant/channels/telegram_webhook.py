@@ -13,7 +13,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
+from assistant.agent.handoff import BACK, HAND_BACK, from_owner
 from assistant.channels.base import InboundMessage
+from assistant.channels.telegram import TelegramApi
 from assistant.identity import customer_ref
 from assistant.services import AppServices, app_services
 
@@ -22,6 +24,12 @@ WELCOME = (
 )
 NO_BUSINESS = "Merhaba! Lütfen işletmenin randevu sayfasındaki Telegram bağlantısından başlayın."
 TEXT_ONLY = "Şimdilik yalnızca yazılı mesajları anlayabiliyorum."
+
+
+def chat_id_reply(chat_id: int) -> str:
+    """The answer to /id: what `assistant owners link` needs from an owner."""
+    return f"Bu sohbetin kimliği: {chat_id}"
+
 
 START = re.compile(r"^/start(?:@\w+)?(?:\s+(?P<payload>\S+))?$")
 # Rezerve's own slug rule (lib/slug.ts).
@@ -41,10 +49,15 @@ class Chat(BaseModel):
     type: str
 
 
+class Replied(BaseModel):
+    message_id: int
+
+
 class Message(BaseModel):
     message_id: int
     chat: Chat
     text: str | None = None
+    reply_to_message: Replied | None = None
 
 
 class Update(BaseModel):
@@ -69,6 +82,17 @@ async def webhook(
     if message is None or message.chat.type != "private":
         return {"ok": True}
     chat_id = message.chat.id
+    if message.text is not None and message.text.strip() == "/id":
+        await telegram.send_message(chat_id, chat_id_reply(chat_id))
+        return {"ok": True}
+    if message.reply_to_message is not None:
+        conversation_id = await services.store.relayed_conversation(
+            chat_id, message.reply_to_message.message_id
+        )
+        if conversation_id is not None:
+            # An owner answering the customer it was handed (spec §7.6).
+            await from_the_owner(services, telegram, conversation_id, chat_id, message.text)
+            return {"ok": True}
     if message.text is None:
         await telegram.send_message(chat_id, TEXT_ONLY)
         return {"ok": True}
@@ -99,3 +123,24 @@ async def webhook(
     if recorded.seq is not None:
         await services.queue.enqueue_turn(recorded.conversation_id, recorded.seq)
     return {"ok": True}
+
+
+async def from_the_owner(
+    services: AppServices,
+    telegram: TelegramApi,
+    conversation_id: int,
+    owner_chat_id: int,
+    text: str | None,
+) -> None:
+    """The owner's reply goes to the customer as the business's; /bitir hands
+    the conversation back to the assistant."""
+    if text is None:
+        await telegram.send_message(owner_chat_id, TEXT_ONLY)
+        return
+    if text.strip() == HAND_BACK:
+        seq = await services.store.hand_back(conversation_id, BACK)
+    else:
+        seq = await services.store.add_reply(conversation_id, from_owner(text))
+    if seq is not None:
+        # The turn sends what waits unsent, and there is nothing else to answer.
+        await services.queue.enqueue_turn(conversation_id, seq)
