@@ -32,7 +32,8 @@ jobs:
       PYDANTIC_AI_NO_BANNER: "1"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      # Exact: since v8, setup-uv publishes only immutable release tags, no @v10.
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: "0.13.1"
           enable-cache: true
