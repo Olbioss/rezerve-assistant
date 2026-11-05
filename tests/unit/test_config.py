@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -11,6 +14,10 @@ def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         "CUSTOMER_REF_SECRET",
         "ALLOWED_WEB_ORIGINS",
         "MODEL_FALLBACKS",
+        "CONFIG_FILE",
+        "DATABASE_URL",
+        "DAILY_REQUEST_CAP",
+        "QUEUE_BACKEND",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -26,3 +33,57 @@ def test_lists_come_comma_separated(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_the_secrets_have_no_defaults() -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None)  # pyright: ignore[reportCallIssue]
+
+
+def secret_file(tmp_path: Path, values: dict[str, object]) -> Path:
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(values), encoding="utf-8")
+    return path
+
+
+def test_production_reads_every_setting_from_one_mounted_secret(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Spec §7.11: one Secret Manager secret, mounted as a file, keyed the way
+    # the environment would be.
+    path = secret_file(
+        tmp_path,
+        {
+            "DATABASE_URL": "postgresql+asyncpg://neon.example/assistant",
+            "ASSISTANT_MCP_TOKEN": "token",
+            "CUSTOMER_REF_SECRET": "ref-secret",
+            "TELEGRAM_BOT_TOKEN": "123:abc",
+            "DAILY_REQUEST_CAP": 250,
+        },
+    )
+    monkeypatch.setenv("CONFIG_FILE", str(path))
+    settings = Settings(_env_file=None)  # pyright: ignore[reportCallIssue]
+
+    assert settings.database_url == "postgresql+asyncpg://neon.example/assistant"
+    assert settings.customer_ref_secret.get_secret_value() == "ref-secret"
+    assert settings.telegram_bot_token is not None
+    assert settings.telegram_bot_token.get_secret_value() == "123:abc"
+    assert settings.daily_request_cap == 250
+
+
+def test_the_environment_still_overrides_the_secret(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = secret_file(
+        tmp_path,
+        {"ASSISTANT_MCP_TOKEN": "t", "CUSTOMER_REF_SECRET": "s", "DAILY_REQUEST_CAP": 250},
+    )
+    monkeypatch.setenv("CONFIG_FILE", str(path))
+    monkeypatch.setenv("DAILY_REQUEST_CAP", "50")
+
+    assert Settings(_env_file=None).daily_request_cap == 50  # pyright: ignore[reportCallIssue]
+
+
+def test_cloud_tasks_needs_a_project_and_an_invoker() -> None:
+    with pytest.raises(ValidationError, match="GCP_PROJECT and TASKS_INVOKER_SA"):
+        Settings(
+            _env_file=None,  # pyright: ignore[reportCallIssue]
+            assistant_mcp_token="t",
+            customer_ref_secret="s",
+            queue_backend="cloud_tasks",
+        )
