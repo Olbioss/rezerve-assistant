@@ -391,6 +391,26 @@ class Store:
                 for row in rows.scalars()
             ]
 
+    async def requests_since(self, since: datetime) -> int:
+        """Model requests made since `since`, by every conversation."""
+        async with self._sessions() as session:
+            total = await session.execute(
+                sa.select(sa.func.coalesce(sa.func.sum(AgentRun.requests), 0)).where(
+                    AgentRun.started_at >= since
+                )
+            )
+            return int(total.scalar_one())
+
+    async def tokens_since(self, conversation_id: int, since: datetime) -> int:
+        """Tokens one conversation's turns have used since `since`."""
+        async with self._sessions() as session:
+            total = await session.execute(
+                sa.select(
+                    sa.func.coalesce(sa.func.sum(AgentRun.input_tokens + AgentRun.output_tokens), 0)
+                ).where(AgentRun.conversation_id == conversation_id, AgentRun.started_at >= since)
+            )
+            return int(total.scalar_one())
+
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""
         async with self._sessions() as session:

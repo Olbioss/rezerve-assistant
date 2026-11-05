@@ -152,4 +152,7 @@ class AgentRun(Base):
             "outcome IN ('reply', 'confirmation', 'handoff', 'degraded', 'error')",
             name="agent_runs_outcome",
         ),
+        # The budgets sum the last day's runs: the service's, and one conversation's.
+        sa.Index("agent_runs_started_at", "started_at"),
+        sa.Index("agent_runs_conversation_started_at", "conversation_id", "started_at"),
     )

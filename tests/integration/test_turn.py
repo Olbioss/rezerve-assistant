@@ -20,9 +20,10 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
+from assistant.agent.budget import Budget
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation.lease import Lease, LeaseLost
-from assistant.conversation.store import Reply, Store, TurnResult
+from assistant.conversation.store import Reply, RunRecord, Store, TurnResult
 from assistant.conversation.turn import TurnProcessor, TurnSettings
 from assistant.identity import customer_ref
 from assistant.mcp import RezerveSession
@@ -513,3 +514,75 @@ async def test_a_turn_counts_the_calls_that_failed(store: Store) -> None:
     await turn.say("yarın 15:30 cilt bakımı, adım Elif Kaya")
     [run] = await store.runs(turn.conversation_id)
     assert (run.outcome, run.tool_errors) == ("reply", 2)
+
+
+UNAVAILABLE = (
+    "Şu an yanıt veremiyorum — randevunuzu buradan alabilirsiniz: http://localhost:3000/r/demo"
+)
+
+
+def spent(started_at: datetime, *, requests: int = 0, tokens: int = 0) -> TurnResult:
+    """A turn that has already spent what a test needs spent."""
+    run = RunRecord(
+        started_at=started_at,
+        duration_ms=1,
+        model_used="gemini",
+        models_tried=["gemini"],
+        requests=requests,
+        input_tokens=tokens,
+        output_tokens=0,
+        tool_calls=0,
+        tool_errors=0,
+        outcome="reply",
+    )
+    return TurnResult(processed=[], replies=[], run=run)
+
+
+async def test_a_spent_daily_request_cap_answers_without_a_model(store: Store) -> None:
+    # Spec §7.5: the free tier's daily requests are the whole service's. Once
+    # they are spent, every customer still gets an answer: the booking page.
+    elsewhere = await store.record_inbound(
+        InboundMessage("demo", "web", "visitor-2", str(uuid4()), "merhaba"),
+        customer_ref("secret", "web", "visitor-2"),
+        datetime.now(UTC),
+    )
+    turn = Harness(store, Script())  # an empty script: a model call would fail the test
+    await store.commit_turn(
+        elsewhere.conversation_id,
+        spent(turn.clock.now - timedelta(hours=1), requests=400),
+        turn.clock.now,
+    )
+    turn.settings = dataclasses.replace(turn.settings, budget=Budget(daily_requests=400))
+
+    assert await turn.say("merhaba") == [UNAVAILABLE]
+    [run] = await store.runs(turn.conversation_id)
+    assert (run.outcome, run.requests) == ("degraded", 0)
+    assert await store.unprocessed_inbound(turn.conversation_id) == []
+
+
+async def test_requests_older_than_a_day_no_longer_count(store: Store) -> None:
+    turn = Harness(store, Script(says("Merhaba!")))
+    await turn.receive("merhaba")
+    await store.commit_turn(
+        turn.conversation_id,
+        spent(turn.clock.now - timedelta(hours=25), requests=400),
+        turn.clock.now,
+    )
+    turn.settings = dataclasses.replace(turn.settings, budget=Budget(daily_requests=400))
+
+    assert await turn.say("yer var mı?") == ["Merhaba!"]
+
+
+async def test_a_conversation_past_its_daily_tokens_gets_the_booking_page(store: Store) -> None:
+    turn = Harness(store, Script())
+    await turn.receive("merhaba")
+    await store.commit_turn(
+        turn.conversation_id,
+        spent(turn.clock.now - timedelta(hours=2), tokens=40_000),
+        turn.clock.now,
+    )
+    turn.settings = dataclasses.replace(
+        turn.settings, budget=Budget(conversation_daily_tokens=40_000)
+    )
+
+    assert await turn.say("yarın yer var mı?") == [UNAVAILABLE]

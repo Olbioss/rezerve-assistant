@@ -2,6 +2,9 @@ from datetime import UTC, datetime
 
 import pytest
 
+from assistant.agent.budget import Budget
+from assistant.conversation.turn import TurnSettings
+from evals.config import EvalSettings
 from evals.results import RunConfig, RunResult, ScenarioResult
 from evals.run import (
     agent_models,
@@ -118,3 +121,9 @@ def test_a_run_is_one_trial_unless_told_and_a_resume_keeps_its_own() -> None:
 def test_a_resume_refuses_flags_the_run_did_not_start_with(flags: list[str], refused: str) -> None:
     with pytest.raises(SystemExit, match=refused):
         check_resume(parse_args([*flags, "--resume", GROQ_RUN.id]), GROQ_RUN)
+
+
+def test_the_evals_measure_the_agent_not_its_budget() -> None:
+    # A whole run and its trials spend more in a day than production's cap.
+    settings = EvalSettings(_env_file=None, assistant_mcp_token="t", customer_ref_secret="s")  # pyright: ignore[reportCallIssue]
+    assert TurnSettings.from_settings(settings).budget == Budget()

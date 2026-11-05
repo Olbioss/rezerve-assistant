@@ -45,6 +45,7 @@ from assistant.agent.approvals import (
     write_actions,
     write_receipt,
 )
+from assistant.agent.budget import Budget
 from assistant.agent.handoff import booking_page, handoff_reply, unavailable_reply
 from assistant.channels.base import Channel, ChannelName
 from assistant.config import Settings
@@ -85,6 +86,8 @@ class TurnSettings:
     lease_ttl: timedelta
     lease_renew: timedelta
     rezerve_mcp_url: str
+    # Spec §7.5; the default has no limits, as tests and the evals want.
+    budget: Budget = field(default_factory=Budget)
 
     @classmethod
     def from_settings(cls, settings: Settings) -> "TurnSettings":
@@ -95,6 +98,10 @@ class TurnSettings:
             lease_ttl=timedelta(seconds=settings.lease_ttl_seconds),
             lease_renew=timedelta(seconds=settings.lease_renew_seconds),
             rezerve_mcp_url=settings.rezerve_mcp_url,
+            budget=Budget(
+                daily_requests=settings.daily_request_cap,
+                conversation_daily_tokens=settings.conversation_daily_token_cap,
+            ),
         )
 
 
@@ -263,6 +270,11 @@ class TurnProcessor:
         check_lease: Callable[[], None],
     ) -> TurnResult:
         turn = _Turn(processed=[message.seq for message in batch], started_at=self._clock())
+        spent = await self._settings.budget.spent(self._store, conversation.id, self._clock())
+        if spent is not None:
+            # No model call, and still an answer (spec §7.5).
+            log.warning("Conversation %s: the %s budget is spent", conversation.id, spent)
+            return turn.finish([Reply(self._unavailable(conversation, turn))], "degraded")
         try:
             rezerve = self._open_rezerve(conversation.business_slug, conversation.customer_ref)
             # The session records each write as it runs: kept on the turn, so
