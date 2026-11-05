@@ -21,6 +21,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
 from assistant.agent.budget import SLOW_DOWN, Budget
+from assistant.agent.handoff import HANDED_OFF
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation.lease import Lease, LeaseLost
 from assistant.conversation.store import Reply, RunRecord, Store, TurnResult
@@ -57,6 +58,19 @@ class Outbox:
         return [message.text for message in self.sent]
 
 
+class TelegramOutbox:
+    """The Telegram channel, kept: who each message went to, and what it said."""
+
+    name: ChannelName = "telegram"
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, str]] = []
+
+    async def send(self, channel_user_id: str, message: OutboundMessage) -> str:
+        self.sent.append((channel_user_id, message.text))
+        return f"telegram:{len(self.sent)}"
+
+
 class Clock:
     def __init__(self) -> None:
         self.now = datetime.now(UTC)
@@ -70,6 +84,7 @@ class Harness:
         self.store = store
         self.fake = FakeRezerve()
         self.outbox = Outbox()
+        self.telegram = TelegramOutbox()
         self.clock = Clock()
         self.open_rezerve: Callable[[str, str], RezerveSession] = lambda slug, ref: (
             self.fake.session()
@@ -94,7 +109,7 @@ class Harness:
             agent=build_agent(self.model or self.script.model),
             classifier=ReplyClassifier(self.classifier.model),
             open_rezerve=lambda slug, ref: self.open_rezerve(slug, ref),
-            channels={"web": self.outbox},
+            channels={"web": self.outbox, "telegram": self.telegram},
             settings=self.settings,
             clock=self.clock,
         )
@@ -600,3 +615,49 @@ async def test_a_sender_past_the_limit_is_asked_to_slow_down_once_then_not_answe
     assert await turn.say("??") == [SLOW_DOWN]
     assert await turn.say("cevap verin") == []
     assert await store.unprocessed_inbound(turn.conversation_id) == []
+
+
+OWNER_CHAT = 777
+
+
+async def test_a_handoff_puts_a_linked_owner_in_the_conversation(store: Store) -> None:
+    # Spec §7.6: the customer is told, and the owner's Telegram chat gets the
+    # reason, the last messages, and how to answer.
+    await store.link_owner("demo", OWNER_CHAT)
+    turn = Harness(store, Script(calls("handoff_to_owner", {"reason": "şikayet"})))
+
+    assert await turn.say("berbat bir hizmetti, şikayetçiyim") == [HANDED_OFF]
+
+    [(chat, notice)] = turn.telegram.sent
+    assert chat == str(OWNER_CHAT)
+    assert "Neden: şikayet" in notice
+    assert "Müşteri: berbat bir hizmetti, şikayetçiyim" in notice
+    assert "/bitir" in notice
+    assert (await store.conversation(turn.conversation_id)).state == "human"
+
+
+async def test_while_the_owner_has_it_the_customer_is_relayed_and_no_model_asked(
+    store: Store,
+) -> None:
+    await store.link_owner("demo", OWNER_CHAT)
+    # One step only: a second model request would fail the test.
+    turn = Harness(store, Script(calls("handoff_to_owner", {"reason": "şikayet"})))
+    await turn.say("şikayetçiyim")
+
+    assert await turn.say("ne zaman dönüş yapacaksınız?") == []
+    assert turn.telegram.sent[-1] == (str(OWNER_CHAT), "Müşteri: ne zaman dönüş yapacaksınız?")
+    assert await store.unprocessed_inbound(turn.conversation_id) == []
+
+
+async def test_a_day_after_the_handoff_the_assistant_answers_again(store: Store) -> None:
+    await store.link_owner("demo", OWNER_CHAT)
+    turn = Harness(
+        store, Script(calls("handoff_to_owner", {"reason": "şikayet"}), says("Buyurun?"))
+    )
+    await turn.say("şikayetçiyim")
+    turn.clock.now += timedelta(hours=20)
+    assert await turn.say("orada mısınız?") == []
+    turn.clock.now += timedelta(hours=5)
+
+    assert await turn.say("merhaba?") == ["Buyurun?"]
+    assert (await store.conversation(turn.conversation_id)).state == "active"

@@ -8,6 +8,7 @@ are sent after it and marked sent one by one, so a retry resends only what
 never went out (at-least-once, spec §7.2).
 """
 
+import dataclasses
 import logging
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -46,7 +47,14 @@ from assistant.agent.approvals import (
     write_receipt,
 )
 from assistant.agent.budget import SLOW_DOWN, Budget
-from assistant.agent.handoff import booking_page, handoff_reply, unavailable_reply
+from assistant.agent.handoff import (
+    HANDED_OFF,
+    booking_page,
+    handoff_reply,
+    owner_notice,
+    relayed,
+    unavailable_reply,
+)
 from assistant.channels.base import Channel, ChannelName
 from assistant.config import Settings
 from assistant.conversation import history
@@ -59,6 +67,7 @@ from assistant.conversation.store import (
     Outcome,
     Reply,
     RunRecord,
+    State,
     Store,
     StoredInbound,
     TurnResult,
@@ -70,6 +79,10 @@ log = logging.getLogger(__name__)
 # Calls code may send back to the model in one turn — a service id it made up,
 # an email it forgot to ask for — before the business is handed the customer.
 MAX_REFUSALS = 2
+# How long an owner keeps a conversation they were handed (spec §7.6).
+OWNER_KEEPS = timedelta(hours=24)
+# Messages the owner sees with a handoff.
+RECENT = 6
 
 type OpenRezerve = Callable[[str, str], RezerveSession]
 
@@ -178,6 +191,8 @@ class _Turn:
         *,
         messages: list[ModelMessage] | None = None,
         approval: NewApproval | None = None,
+        owner_notes: list[str] | None = None,
+        state: State | None = None,
     ) -> TurnResult:
         receipt = write_receipt(self.writes)
         if receipt is not None and outcome != "reply":
@@ -209,6 +224,8 @@ class _Turn:
             run=run,
             resolved=self.resolved,
             approval=approval,
+            owner_notes=owner_notes or [],
+            state=state,
         )
 
 
@@ -253,7 +270,13 @@ class TurnProcessor:
             conversation = await self._store.conversation(conversation_id)
             await self._send_unsent(conversation)
             while batch := await self._store.unprocessed_inbound(conversation_id):
-                result = await self._answer(conversation, batch, lease.check)
+                if await self._owner_has(conversation):
+                    result = self._relay(batch)
+                else:
+                    result = await self._answer(conversation, batch, lease.check)
+                    if conversation.state == "human" and result.state is None:
+                        # The owner's 24 hours are over, or no owner is linked now.
+                        result = dataclasses.replace(result, state="active")
                 lease.check()
                 await self._store.commit_turn(conversation_id, result, self._clock())
                 await self._send_unsent(conversation)
@@ -264,6 +287,57 @@ class TurnProcessor:
         for message in await self._store.unsent(conversation.id):
             sent_id = await channel.send(conversation.channel_user_id, message)
             await self._store.mark_sent(message.seq, sent_id, self._clock())
+        notes = await self._store.unsent_to_owner(conversation.id)
+        if not notes:
+            return
+        owner = await self._owner_chat(conversation.business_slug)
+        telegram = self._channels.get("telegram")
+        for note in notes:
+            if owner is None or telegram is None:
+                # Unlinked since it was written: there is no one to tell.
+                await self._store.mark_sent(note.seq, "owner:unlinked", self._clock())
+                continue
+            sent_id = await telegram.send(str(owner), note)
+            await self._store.mark_relayed(note.seq, sent_id, owner, conversation.id, self._clock())
+
+    async def _owner_chat(self, business_slug: str) -> int | None:
+        """The business owner's Telegram chat, if one is linked and Telegram is on."""
+        if "telegram" not in self._channels:
+            return None
+        return await self._store.owner_chat(business_slug)
+
+    async def _owner_has(self, conversation: ConversationRecord) -> bool:
+        """Whether the owner is answering this conversation now (spec §7.6)."""
+        handed_off_at = conversation.handed_off_at
+        if conversation.state != "human" or handed_off_at is None:
+            return False
+        if handed_off_at <= self._clock() - OWNER_KEEPS:
+            return False
+        return await self._owner_chat(conversation.business_slug) is not None
+
+    def _relay(self, batch: list[StoredInbound]) -> TurnResult:
+        """The customer's words, passed to the owner: no model, no reply."""
+        text = "\n".join(message.text for message in batch)
+        return TurnResult(
+            processed=[message.seq for message in batch], replies=[], owner_notes=[relayed(text)]
+        )
+
+    async def _hand_off(
+        self,
+        conversation: ConversationRecord,
+        turn: "_Turn",
+        business: BusinessInfo,
+        reason: str,
+        messages: list[ModelMessage] | None = None,
+    ) -> TurnResult:
+        """To the owner's chat when one is linked; otherwise the business's phone."""
+        if await self._owner_chat(conversation.business_slug) is None:
+            return turn.finish([Reply(handoff_reply(business))], "handoff", messages=messages)
+        recent = await self._store.recent_messages(conversation.id, RECENT)
+        notice = owner_notice(conversation.business_slug, reason, recent)
+        return turn.finish(
+            [Reply(HANDED_OFF)], "handoff", messages=messages, owner_notes=[notice], state="human"
+        )
 
     async def _answer(
         self,
@@ -301,7 +375,9 @@ class TurnProcessor:
         except UsageLimitExceeded:
             if turn.business is None:
                 raise
-            return turn.finish([Reply(handoff_reply(turn.business))], "handoff")
+            return await self._hand_off(
+                conversation, turn, turn.business, "Asistan bu sohbette istek sınırına ulaştı."
+            )
         except (FallbackExceptionGroup, ModelAPIError):
             log.warning("Every model failed for conversation %s", conversation.id, exc_info=True)
             return turn.finish([Reply(self._unavailable(conversation, turn))], "degraded")
@@ -356,8 +432,9 @@ class TurnProcessor:
         for _ in range(MAX_REFUSALS + 1):
             output = run.output
             if isinstance(output, Handoff):
-                reply = Reply(handoff_reply(deps.business))
-                return turn.finish([reply], "handoff", messages=run.all_messages())
+                return await self._hand_off(
+                    conversation, turn, deps.business, output.reason, run.all_messages()
+                )
             if isinstance(output, str):
                 if not output.strip():
                     # An empty answer is no answer: send the booking page instead.
@@ -389,9 +466,12 @@ class TurnProcessor:
                 ),
             )
         # It kept proposing what could not be proposed: the business takes over.
-        reply = Reply(handoff_reply(deps.business))
-        return turn.finish(
-            [reply], "handoff", messages=history.close_open_calls(run.all_messages())
+        return await self._hand_off(
+            conversation,
+            turn,
+            deps.business,
+            "Asistan isteği tamamlayamadı.",
+            history.close_open_calls(run.all_messages()),
         )
 
     async def _decide(self, approval: OpenApproval, text: str, turn: _Turn) -> Resolution:

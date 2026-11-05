@@ -13,7 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from assistant.channels.base import Action, ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation import history
-from assistant.db.models import AgentRun, Conversation, Message, PendingApproval, TelegramChat
+from assistant.db.models import (
+    AgentRun,
+    BusinessConfig,
+    Conversation,
+    Message,
+    OwnerRelay,
+    PendingApproval,
+    TelegramChat,
+)
 
 # A conversation idle this long is closed; the next message opens a new one.
 IDLE_CLOSE = timedelta(hours=24)
@@ -23,6 +31,7 @@ PAGE_SIZE = 50
 
 type Decision = Literal["approved", "denied", "expired"]
 type Outcome = Literal["reply", "confirmation", "handoff", "degraded", "error"]
+type State = Literal["active", "human"]
 
 
 @dataclass(frozen=True)
@@ -41,6 +50,8 @@ class ConversationRecord:
     customer_ref: str
     state: str
     history: list[ModelMessage]
+    # When the owner took it over; None unless the state is 'human'.
+    handed_off_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -104,6 +115,10 @@ class TurnResult:
     run: RunRecord | None = None
     resolved: tuple[int, Decision] | None = None
     approval: NewApproval | None = None
+    # Messages for the business owner's Telegram chat (spec §7.6).
+    owner_notes: list[str] = field(default_factory=list[str])
+    # The conversation's new state: 'human' hands it to the owner, 'active' back.
+    state: State | None = None
 
 
 @dataclass(frozen=True)
@@ -216,6 +231,7 @@ class Store:
                 customer_ref=row.customer_ref,
                 state=row.state,
                 history=history.load(row.history),
+                handed_off_at=row.handed_off_at,
             )
 
     async def claim_lease(self, conversation_id: int, owner: str, ttl: timedelta) -> bool:
@@ -309,6 +325,15 @@ class Store:
                     .where(Conversation.id == conversation_id)
                     .values(history=history.dump(result.history))
                 )
+            if result.state is not None:
+                await session.execute(
+                    sa.update(Conversation)
+                    .where(Conversation.id == conversation_id)
+                    .values(
+                        state=result.state,
+                        handed_off_at=now if result.state == "human" else None,
+                    )
+                )
             channel = (
                 await session.execute(
                     sa.select(Conversation.channel).where(Conversation.id == conversation_id)
@@ -325,6 +350,15 @@ class Store:
                 for reply in result.replies
             ]
             session.add_all(replies)
+            session.add_all(
+                Message(
+                    conversation_id=conversation_id,
+                    channel="telegram",
+                    direction="owner",
+                    text=note,
+                )
+                for note in result.owner_notes
+            )
             await session.flush()
             if result.approval is not None:
                 approval = result.approval
@@ -461,6 +495,85 @@ class Store:
             return await session.scalar(
                 sa.select(TelegramChat.business_slug).where(TelegramChat.chat_id == chat_id)
             )
+
+    async def link_owner(self, business_slug: str, owner_chat_id: int) -> None:
+        """Handoffs for this business go to this Telegram chat from now on."""
+        async with self._sessions.begin() as session:
+            await session.execute(
+                pg_insert(BusinessConfig)
+                .values(slug=business_slug, owner_telegram_chat_id=owner_chat_id)
+                .on_conflict_do_update(
+                    index_elements=["slug"], set_={"owner_telegram_chat_id": owner_chat_id}
+                )
+            )
+
+    async def unlink_owner(self, business_slug: str) -> None:
+        async with self._sessions.begin() as session:
+            await session.execute(
+                sa.update(BusinessConfig)
+                .where(BusinessConfig.slug == business_slug)
+                .values(owner_telegram_chat_id=None)
+            )
+
+    async def owner_chat(self, business_slug: str) -> int | None:
+        async with self._sessions() as session:
+            return await session.scalar(
+                sa.select(BusinessConfig.owner_telegram_chat_id).where(
+                    BusinessConfig.slug == business_slug
+                )
+            )
+
+    async def recent_messages(self, conversation_id: int, limit: int) -> list[tuple[str, str]]:
+        """The last `limit` messages between customer and assistant, oldest first."""
+        async with self._sessions() as session:
+            rows = await session.execute(
+                sa.select(Message.direction, Message.text)
+                .where(Message.conversation_id == conversation_id, Message.direction != "owner")
+                .order_by(Message.seq.desc())
+                .limit(limit)
+            )
+            return [(row.direction, row.text) for row in reversed(rows.all())]
+
+    async def unsent_to_owner(self, conversation_id: int) -> list[OutboundMessage]:
+        async with self._sessions() as session:
+            rows = await session.execute(
+                sa.select(Message.seq, Message.text)
+                .where(
+                    Message.conversation_id == conversation_id,
+                    Message.direction == "owner",
+                    Message.sent_at.is_(None),
+                )
+                .order_by(Message.seq)
+            )
+            return [OutboundMessage(seq=row.seq, text=row.text) for row in rows]
+
+    async def mark_relayed(
+        self,
+        seq: int,
+        sent_message_id: str,
+        owner_chat_id: int,
+        conversation_id: int,
+        now: datetime,
+    ) -> None:
+        """Mark an owner's message sent, and remember which conversation it
+        speaks for, so the owner's reply to it finds its way back."""
+        _, _, message_id = sent_message_id.partition(":")
+        async with self._sessions.begin() as session:
+            await session.execute(
+                sa.update(Message)
+                .where(Message.seq == seq)
+                .values(sent_at=now, sent_message_id=sent_message_id)
+            )
+            if message_id.isdigit():
+                await session.execute(
+                    pg_insert(OwnerRelay)
+                    .values(
+                        owner_chat_id=owner_chat_id,
+                        telegram_message_id=int(message_id),
+                        conversation_id=conversation_id,
+                    )
+                    .on_conflict_do_nothing()
+                )
 
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""

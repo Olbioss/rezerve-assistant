@@ -1,5 +1,4 @@
-"""The agent's own tables (spec §7.8). Phase 2 needs these four; the owner
-relay, reminders and the daily usage counter arrive with their phases.
+"""The agent's own tables (spec §7.8).
 
 `sa.text` is spelled out because `messages.text` is a column: inside a
 class body a bare `text(...)` would call the column, not SQLAlchemy.
@@ -32,6 +31,8 @@ class Conversation(Base):
     # The lease: who is working on this conversation, and until when.
     locked_until: Mapped[datetime | None]
     lease_owner: Mapped[str | None] = mapped_column(sa.Text)
+    # When the business owner took the conversation over (state 'human').
+    handed_off_at: Mapped[datetime | None]
     last_message_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
     created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
 
@@ -166,3 +167,28 @@ class TelegramChat(Base):
     chat_id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True, autoincrement=False)
     business_slug: Mapped[str] = mapped_column(sa.Text)
     updated_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
+
+
+class BusinessConfig(Base):
+    """What this service knows of a business beyond Rezerve: its owner's chat."""
+
+    __tablename__ = "business_config"
+
+    slug: Mapped[str] = mapped_column(sa.Text, primary_key=True)
+    # The Telegram chat a handoff goes to; none, and the customer gets the phone.
+    owner_telegram_chat_id: Mapped[int | None] = mapped_column(sa.BigInteger)
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
+
+
+class OwnerRelay(Base):
+    """A message in an owner's chat, and the conversation it speaks for: the
+    owner answers a customer by replying to it."""
+
+    __tablename__ = "owner_relays"
+
+    # Telegram message ids are unique only within their chat.
+    owner_chat_id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
+    telegram_message_id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
