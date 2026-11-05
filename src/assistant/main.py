@@ -18,13 +18,14 @@ from assistant.channels.base import Channel, ChannelName
 from assistant.channels.telegram import TelegramApi, TelegramChannel
 from assistant.config import Settings
 from assistant.conversation.store import Store
-from assistant.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
+from assistant.conversation.turn import TurnProcessor, TurnSettings
 from assistant.db.session import create_engine, session_factory
-from assistant.mcp import connect
+from assistant.mcp import OpenRezerve, connect
 from assistant.queue.base import TaskQueue
 from assistant.queue.cloud_tasks import CloudTasksQueue, TaskCreator
 from assistant.queue.local import LocalTaskQueue
 from assistant.ratelimit import SlidingWindow
+from assistant.reminders import Reminders
 from assistant.services import AppServices, TokenVerifier
 
 
@@ -56,17 +57,10 @@ def create_app(
                 )
                 telegram = TelegramApi(config.telegram_bot_token.get_secret_value(), client)
                 channels["telegram"] = TelegramChannel(telegram)
-            processor = TurnProcessor(
-                store=store,
-                agent=build_agent(chosen),
-                classifier=ReplyClassifier(chosen),
-                open_rezerve=open_rezerve
-                or partial(
-                    connect, config.rezerve_mcp_url, config.assistant_mcp_token.get_secret_value()
-                ),
-                channels=channels,
-                settings=TurnSettings.from_settings(config),
+            open_session: OpenRezerve = open_rezerve or partial(
+                connect, config.rezerve_mcp_url, config.assistant_mcp_token.get_secret_value()
             )
+            reminders = Reminders(store, open_session, channels.get("telegram"))
             queue: TaskQueue
             if config.queue_backend == "cloud_tasks":
                 if config.gcp_project is None or config.tasks_invoker_sa is None:
@@ -79,13 +73,28 @@ def create_app(
                     project=config.gcp_project,
                     region=config.gcp_region,
                     turns_queue=config.tasks_queue_turns,
+                    reminders_queue=config.tasks_queue_reminders,
                     base_url=config.public_base_url,
                     invoker=config.tasks_invoker_sa,
                 )
             else:
-                local = LocalTaskQueue(processor.process)
+                # The processor needs the queue for reminders, and the local
+                # queue needs the processor for turns: bound on first use.
+                async def answer(conversation_id: int) -> None:
+                    await processor.process(conversation_id)
+
+                local = LocalTaskQueue(answer, remind=reminders.send)
                 stack.push_async_callback(local.aclose)
                 queue = local
+            processor = TurnProcessor(
+                store=store,
+                agent=build_agent(chosen),
+                classifier=ReplyClassifier(chosen),
+                open_rezerve=open_session,
+                channels=channels,
+                settings=TurnSettings.from_settings(config),
+                queue=queue,
+            )
             app.state.services = AppServices(
                 settings=config,
                 store=store,
@@ -96,6 +105,7 @@ def create_app(
                 process_turn=processor.process,
                 verify_token=verify_token or internal.verify_google_token,
                 telegram=telegram,
+                send_reminder=reminders.send,
             )
             yield
 

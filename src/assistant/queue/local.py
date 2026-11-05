@@ -5,8 +5,10 @@ import asyncio
 import logging
 from collections import deque
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 
 from assistant.conversation.lease import LeaseBusy
+from assistant.queue.base import reminder_name
 
 log = logging.getLogger(__name__)
 
@@ -20,16 +22,20 @@ class LocalTaskQueue:
         self,
         handler: Callable[[int], Awaitable[None]],
         *,
+        remind: Callable[[str, datetime], Awaitable[None]] | None = None,
         max_attempts: int = 6,
         backoff_seconds: float = 2.0,
         max_backoff_seconds: float = 60.0,
     ) -> None:
         self._handler = handler
+        self._remind = remind
         self._max_attempts = max_attempts
         self._backoff = backoff_seconds
         self._max_backoff = max_backoff_seconds
         self._names: deque[str] = deque(maxlen=REMEMBERED_NAMES)
         self._tasks: set[asyncio.Task[None]] = set()
+        # Kept apart: a drain waits for turns, never for a reminder a day away.
+        self._reminders: set[asyncio.Task[None]] = set()
 
     async def enqueue_turn(self, conversation_id: int, message_seq: int) -> None:
         name = f"turn-{conversation_id}-{message_seq}"
@@ -39,6 +45,23 @@ class LocalTaskQueue:
         task = asyncio.create_task(self._run(conversation_id), name=name)
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+
+    async def enqueue_reminder(self, booking_id: str, starts_at: datetime, at: datetime) -> None:
+        name = reminder_name(booking_id, starts_at)
+        if self._remind is None or name in self._names:
+            return
+        self._names.append(name)
+        task = asyncio.create_task(self._remind_at(booking_id, starts_at, at), name=name)
+        self._reminders.add(task)
+        task.add_done_callback(self._reminders.discard)
+
+    async def _remind_at(self, booking_id: str, starts_at: datetime, at: datetime) -> None:
+        assert self._remind is not None
+        await asyncio.sleep(max(0.0, (at - datetime.now(UTC)).total_seconds()))
+        try:
+            await self._remind(booking_id, starts_at)
+        except Exception:
+            log.exception("The reminder for booking %s failed", booking_id)
 
     async def _run(self, conversation_id: int) -> None:
         for attempt in range(1, self._max_attempts + 1):
@@ -58,6 +81,7 @@ class LocalTaskQueue:
             await asyncio.gather(*self._tasks, return_exceptions=True)
 
     async def aclose(self) -> None:
-        for task in self._tasks:
+        pending = [*self._tasks, *self._reminders]
+        for task in pending:
             task.cancel()
-        await asyncio.gather(*self._tasks, return_exceptions=True)
+        await asyncio.gather(*pending, return_exceptions=True)

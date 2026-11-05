@@ -1,3 +1,6 @@
+import json
+from datetime import UTC, datetime
+
 from google.cloud import tasks_v2
 
 from assistant.queue.cloud_tasks import CloudTasksQueue
@@ -12,6 +15,7 @@ def tasks_queue(fake: FakeTasks) -> CloudTasksQueue:
         project="rezerve-assistant",
         region="europe-west1",
         turns_queue="turns",
+        reminders_queue="reminders",
         base_url="https://assistant.example/",
         invoker=INVOKER,
     )
@@ -38,3 +42,21 @@ async def test_asking_twice_for_one_turn_queues_it_once() -> None:
     await queue.enqueue_turn(7, 42)
     await queue.enqueue_turn(7, 42)
     assert len(fake.created) == 1
+
+
+async def test_a_reminder_is_a_task_for_its_time_on_the_reminders_queue() -> None:
+    fake = FakeTasks()
+    starts_at = datetime(2026, 11, 12, 12, 30, tzinfo=UTC)
+    at = datetime(2026, 11, 11, 12, 30, tzinfo=UTC)
+    await tasks_queue(fake).enqueue_reminder("b-1", starts_at, at)
+
+    [(parent, task)] = fake.created
+    assert parent.endswith("/queues/reminders")
+    assert task.name.endswith(f"/tasks/reminder-b-1-{int(starts_at.timestamp())}")
+    assert task.schedule_time == at
+    assert task.http_request.url == "https://assistant.example/internal/reminder"
+    assert json.loads(task.http_request.body) == {
+        "booking_id": "b-1",
+        "starts_at": "2026-11-12T12:30:00+00:00",
+    }
+    assert task.http_request.headers["Content-Type"] == "application/json"

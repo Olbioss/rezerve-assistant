@@ -192,3 +192,19 @@ class OwnerRelay(Base):
     conversation_id: Mapped[int] = mapped_column(
         sa.ForeignKey("conversations.id", ondelete="CASCADE")
     )
+
+
+class Reminder(Base):
+    """A reminder a day before a booking (spec §7.7), and where to send it."""
+
+    __tablename__ = "reminders"
+
+    booking_id: Mapped[str] = mapped_column(sa.Text, primary_key=True)
+    # A move gets a reminder of its own: the old one finds the start changed.
+    starts_at: Mapped[datetime] = mapped_column(primary_key=True)
+    business_slug: Mapped[str] = mapped_column(sa.Text)
+    customer_ref: Mapped[str] = mapped_column(sa.Text)
+    chat_id: Mapped[int] = mapped_column(sa.BigInteger)
+    sent_at: Mapped[datetime | None]
+    sent_message_id: Mapped[str | None] = mapped_column(sa.Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())

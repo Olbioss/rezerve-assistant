@@ -28,7 +28,9 @@ from assistant.conversation.store import Reply, RunRecord, Store, TurnResult
 from assistant.conversation.turn import TurnProcessor, TurnSettings
 from assistant.identity import customer_ref
 from assistant.mcp import RezerveSession
+from tests.fakes.channels import TelegramOutbox
 from tests.fakes.models import Script, calls, classifies, says
+from tests.fakes.queue import RecordingQueue
 from tests.fakes.rezerve import CHECKOUT_URL, CILT, SAC, FakeRezerve
 
 REF = customer_ref("secret", "web", "visitor-1")
@@ -58,19 +60,6 @@ class Outbox:
         return [message.text for message in self.sent]
 
 
-class TelegramOutbox:
-    """The Telegram channel, kept: who each message went to, and what it said."""
-
-    name: ChannelName = "telegram"
-
-    def __init__(self) -> None:
-        self.sent: list[tuple[str, str]] = []
-
-    async def send(self, channel_user_id: str, message: OutboundMessage) -> str:
-        self.sent.append((channel_user_id, message.text))
-        return f"telegram:{len(self.sent)}"
-
-
 class Clock:
     def __init__(self) -> None:
         self.now = datetime.now(UTC)
@@ -80,8 +69,19 @@ class Clock:
 
 
 class Harness:
-    def __init__(self, store: Store, script: Script, *, classifier: Script | None = None) -> None:
+    def __init__(
+        self,
+        store: Store,
+        script: Script,
+        *,
+        classifier: Script | None = None,
+        channel: ChannelName = "web",
+        user: str = "visitor-1",
+    ) -> None:
         self.store = store
+        self.channel: ChannelName = channel
+        self.user = user
+        self.queue = RecordingQueue()
         self.fake = FakeRezerve()
         self.outbox = Outbox()
         self.telegram = TelegramOutbox()
@@ -112,20 +112,28 @@ class Harness:
             channels={"web": self.outbox, "telegram": self.telegram},
             settings=self.settings,
             clock=self.clock,
+            queue=self.queue,
         )
 
     async def receive(self, *texts: str) -> None:
+        ref = customer_ref("secret", self.channel, self.user)
         for text in texts:
-            message = InboundMessage("demo", "web", "visitor-1", str(uuid4()), text)
-            recorded = await self.store.record_inbound(message, REF, self.clock())
+            message = InboundMessage("demo", self.channel, self.user, str(uuid4()), text)
+            recorded = await self.store.record_inbound(message, ref, self.clock())
             self.conversation_id = recorded.conversation_id
+
+    def read(self) -> list[str]:
+        """Everything the customer has been sent, on their channel."""
+        if self.channel == "telegram":
+            return [text for chat, text in self.telegram.sent if chat == self.user]
+        return self.outbox.texts
 
     async def say(self, *texts: str) -> list[str]:
         """The customer writes; returns what they read back."""
-        before = len(self.outbox.sent)
+        before = len(self.read())
         await self.receive(*texts)
         await self.processor().process(self.conversation_id)
-        return self.outbox.texts[before:]
+        return self.read()[before:]
 
 
 def prompt_of(script: Script, request: int = -1) -> list[Any]:
@@ -661,3 +669,58 @@ async def test_a_day_after_the_handoff_the_assistant_answers_again(store: Store)
 
     assert await turn.say("merhaba?") == ["Buyurun?"]
     assert (await store.conversation(turn.conversation_id)).state == "active"
+
+
+IN_THREE_DAYS = (datetime.now(UTC) + timedelta(days=3)).replace(minute=0, second=0, microsecond=0)
+
+
+def iso(instant: datetime) -> str:
+    return instant.isoformat().replace("+00:00", "Z")
+
+
+def book_haircut(starts_at: datetime) -> dict[str, Any]:
+    return {"service_id": SAC, "starts_at": iso(starts_at), "customer_name": "Elif Kaya"}
+
+
+async def test_a_booking_made_on_telegram_is_reminded_a_day_ahead(store: Store) -> None:
+    # Spec §7.7: a reminder task for 24 hours before the start.
+    script = Script(calls("create_booking", book_haircut(IN_THREE_DAYS)), says("Alındı."))
+    turn = Harness(store, script, channel="telegram", user="4242")
+    await turn.say("3 gün sonra saç kesimi, Elif Kaya")
+    await turn.say("evet")
+
+    [(booking_id, starts_at, at)] = turn.queue.reminders
+    assert booking_id in turn.fake.bookings
+    assert (starts_at, at) == (IN_THREE_DAYS, IN_THREE_DAYS - timedelta(hours=24))
+
+
+async def test_a_booking_made_on_the_web_is_not_reminded(store: Store) -> None:
+    # A web visitor cannot be reached once the page is closed.
+    script = Script(calls("create_booking", book_haircut(IN_THREE_DAYS)), says("Alındı."))
+    turn = Harness(store, script)
+    await turn.say("3 gün sonra saç kesimi, Elif Kaya")
+    await turn.say("evet")
+    assert turn.queue.reminders == []
+
+
+async def test_a_booking_too_near_for_a_day_ahead_is_not_reminded(store: Store) -> None:
+    # A day ahead would be in half an hour: the customer booked it just now.
+    soon = (datetime.now(UTC) + timedelta(hours=24, minutes=30)).replace(microsecond=0)
+    script = Script(calls("create_booking", book_haircut(soon)), says("Alındı."))
+    turn = Harness(store, script, channel="telegram", user="4242")
+    await turn.say("yarın bu saatlerde saç kesimi, Elif Kaya")
+    await turn.say("evet")
+    assert turn.queue.reminders == []
+
+
+async def test_a_move_is_reminded_at_its_new_time(store: Store) -> None:
+    later = IN_THREE_DAYS + timedelta(days=1)
+    turn = Harness(store, Script(), channel="telegram", user="4242")
+    booking = turn.fake.add_booking(SAC, IN_THREE_DAYS)
+    turn.script.add(
+        calls("reschedule_booking", {"booking_id": booking.id, "new_starts_at": iso(later)}),
+        says("Taşındı."),
+    )
+    await turn.say("randevumu bir gün sonraya alalım")
+    await turn.say("evet")
+    assert turn.queue.reminders == [(booking.id, later, later - timedelta(hours=24))]

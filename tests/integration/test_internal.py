@@ -124,3 +124,13 @@ async def test_a_turn_another_handler_holds_is_tried_again_later(
 
     # 429: Cloud Tasks retries it with backoff (spec §7.2).
     assert response.status_code == 429
+
+
+async def test_a_reminder_task_calls_back_with_the_invokers_token(service: Service) -> None:
+    body = {"booking_id": "no-such-booking", "starts_at": "2026-11-12T12:30:00+00:00"}
+    refused = await service.client.post("/internal/reminder", json=body)
+    assert refused.status_code == 401
+    response = await service.client.post(
+        "/internal/reminder", json=body, headers={"Authorization": "Bearer invoker-token"}
+    )
+    assert response.status_code == 204

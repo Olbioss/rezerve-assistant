@@ -20,6 +20,7 @@ from assistant.db.models import (
     Message,
     OwnerRelay,
     PendingApproval,
+    Reminder,
     TelegramChat,
 )
 
@@ -119,6 +120,16 @@ class TurnResult:
     owner_notes: list[str] = field(default_factory=list[str])
     # The conversation's new state: 'human' hands it to the owner, 'active' back.
     state: State | None = None
+    # Each booking this turn's writes made or moved, and when it now starts.
+    booked: list[tuple[str, datetime]] = field(default_factory=list[tuple[str, datetime]])
+
+
+@dataclass(frozen=True)
+class DueReminder:
+    business_slug: str
+    customer_ref: str
+    chat_id: int
+    sent_at: datetime | None
 
 
 @dataclass(frozen=True)
@@ -617,6 +628,50 @@ class Store:
             session.add(message)
             await session.flush()
             return message.seq
+
+    async def add_reminder(
+        self,
+        booking_id: str,
+        starts_at: datetime,
+        business_slug: str,
+        customer_ref: str,
+        chat_id: int,
+        now: datetime,
+    ) -> bool:
+        """Keep a reminder to send; False if this one was already kept."""
+        async with self._sessions.begin() as session:
+            # KVKK: a reminder long past holds a chat id and nothing worth keeping.
+            await session.execute(sa.delete(Reminder).where(Reminder.starts_at < now - RETENTION))
+            added = await session.execute(
+                pg_insert(Reminder)
+                .values(
+                    booking_id=booking_id,
+                    starts_at=starts_at,
+                    business_slug=business_slug,
+                    customer_ref=customer_ref,
+                    chat_id=chat_id,
+                )
+                .on_conflict_do_nothing()
+                .returning(Reminder.booking_id)
+            )
+            return added.scalar_one_or_none() is not None
+
+    async def reminder(self, booking_id: str, starts_at: datetime) -> DueReminder | None:
+        async with self._sessions() as session:
+            row = await session.get(Reminder, (booking_id, starts_at))
+            if row is None:
+                return None
+            return DueReminder(row.business_slug, row.customer_ref, row.chat_id, row.sent_at)
+
+    async def mark_reminded(
+        self, booking_id: str, starts_at: datetime, sent_message_id: str, now: datetime
+    ) -> None:
+        async with self._sessions.begin() as session:
+            await session.execute(
+                sa.update(Reminder)
+                .where(Reminder.booking_id == booking_id, Reminder.starts_at == starts_at)
+                .values(sent_at=now, sent_message_id=sent_message_id)
+            )
 
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""

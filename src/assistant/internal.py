@@ -8,12 +8,14 @@ account, so every call to them is refused there too.
 
 import asyncio
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.auth.exceptions import GoogleAuthError, TransportError
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token
+from pydantic import BaseModel
 
 from assistant.conversation.lease import LeaseBusy
 from assistant.services import AppServices, app_services
@@ -74,4 +76,15 @@ async def turn(conversation_id: int, services: Services) -> Response:
     except LeaseBusy:
         # Another handler has the conversation: Cloud Tasks tries again later.
         raise HTTPException(status_code=429, detail="busy") from None
+    return Response(status_code=204)
+
+
+class DueReminder(BaseModel):
+    booking_id: str
+    starts_at: datetime
+
+
+@router.post("/reminder", status_code=204, dependencies=[Depends(from_cloud_tasks)])
+async def reminder(due: DueReminder, services: Services) -> Response:
+    await services.send_reminder(due.booking_id, due.starts_at)
     return Response(status_code=204)

@@ -72,7 +72,9 @@ from assistant.conversation.store import (
     StoredInbound,
     TurnResult,
 )
-from assistant.mcp import BusinessInfo, CompletedWrite, RezerveSession
+from assistant.mcp import BusinessInfo, CompletedWrite, OpenRezerve, RezerveSession
+from assistant.queue.base import TaskQueue
+from assistant.reminders import MIN_NOTICE, REMIND_BEFORE, booked
 
 log = logging.getLogger(__name__)
 
@@ -83,8 +85,6 @@ MAX_REFUSALS = 2
 OWNER_KEEPS = timedelta(hours=24)
 # Messages the owner sees with a handoff.
 RECENT = 6
-
-type OpenRezerve = Callable[[str, str], RezerveSession]
 
 
 def _utcnow() -> datetime:
@@ -226,6 +226,7 @@ class _Turn:
             approval=approval,
             owner_notes=owner_notes or [],
             state=state,
+            booked=booked(self.writes),
         )
 
 
@@ -246,8 +247,11 @@ class TurnProcessor:
         channels: Mapping[ChannelName, Channel],
         settings: TurnSettings,
         clock: Callable[[], datetime] = _utcnow,
+        queue: TaskQueue | None = None,
     ) -> None:
+        """`queue` takes the reminders of what a turn books; without one, none are kept."""
         self._store = store
+        self._queue = queue
         self._agent = agent
         self._classifier = classifier
         self._open_rezerve = open_rezerve
@@ -279,6 +283,7 @@ class TurnProcessor:
                         result = dataclasses.replace(result, state="active")
                 lease.check()
                 await self._store.commit_turn(conversation_id, result, self._clock())
+                await self._remind(conversation, result.booked)
                 await self._send_unsent(conversation)
                 conversation = await self._store.conversation(conversation_id)
 
@@ -299,6 +304,34 @@ class TurnProcessor:
                 continue
             sent_id = await telegram.send(str(owner), note)
             await self._store.mark_relayed(note.seq, sent_id, owner, conversation.id, self._clock())
+
+    async def _remind(
+        self, conversation: ConversationRecord, booked: list[tuple[str, datetime]]
+    ) -> None:
+        """Spec §7.7: a reminder a day ahead of what this turn booked or moved,
+        on Telegram, when that day ahead is still at least an hour away."""
+        if self._queue is None or conversation.channel != "telegram":
+            return
+        now = self._clock()
+        for booking_id, starts_at in booked:
+            at = starts_at - REMIND_BEFORE
+            if at - now < MIN_NOTICE:
+                continue
+            kept = await self._store.add_reminder(
+                booking_id,
+                starts_at,
+                conversation.business_slug,
+                conversation.customer_ref,
+                int(conversation.channel_user_id),
+                now,
+            )
+            if not kept:
+                continue
+            try:
+                await self._queue.enqueue_reminder(booking_id, starts_at, at)
+            except Exception:
+                # The booking is made either way; only its reminder is lost.
+                log.exception("Could not schedule the reminder for booking %s", booking_id)
 
     async def _owner_chat(self, business_slug: str) -> int | None:
         """The business owner's Telegram chat, if one is linked and Telegram is on."""

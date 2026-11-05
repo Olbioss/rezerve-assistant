@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, cast
 
 from fastapi import Request
@@ -28,6 +29,8 @@ class AppServices:
     verify_token: TokenVerifier
     # None while no bot token is set: the Telegram webhook is off.
     telegram: TelegramApi | None
+    # Sends a booking's reminder: what a reminder task runs.
+    send_reminder: Callable[[str, datetime], Awaitable[None]]
 
 
 def app_services(request: Request) -> AppServices:

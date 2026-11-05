@@ -8,6 +8,7 @@ same session to build the instructions and the confirmations.
 
 import dataclasses
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from types import TracebackType
@@ -248,6 +249,10 @@ class RezerveSession:
         return BookingView.model_validate(
             await self.call("get_booking", {"booking_id": booking_id})
         )
+
+
+# Opens a session for (business slug, customer ref).
+type OpenRezerve = Callable[[str, str], RezerveSession]
 
 
 def connect(url: str, token: str, business_slug: str, customer_ref: str) -> RezerveSession:
