@@ -156,3 +156,13 @@ class AgentRun(Base):
         sa.Index("agent_runs_started_at", "started_at"),
         sa.Index("agent_runs_conversation_started_at", "conversation_id", "started_at"),
     )
+
+
+class TelegramChat(Base):
+    """Which business a Telegram chat talks to: the one its last /start named."""
+
+    __tablename__ = "telegram_chats"
+
+    chat_id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True, autoincrement=False)
+    business_slug: Mapped[str] = mapped_column(sa.Text)
+    updated_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())

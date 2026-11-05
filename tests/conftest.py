@@ -32,8 +32,8 @@ async def store(database_url: str) -> AsyncIterator[Store]:
     async with engine.begin() as connection:
         await connection.execute(
             sa.text(
-                "TRUNCATE conversations, messages, pending_approvals, agent_runs "
-                "RESTART IDENTITY CASCADE"
+                "TRUNCATE conversations, messages, pending_approvals, agent_runs, "
+                "telegram_chats RESTART IDENTITY CASCADE"
             )
         )
     yield Store(session_factory(engine))

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from assistant.channels.base import Action, ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation import history
-from assistant.db.models import AgentRun, Conversation, Message, PendingApproval
+from assistant.db.models import AgentRun, Conversation, Message, PendingApproval, TelegramChat
 
 # A conversation idle this long is closed; the next message opens a new one.
 IDLE_CLOSE = timedelta(hours=24)
@@ -443,6 +443,24 @@ class Store:
                 )
             )
             return said.scalar_one()
+
+    async def bind_telegram_chat(self, chat_id: int, business_slug: str, now: datetime) -> None:
+        """From now on the chat talks to this business (a later /start switches it)."""
+        async with self._sessions.begin() as session:
+            await session.execute(
+                pg_insert(TelegramChat)
+                .values(chat_id=chat_id, business_slug=business_slug, updated_at=now)
+                .on_conflict_do_update(
+                    index_elements=["chat_id"],
+                    set_={"business_slug": business_slug, "updated_at": now},
+                )
+            )
+
+    async def telegram_business(self, chat_id: int) -> str | None:
+        async with self._sessions() as session:
+            return await session.scalar(
+                sa.select(TelegramChat.business_slug).where(TelegramChat.chat_id == chat_id)
+            )
 
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""

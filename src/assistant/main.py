@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack, asynccontextmanager
 from functools import partial
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import tasks_v2
@@ -12,7 +13,9 @@ from pydantic_ai.models import Model
 from assistant import internal
 from assistant.agent.agent import build_agent, build_model
 from assistant.agent.approvals import ReplyClassifier
-from assistant.channels import web
+from assistant.channels import telegram_webhook, web
+from assistant.channels.base import Channel, ChannelName
+from assistant.channels.telegram import TelegramApi, TelegramChannel
 from assistant.config import Settings
 from assistant.conversation.store import Store
 from assistant.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
@@ -32,9 +35,10 @@ def create_app(
     open_rezerve: OpenRezerve | None = None,
     tasks_client: TaskCreator | None = None,
     verify_token: TokenVerifier | None = None,
+    telegram_transport: httpx.AsyncBaseTransport | None = None,
 ) -> FastAPI:
-    """Tests pass a model, a Rezerve, Cloud Tasks and a token check of their
-    own; production builds each from settings."""
+    """Tests pass a model, a Rezerve, Cloud Tasks, a token check and Telegram's
+    transport of their own; production builds each from settings."""
     config = settings or Settings()  # pyright: ignore[reportCallIssue]
 
     @asynccontextmanager
@@ -44,6 +48,14 @@ def create_app(
             stack.push_async_callback(engine.dispose)
             store = Store(session_factory(engine))
             chosen = model or build_model(config)
+            channels: dict[ChannelName, Channel] = {"web": web.WebChannel()}
+            telegram: TelegramApi | None = None
+            if config.telegram_bot_token is not None:
+                client = await stack.enter_async_context(
+                    httpx.AsyncClient(transport=telegram_transport, timeout=15)
+                )
+                telegram = TelegramApi(config.telegram_bot_token.get_secret_value(), client)
+                channels["telegram"] = TelegramChannel(telegram)
             processor = TurnProcessor(
                 store=store,
                 agent=build_agent(chosen),
@@ -52,7 +64,7 @@ def create_app(
                 or partial(
                     connect, config.rezerve_mcp_url, config.assistant_mcp_token.get_secret_value()
                 ),
-                channels={"web": web.WebChannel()},
+                channels=channels,
                 settings=TurnSettings.from_settings(config),
             )
             queue: TaskQueue
@@ -83,6 +95,7 @@ def create_app(
                 ),
                 process_turn=processor.process,
                 verify_token=verify_token or internal.verify_google_token,
+                telegram=telegram,
             )
             yield
 
@@ -96,6 +109,7 @@ def create_app(
         max_age=600,
     )
     app.include_router(web.router)
+    app.include_router(telegram_webhook.router)
     app.include_router(internal.router)
 
     @app.get("/health")
