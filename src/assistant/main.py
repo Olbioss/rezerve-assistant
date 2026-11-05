@@ -1,13 +1,15 @@
 """The service: `uvicorn assistant.main:create_app --factory`."""
 
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from functools import partial
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from google.cloud import tasks_v2
 from pydantic_ai.models import Model
 
+from assistant import internal
 from assistant.agent.agent import build_agent, build_model
 from assistant.agent.approvals import ReplyClassifier
 from assistant.channels import web
@@ -16,9 +18,11 @@ from assistant.conversation.store import Store
 from assistant.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
 from assistant.db.session import create_engine, session_factory
 from assistant.mcp import connect
+from assistant.queue.base import TaskQueue
+from assistant.queue.cloud_tasks import CloudTasksQueue, TaskCreator
 from assistant.queue.local import LocalTaskQueue
 from assistant.ratelimit import SlidingWindow
-from assistant.services import AppServices
+from assistant.services import AppServices, TokenVerifier
 
 
 def create_app(
@@ -26,39 +30,61 @@ def create_app(
     *,
     model: Model | None = None,
     open_rezerve: OpenRezerve | None = None,
+    tasks_client: TaskCreator | None = None,
+    verify_token: TokenVerifier | None = None,
 ) -> FastAPI:
-    """Tests pass a model and a Rezerve of their own; production builds both
-    from settings."""
+    """Tests pass a model, a Rezerve, Cloud Tasks and a token check of their
+    own; production builds each from settings."""
     config = settings or Settings()  # pyright: ignore[reportCallIssue]
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        engine = create_engine(config.database_url)
-        store = Store(session_factory(engine))
-        chosen = model or build_model(config)
-        processor = TurnProcessor(
-            store=store,
-            agent=build_agent(chosen),
-            classifier=ReplyClassifier(chosen),
-            open_rezerve=open_rezerve
-            or partial(
-                connect, config.rezerve_mcp_url, config.assistant_mcp_token.get_secret_value()
-            ),
-            channels={"web": web.WebChannel()},
-            settings=TurnSettings.from_settings(config),
-        )
-        queue = LocalTaskQueue(processor.process)
-        post_limit = SlidingWindow(
-            limit=config.ip_message_limit, seconds=config.sender_window_seconds
-        )
-        app.state.services = AppServices(
-            settings=config, store=store, queue=queue, post_limit=post_limit
-        )
-        try:
+        async with AsyncExitStack() as stack:
+            engine = create_engine(config.database_url)
+            stack.push_async_callback(engine.dispose)
+            store = Store(session_factory(engine))
+            chosen = model or build_model(config)
+            processor = TurnProcessor(
+                store=store,
+                agent=build_agent(chosen),
+                classifier=ReplyClassifier(chosen),
+                open_rezerve=open_rezerve
+                or partial(
+                    connect, config.rezerve_mcp_url, config.assistant_mcp_token.get_secret_value()
+                ),
+                channels={"web": web.WebChannel()},
+                settings=TurnSettings.from_settings(config),
+            )
+            queue: TaskQueue
+            if config.queue_backend == "cloud_tasks":
+                if config.gcp_project is None or config.tasks_invoker_sa is None:
+                    raise RuntimeError("Settings let cloud_tasks through without its project")
+                client = tasks_client or await stack.enter_async_context(
+                    tasks_v2.CloudTasksAsyncClient()
+                )
+                queue = CloudTasksQueue(
+                    client,
+                    project=config.gcp_project,
+                    region=config.gcp_region,
+                    turns_queue=config.tasks_queue_turns,
+                    base_url=config.public_base_url,
+                    invoker=config.tasks_invoker_sa,
+                )
+            else:
+                local = LocalTaskQueue(processor.process)
+                stack.push_async_callback(local.aclose)
+                queue = local
+            app.state.services = AppServices(
+                settings=config,
+                store=store,
+                queue=queue,
+                post_limit=SlidingWindow(
+                    limit=config.ip_message_limit, seconds=config.sender_window_seconds
+                ),
+                process_turn=processor.process,
+                verify_token=verify_token or internal.verify_google_token,
+            )
             yield
-        finally:
-            await queue.aclose()
-            await engine.dispose()
 
     app = FastAPI(title="Rezerve Assistant", lifespan=lifespan)
     app.add_middleware(
@@ -70,6 +96,7 @@ def create_app(
         max_age=600,
     )
     app.include_router(web.router)
+    app.include_router(internal.router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
