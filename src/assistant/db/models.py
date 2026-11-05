@@ -51,6 +51,8 @@ class Conversation(Base):
             postgresql_where=sa.text("state <> 'closed'"),
         ),
         sa.Index("conversations_last_message_at", "last_message_at"),
+        # Rezerve's events name a customer by business and ref.
+        sa.Index("conversations_customer", "business_slug", "customer_ref"),
     )
 
 
@@ -208,3 +210,12 @@ class Reminder(Base):
     sent_at: Mapped[datetime | None]
     sent_message_id: Mapped[str | None] = mapped_column(sa.Text)
     created_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())
+
+
+class ProcessedEvent(Base):
+    """An event from Rezerve already acted on: a resent one is ignored."""
+
+    __tablename__ = "processed_events"
+
+    id: Mapped[str] = mapped_column(sa.Text, primary_key=True)
+    received_at: Mapped[datetime] = mapped_column(server_default=sa.func.now())

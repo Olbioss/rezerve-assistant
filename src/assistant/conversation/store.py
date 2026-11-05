@@ -20,6 +20,7 @@ from assistant.db.models import (
     Message,
     OwnerRelay,
     PendingApproval,
+    ProcessedEvent,
     Reminder,
     TelegramChat,
 )
@@ -671,6 +672,33 @@ class Store:
                 sa.update(Reminder)
                 .where(Reminder.booking_id == booking_id, Reminder.starts_at == starts_at)
                 .values(sent_at=now, sent_message_id=sent_message_id)
+            )
+
+    async def first_seen(self, event_id: str, now: datetime) -> bool:
+        """Whether this event is new; it counts as seen from now on."""
+        async with self._sessions.begin() as session:
+            await session.execute(
+                sa.delete(ProcessedEvent).where(ProcessedEvent.received_at < now - RETENTION)
+            )
+            added = await session.execute(
+                pg_insert(ProcessedEvent)
+                .values(id=event_id, received_at=now)
+                .on_conflict_do_nothing()
+                .returning(ProcessedEvent.id)
+            )
+            return added.scalar_one_or_none() is not None
+
+    async def latest_conversation(self, business_slug: str, customer_ref: str) -> int | None:
+        """The customer's most recent conversation with this business, open or not."""
+        async with self._sessions() as session:
+            return await session.scalar(
+                sa.select(Conversation.id)
+                .where(
+                    Conversation.business_slug == business_slug,
+                    Conversation.customer_ref == customer_ref,
+                )
+                .order_by(Conversation.last_message_at.desc())
+                .limit(1)
             )
 
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
