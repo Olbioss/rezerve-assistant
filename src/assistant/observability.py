@@ -1,17 +1,20 @@
 """Traces (spec §7.10): the turns, Pydantic AI's model calls and FastAPI's
 requests, over OTLP/HTTP to Langfuse Cloud EU, and none to Logfire itself.
 
-Two things stay out. httpx is not instrumented, since Telegram's URLs carry
-the bot token. And what customers wrote is left out unless TRACE_CONTENT is
-set, since it is personal data and Langfuse keeps it for 30 days.
+Three things stay out. httpx is not instrumented, since Telegram's URLs carry
+the bot token. What customers wrote is left out unless TRACE_CONTENT is set,
+since it is personal data and Langfuse keeps it for 30 days. And no request
+span carries its endpoint's arguments: they hold the settings, the database
+URL among them, what a customer wrote, and the widget's visitor ids.
 """
 
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
 from urllib.parse import unquote
 
 import logfire
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, WebSocket
 from opentelemetry import baggage, context
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -19,6 +22,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from assistant.config import Settings
 
 SERVICE = "rezerve-assistant"
+# What Langfuse groups traces by. Logfire's scrubber would redact the session
+# for its name, but here it names a conversation, not a login.
+LANGFUSE_KEYS = frozenset({"langfuse.session.id", "langfuse.user.id"})
 
 
 def otlp_headers(raw: str) -> dict[str, str]:
@@ -44,10 +50,23 @@ def configure(settings: Settings, app: FastAPI) -> bool:
         console=False,
         metrics=False,
         additional_span_processors=[BatchSpanProcessor(exporter)],
+        scrubbing=logfire.ScrubbingOptions(callback=_keep_langfuse_keys),
     )
     logfire.instrument_pydantic_ai(include_content=settings.trace_content)
-    logfire.instrument_fastapi(app, excluded_urls="/health")
+    logfire.instrument_fastapi(
+        app, excluded_urls="/health", request_attributes_mapper=_no_arguments
+    )
     return True
+
+
+def _keep_langfuse_keys(match: logfire.ScrubMatch) -> Any:
+    """Everything the scrubber finds is redacted, except Langfuse's own keys."""
+    return match.value if match.path[-1] in LANGFUSE_KEYS else None
+
+
+def _no_arguments(request: Request | WebSocket, attributes: dict[str, Any]) -> None:
+    """Logfire would put every endpoint argument on the request's span."""
+    return None
 
 
 @contextmanager

@@ -70,4 +70,7 @@ def test_traces_go_to_the_endpoint_and_nowhere_else(monkeypatch: pytest.MonkeyPa
     assert isinstance(processor, BatchSpanProcessor)
     # What customers write is personal data: out of the traces unless asked for.
     assert seen["instrument_pydantic_ai"] == ((), {"include_content": False})
-    assert seen["instrument_fastapi"] == ((app,), {"excluded_urls": "/health"})
+    # Which arguments reach the request spans: tests/unit/test_traces_exported.py.
+    (instrumented,), options = seen["instrument_fastapi"]
+    assert instrumented is app
+    assert options["excluded_urls"] == "/health"
