@@ -17,6 +17,7 @@ from assistant.conversation.turn import OpenRezerve, TurnProcessor, TurnSettings
 from assistant.db.session import create_engine, session_factory
 from assistant.mcp import connect
 from assistant.queue.local import LocalTaskQueue
+from assistant.ratelimit import SlidingWindow
 from assistant.services import AppServices
 
 
@@ -47,7 +48,12 @@ def create_app(
             settings=TurnSettings.from_settings(config),
         )
         queue = LocalTaskQueue(processor.process)
-        app.state.services = AppServices(settings=config, store=store, queue=queue)
+        post_limit = SlidingWindow(
+            limit=config.ip_message_limit, seconds=config.sender_window_seconds
+        )
+        app.state.services = AppServices(
+            settings=config, store=store, queue=queue, post_limit=post_limit
+        )
         try:
             yield
         finally:

@@ -86,10 +86,13 @@ class Settings(DatabaseSettings):
     # Budgets (spec §7.5). None switches a cap off, as the evals do.
     daily_request_cap: int | None = 400
     conversation_daily_token_cap: int | None = 40_000
-    sender_message_limit: int = 20
+    sender_message_limit: int | None = 20
     sender_window_seconds: int = 600
     # The widget's posts per client IP, in the same window.
     ip_message_limit: int = 60
+    # Which X-Forwarded-For entry is the client, counted from the right: the
+    # ones the platform appends. Checked on Cloud Run before go-live.
+    trusted_proxy_hops: int = 1
 
     # Traces over OTLP/HTTP (spec §7.10): Langfuse's traces endpoint, and its
     # headers as "Authorization=Basic <base64 of public:secret key>".

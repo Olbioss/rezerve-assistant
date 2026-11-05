@@ -411,6 +411,39 @@ class Store:
             )
             return int(total.scalar_one())
 
+    async def inbound_since(
+        self, channel: ChannelName, channel_user_id: str, since: datetime
+    ) -> int:
+        """Messages one sender has written since `since`, in any conversation."""
+        async with self._sessions() as session:
+            count = await session.execute(
+                sa.select(sa.func.count())
+                .select_from(Message)
+                .join(Conversation, Conversation.id == Message.conversation_id)
+                .where(
+                    Conversation.channel == channel,
+                    Conversation.channel_user_id == channel_user_id,
+                    Message.direction == "in",
+                    Message.created_at >= since,
+                )
+            )
+            return count.scalar_one()
+
+    async def said_since(self, conversation_id: int, text: str, since: datetime) -> bool:
+        """Whether this conversation was told `text` since `since`."""
+        async with self._sessions() as session:
+            said = await session.execute(
+                sa.select(
+                    sa.exists().where(
+                        Message.conversation_id == conversation_id,
+                        Message.direction == "out",
+                        Message.text == text,
+                        Message.created_at >= since,
+                    )
+                )
+            )
+            return said.scalar_one()
+
     async def decisions(self, conversation_id: int) -> list[tuple[str, Decision | None]]:
         """Every write proposed in the conversation, and how it was answered."""
         async with self._sessions() as session:

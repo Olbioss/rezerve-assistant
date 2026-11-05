@@ -20,7 +20,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
-from assistant.agent.budget import Budget
+from assistant.agent.budget import SLOW_DOWN, Budget
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation.lease import Lease, LeaseLost
 from assistant.conversation.store import Reply, RunRecord, Store, TurnResult
@@ -586,3 +586,17 @@ async def test_a_conversation_past_its_daily_tokens_gets_the_booking_page(store:
     )
 
     assert await turn.say("yarın yer var mı?") == [UNAVAILABLE]
+
+
+async def test_a_sender_past_the_limit_is_asked_to_slow_down_once_then_not_answered(
+    store: Store,
+) -> None:
+    # Spec §7.5: 20 messages in 10 minutes, here 3. Over the limit the sender
+    # hears it once, then nothing, and no model is asked either way.
+    turn = Harness(store, Script(says("Merhaba!")))
+    turn.settings = dataclasses.replace(turn.settings, budget=Budget(sender_messages=3))
+
+    assert await turn.say("selam", "orada mısınız", "hey") == ["Merhaba!"]
+    assert await turn.say("??") == [SLOW_DOWN]
+    assert await turn.say("cevap verin") == []
+    assert await store.unprocessed_inbound(turn.conversation_id) == []

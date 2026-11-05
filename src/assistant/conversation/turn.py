@@ -45,7 +45,7 @@ from assistant.agent.approvals import (
     write_actions,
     write_receipt,
 )
-from assistant.agent.budget import Budget
+from assistant.agent.budget import SLOW_DOWN, Budget
 from assistant.agent.handoff import booking_page, handoff_reply, unavailable_reply
 from assistant.channels.base import Channel, ChannelName
 from assistant.config import Settings
@@ -101,6 +101,8 @@ class TurnSettings:
             budget=Budget(
                 daily_requests=settings.daily_request_cap,
                 conversation_daily_tokens=settings.conversation_daily_token_cap,
+                sender_messages=settings.sender_message_limit,
+                sender_window=timedelta(seconds=settings.sender_window_seconds),
             ),
         )
 
@@ -270,7 +272,13 @@ class TurnProcessor:
         check_lease: Callable[[], None],
     ) -> TurnResult:
         turn = _Turn(processed=[message.seq for message in batch], started_at=self._clock())
-        spent = await self._settings.budget.spent(self._store, conversation.id, self._clock())
+        budget = self._settings.budget
+        spent = await budget.spent(self._store, conversation, self._clock())
+        if spent == "sender_rate":
+            # Spec §7.5: told once, then silence until the sender slows down.
+            since = self._clock() - budget.sender_window
+            told = await self._store.said_since(conversation.id, SLOW_DOWN, since)
+            return turn.finish([] if told else [Reply(SLOW_DOWN)], "degraded")
         if spent is not None:
             # No model call, and still an answer (spec §7.5).
             log.warning("Conversation %s: the %s budget is spent", conversation.id, spent)

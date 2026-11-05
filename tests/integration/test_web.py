@@ -58,7 +58,15 @@ def script() -> Script:
 
 
 @pytest.fixture
-async def widget(database_url: str, store: Store, script: Script) -> AsyncIterator[Widget]:
+def widget_overrides() -> dict[str, Any]:
+    """Settings a test changes, by parametrizing this fixture's name."""
+    return {}
+
+
+@pytest.fixture
+async def widget(
+    database_url: str, store: Store, script: Script, widget_overrides: dict[str, Any]
+) -> AsyncIterator[Widget]:
     # `store` empties the tables; the app opens its own engine on them.
     fake = FakeRezerve()
     settings = Settings(
@@ -67,6 +75,7 @@ async def widget(database_url: str, store: Store, script: Script) -> AsyncIterat
         assistant_mcp_token="t",
         customer_ref_secret="s",
         allowed_web_origins=[ORIGIN],
+        **widget_overrides,
     )
     app = create_app(settings, model=script.model, open_rezerve=lambda slug, ref: fake.session())
     async with app.router.lifespan_context(app):
@@ -171,3 +180,16 @@ async def test_a_browser_may_send_the_visitor_header(widget: Widget) -> None:
     )
     assert allowed.status_code == 200
     assert "x-visitor-id" in allowed.headers["access-control-allow-headers"].lower()
+
+
+@pytest.mark.parametrize("widget_overrides", [{"ip_message_limit": 2}])
+async def test_one_address_posting_too_fast_is_turned_away(widget: Widget, script: Script) -> None:
+    # A visitor id costs nothing to make, so the widget also counts per client
+    # address (spec §5): new visitors from one address share its limit.
+    script.add(says("Merhaba!"), says("Merhaba!"))
+    for _ in range(2):
+        widget.visitor_id = str(uuid4())
+        assert (await widget.post("merhaba")).status_code == 202
+    widget.visitor_id = str(uuid4())
+    assert (await widget.post("merhaba")).status_code == 429
+    await widget.settle()

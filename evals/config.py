@@ -16,3 +16,4 @@ class EvalSettings(Settings):
     # spend more in a day than production's caps allow.
     daily_request_cap: int | None = None
     conversation_daily_token_cap: int | None = None
+    sender_message_limit: int | None = None

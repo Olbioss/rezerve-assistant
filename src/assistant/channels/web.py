@@ -11,11 +11,12 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Path, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request
 from pydantic import BaseModel, StringConstraints
 
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
 from assistant.identity import customer_ref
+from assistant.ratelimit import client_ip
 from assistant.services import AppServices, app_services
 
 # Rezerve's own slug rule (lib/slug.ts).
@@ -65,7 +66,12 @@ class WebChannel:
 
 
 @router.post("/{slug}/messages", status_code=202)
-async def post_message(slug: Slug, body: PostedMessage, services: Services) -> Accepted:
+async def post_message(
+    slug: Slug, body: PostedMessage, services: Services, request: Request
+) -> Accepted:
+    address = client_ip(request, hops=services.settings.trusted_proxy_hops)
+    if not services.post_limit.allow(address):
+        raise HTTPException(status_code=429, detail="too_many_messages")
     message = InboundMessage(
         business_slug=slug,
         channel="web",
