@@ -15,6 +15,8 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
+from opentelemetry import trace
+from opentelemetry.trace import Span
 from pydantic_ai import (
     Agent,
     AgentRunResult,
@@ -73,10 +75,13 @@ from assistant.conversation.store import (
     TurnResult,
 )
 from assistant.mcp import BusinessInfo, CompletedWrite, OpenRezerve, RezerveSession
+from assistant.observability import tagged
 from assistant.queue.base import TaskQueue
 from assistant.reminders import MIN_NOTICE, REMIND_BEFORE, booked
 
 log = logging.getLogger(__name__)
+# A no-op until observability.configure sets an exporter.
+tracer = trace.get_tracer("assistant.turn")
 
 # Calls code may send back to the model in one turn — a service id it made up,
 # an email it forgot to ask for — before the business is handed the customer.
@@ -216,6 +221,7 @@ class _Turn:
             tool_calls=meter.tool_calls,
             tool_errors=meter.tool_errors,
             outcome=outcome,
+            trace_id=_current_trace_id(),
         )
         return TurnResult(
             processed=self.processed,
@@ -228,6 +234,28 @@ class _Turn:
             state=state,
             booked=booked(self.writes),
         )
+
+
+def _current_trace_id() -> str | None:
+    span = trace.get_current_span().get_span_context()
+    return format(span.trace_id, "032x") if span.is_valid else None
+
+
+def _describe(span: Span, result: TurnResult) -> None:
+    """Spec §7.10: what the turn did, on its trace."""
+    run = result.run
+    if run is None:
+        return
+    span.set_attributes(
+        {
+            "turn.outcome": run.outcome,
+            "turn.model_used": run.model_used or "",
+            "turn.models_tried": run.models_tried,
+            "turn.requests": run.requests,
+            "turn.input_tokens": run.input_tokens,
+            "turn.output_tokens": run.output_tokens,
+        }
+    )
 
 
 def _decision(resolution: Resolution) -> Decision:
@@ -264,6 +292,10 @@ class TurnProcessor:
 
     async def process(self, conversation_id: int) -> None:
         """Raises LeaseBusy when another handler holds the conversation."""
+        with tracer.start_as_current_span("turn") as span:
+            await self._process(conversation_id, span)
+
+    async def _process(self, conversation_id: int, span: Span) -> None:
         settings = self._settings
         async with Lease(
             self._store,
@@ -272,20 +304,38 @@ class TurnProcessor:
             renew_every=settings.lease_renew,
         ) as lease:
             conversation = await self._store.conversation(conversation_id)
+            trace_values = {
+                "langfuse.session.id": str(conversation.id),
+                "langfuse.user.id": conversation.customer_ref,
+            }
+            span.set_attributes(
+                {
+                    **trace_values,
+                    "langfuse.trace.name": "turn",
+                    "business.slug": conversation.business_slug,
+                    "channel": conversation.channel,
+                }
+            )
+            with tagged(trace_values):
+                await self._answer_all(conversation, span, lease)
+
+    async def _answer_all(self, conversation: ConversationRecord, span: Span, lease: Lease) -> None:
+        """Every unprocessed message, oldest first, until none is left."""
+        await self._send_unsent(conversation)
+        while batch := await self._store.unprocessed_inbound(conversation.id):
+            if await self._owner_has(conversation):
+                result = self._relay(batch)
+            else:
+                result = await self._answer(conversation, batch, lease.check)
+                if conversation.state == "human" and result.state is None:
+                    # The owner's 24 hours are over, or no owner is linked now.
+                    result = dataclasses.replace(result, state="active")
+            lease.check()
+            await self._store.commit_turn(conversation.id, result, self._clock())
+            _describe(span, result)
+            await self._remind(conversation, result.booked)
             await self._send_unsent(conversation)
-            while batch := await self._store.unprocessed_inbound(conversation_id):
-                if await self._owner_has(conversation):
-                    result = self._relay(batch)
-                else:
-                    result = await self._answer(conversation, batch, lease.check)
-                    if conversation.state == "human" and result.state is None:
-                        # The owner's 24 hours are over, or no owner is linked now.
-                        result = dataclasses.replace(result, state="active")
-                lease.check()
-                await self._store.commit_turn(conversation_id, result, self._clock())
-                await self._remind(conversation, result.booked)
-                await self._send_unsent(conversation)
-                conversation = await self._store.conversation(conversation_id)
+            conversation = await self._store.conversation(conversation.id)
 
     async def _send_unsent(self, conversation: ConversationRecord) -> None:
         channel = self._channels[conversation.channel]

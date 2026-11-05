@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import tasks_v2
 from pydantic_ai.models import Model
 
-from assistant import events, internal
+from assistant import events, internal, observability
 from assistant.agent.agent import build_agent, build_model
 from assistant.agent.approvals import ReplyClassifier
 from assistant.channels import telegram_webhook, web
@@ -118,6 +118,7 @@ def create_app(
         # The widget polls every second; one preflight per ten minutes is plenty.
         max_age=600,
     )
+    observability.configure(config, app)
     app.include_router(web.router)
     app.include_router(telegram_webhook.router)
     app.include_router(events.router)

@@ -6,6 +6,10 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic_ai import (
     ModelHTTPError,
     ModelMessage,
@@ -724,3 +728,36 @@ async def test_a_move_is_reminded_at_its_new_time(store: Store) -> None:
     await turn.say("randevumu bir gün sonraya alalım")
     await turn.say("evet")
     assert turn.queue.reminders == [(booking.id, later, later - timedelta(hours=24))]
+
+
+@pytest.fixture(scope="session")
+def spans() -> InMemorySpanExporter:
+    """Every span from here on, kept in memory: OpenTelemetry takes one
+    provider per process, so this is set once."""
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+    return exporter
+
+
+async def test_each_turn_is_a_trace_whose_id_its_run_keeps(
+    store: Store, spans: InMemorySpanExporter
+) -> None:
+    # Spec §7.10: one trace per turn, and its id on agent_runs, which outlives
+    # Langfuse's 30 days.
+    spans.clear()
+    turn = Harness(store, Script(says("Merhaba!")))
+    await turn.say("merhaba")
+
+    [span] = [span for span in spans.get_finished_spans() if span.name == "turn"]
+    [run] = await store.runs(turn.conversation_id)
+    assert span.context is not None
+    assert run.trace_id == format(span.context.trace_id, "032x")
+    attributes = dict(span.attributes or {})
+    assert attributes["langfuse.session.id"] == str(turn.conversation_id)
+    assert attributes["langfuse.user.id"] == REF
+    assert attributes["business.slug"] == "demo"
+    assert attributes["channel"] == "web"
+    assert attributes["turn.outcome"] == "reply"
+    assert attributes["turn.model_used"] == "script"

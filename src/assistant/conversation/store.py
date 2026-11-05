@@ -104,6 +104,8 @@ class RunRecord:
     tool_calls: int
     tool_errors: int
     outcome: Outcome
+    # The turn's trace, kept past Langfuse's 30 days (spec §7.10).
+    trace_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -404,6 +406,7 @@ class Store:
                         tool_calls=run.tool_calls,
                         tool_errors=run.tool_errors,
                         outcome=run.outcome,
+                        trace_id=run.trace_id,
                     )
                 )
             if result.processed:
@@ -433,6 +436,7 @@ class Store:
                     tool_calls=row.tool_calls,
                     tool_errors=row.tool_errors,
                     outcome=cast(Outcome, row.outcome),
+                    trace_id=row.trace_id,
                 )
                 for row in rows.scalars()
             ]
