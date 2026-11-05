@@ -258,3 +258,44 @@ async def test_an_owner_testing_as_their_own_customer_is_told_apart_by_reply(
     await bot.write("Buradayım.", reply_to=notice)
     await bot.settle()
     assert bot.telegram.texts(CHAT)[-1] == "İşletme: Buradayım."
+
+
+async def test_a_message_whose_turn_was_not_queued_is_answered_when_telegram_resends_it(
+    bot: Bot, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Cloud Tasks can refuse for a moment: the webhook fails, Telegram sends
+    # the update again, and the message stored the first time must still be
+    # answered (spec §7.2).
+    bot.script.add(says("Merhaba!"))
+    await bot.write("/start demo")
+    queue = cast(LocalTaskQueue, cast(AppServices, bot.app.state.services).queue)
+    enqueue = queue.enqueue_turn
+
+    async def unavailable(conversation_id: int, message_seq: int) -> None:
+        monkeypatch.setattr(queue, "enqueue_turn", enqueue)
+        raise RuntimeError("Cloud Tasks is unavailable")
+
+    monkeypatch.setattr(queue, "enqueue_turn", unavailable)
+    with pytest.raises(RuntimeError):
+        await bot.write("merhaba", update_id=5000)
+    await bot.write("merhaba", update_id=5000)
+    await bot.settle()
+
+    assert bot.telegram.texts(CHAT) == [WELCOME, "Merhaba!"]
+
+
+@pytest.mark.parametrize("change", ["unlinked", "linked to another chat"])
+async def test_a_chat_no_longer_the_owners_cannot_answer_for_the_business(
+    bot: Bot, store: Store, change: str
+) -> None:
+    notice = await handed_to_the_owner(bot, store)
+    if change == "unlinked":
+        await store.unlink_owner("demo")
+    else:
+        await store.link_owner("demo", 9191)
+
+    await bot.write("Hâlâ buradayım.", chat=OWNER, reply_to=notice)
+    await bot.settle()
+
+    assert bot.telegram.texts(CHAT)[-1] == HANDED_OFF
+    assert bot.telegram.texts(OWNER)[-1] == NO_BUSINESS

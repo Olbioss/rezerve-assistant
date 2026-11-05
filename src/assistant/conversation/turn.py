@@ -54,6 +54,7 @@ from assistant.agent.handoff import (
     booking_page,
     handoff_reply,
     owner_notice,
+    owner_unreachable,
     relayed,
     unavailable_reply,
 )
@@ -321,7 +322,7 @@ class TurnProcessor:
 
     async def _answer_all(self, conversation: ConversationRecord, span: Span, lease: Lease) -> None:
         """Every unprocessed message, oldest first, until none is left."""
-        await self._send_unsent(conversation)
+        conversation = await self._send_unsent(conversation)
         while batch := await self._store.unprocessed_inbound(conversation.id):
             if await self._owner_has(conversation):
                 result = self._relay(batch)
@@ -337,23 +338,44 @@ class TurnProcessor:
             await self._send_unsent(conversation)
             conversation = await self._store.conversation(conversation.id)
 
-    async def _send_unsent(self, conversation: ConversationRecord) -> None:
+    async def _send_unsent(self, conversation: ConversationRecord) -> ConversationRecord:
+        """Sends what waits unsent, the customer's first, then the owner's.
+        Returns the conversation as it now stands: an owner Telegram refuses
+        cannot answer, so the assistant takes the conversation back (spec §7.5)."""
+        await self._send_to_customer(conversation)
+        if await self._send_to_owner(conversation):
+            return conversation
+        page = booking_page(self._settings.rezerve_mcp_url, conversation.business_slug)
+        if await self._store.hand_back(conversation.id, owner_unreachable(page)) is None:
+            return conversation
+        await self._send_to_customer(conversation)
+        return await self._store.conversation(conversation.id)
+
+    async def _send_to_customer(self, conversation: ConversationRecord) -> None:
         channel = self._channels[conversation.channel]
         for message in await self._store.unsent(conversation.id):
             sent_id = await channel.send(conversation.channel_user_id, message)
             await self._store.mark_sent(message.seq, sent_id, self._clock())
+
+    async def _send_to_owner(self, conversation: ConversationRecord) -> bool:
+        """Sends the owner's notes; False if Telegram refused one for good."""
         notes = await self._store.unsent_to_owner(conversation.id)
         if not notes:
-            return
+            return True
         owner = await self._owner_chat(conversation.business_slug)
         telegram = self._channels.get("telegram")
+        reached = True
         for note in notes:
             if owner is None or telegram is None:
                 # Unlinked since it was written: there is no one to tell.
                 await self._store.mark_sent(note.seq, "owner:unlinked", self._clock())
                 continue
             sent_id = await telegram.send(str(owner), note)
-            await self._store.mark_relayed(note.seq, sent_id, owner, conversation.id, self._clock())
+            delivered = await self._store.mark_relayed(
+                note.seq, sent_id, owner, conversation.id, self._clock()
+            )
+            reached = reached and delivered
+        return reached
 
     async def _remind(
         self, conversation: ConversationRecord, booked: list[tuple[str, datetime]]

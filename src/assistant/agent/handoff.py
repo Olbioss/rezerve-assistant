@@ -14,6 +14,10 @@ HANDED_OFF = "Sizi işletmeye aktarıyorum, en kısa sürede dönüş yapılacak
 # When the owner hands the conversation back, or their 24 hours are over.
 BACK = "Asistan yeniden sizinle. Size nasıl yardımcı olabilirim?"
 HAND_BACK = "/bitir"
+# A notice quotes this much of each message, and of the reason: six messages
+# and how to answer fit in one Telegram message (4096 characters).
+QUOTE = 400
+REASON = 200
 
 
 def handoff_reply(business: BusinessInfo) -> str:
@@ -31,12 +35,13 @@ def handoff_reply(business: BusinessInfo) -> str:
 def owner_notice(business_slug: str, reason: str, recent: Sequence[tuple[str, str]]) -> str:
     """The owner's first word of a handoff: why, what was said, how to answer."""
     said = [
-        f"{'Müşteri' if direction == 'in' else 'Asistan'}: {text}" for direction, text in recent
+        f"{'Müşteri' if direction == 'in' else 'Asistan'}: {_cut(text, QUOTE)}"
+        for direction, text in recent
     ]
     return "\n".join(
         [
             f"🔔 {business_slug}: bir müşteri size aktarıldı.",
-            f"Neden: {reason}",
+            f"Neden: {_cut(reason, REASON)}",
             "",
             "Son mesajlar:",
             *said,
@@ -55,6 +60,18 @@ def relayed(text: str) -> str:
 def from_owner(text: str) -> str:
     """What the owner wrote, as the customer reads it."""
     return f"İşletme: {text}"
+
+
+def owner_unreachable(booking_page_url: str) -> str:
+    """Telegram refused the owner's chat, so the assistant answers again (spec §7.5)."""
+    return (
+        "İşletmeye şu an ulaşamadım; dilerseniz size ben yardımcı olmaya devam edeyim. "
+        f"İşletmenin iletişim bilgileri randevu sayfasında: {booking_page_url}"
+    )
+
+
+def _cut(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
 def booking_page(rezerve_mcp_url: str, business_slug: str) -> str:

@@ -29,9 +29,20 @@ async def test_a_redelivered_message_is_stored_once(store: Store) -> None:
     first = await store.record_inbound(message, REF, NOW)
     again = await store.record_inbound(message, REF, NOW)
     assert first.seq is not None
-    assert again.seq is None
-    assert again.conversation_id == first.conversation_id
+    # Still unanswered, it asks for its turn again: the first ask may never
+    # have reached the queue.
+    assert again == first
     assert [m.text for m in await store.unprocessed_inbound(first.conversation_id)] == ["merhaba"]
+
+
+async def test_a_redelivery_of_an_answered_message_asks_for_nothing(store: Store) -> None:
+    message = inbound()
+    first = await store.record_inbound(message, REF, NOW)
+    assert first.seq is not None
+    answered = TurnResult(processed=[first.seq], replies=[Reply("Merhaba!")])
+    await store.commit_turn(first.conversation_id, answered, NOW)
+    again = await store.record_inbound(message, REF, NOW)
+    assert again.seq is None
 
 
 async def test_one_customer_keeps_one_open_conversation_per_business(store: Store) -> None:

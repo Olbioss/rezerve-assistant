@@ -39,7 +39,9 @@ type State = Literal["active", "human"]
 @dataclass(frozen=True)
 class Recorded:
     conversation_id: int
-    # None when this message was a redelivery, stored the first time.
+    # The message, while it waits for an answer: a turn to ask for. A
+    # redelivery asks again, since the first ask may never have reached the
+    # queue; None once it was answered.
     seq: int | None
 
 
@@ -176,12 +178,26 @@ class Store:
                 .returning(Message.seq)
             )
             seq = inserted.scalar_one_or_none()
-            if seq is not None:
-                await session.execute(
-                    sa.update(Conversation)
-                    .where(Conversation.id == conversation_id)
-                    .values(last_message_at=now)
-                )
+            if seq is None:
+                # A redelivery, stored the first time.
+                waiting = (
+                    await session.execute(
+                        sa.select(Message.conversation_id, Message.seq).where(
+                            Message.channel == message.channel,
+                            Message.channel_message_id == message.channel_message_id,
+                            Message.direction == "in",
+                            Message.processed_at.is_(None),
+                        )
+                    )
+                ).one_or_none()
+                if waiting is None:
+                    return Recorded(conversation_id=conversation_id, seq=None)
+                return Recorded(conversation_id=waiting.conversation_id, seq=waiting.seq)
+            await session.execute(
+                sa.update(Conversation)
+                .where(Conversation.id == conversation_id)
+                .values(last_message_at=now)
+            )
             return Recorded(conversation_id=conversation_id, seq=seq)
 
     async def _open_conversation(
@@ -570,9 +586,10 @@ class Store:
         owner_chat_id: int,
         conversation_id: int,
         now: datetime,
-    ) -> None:
+    ) -> bool:
         """Mark an owner's message sent, and remember which conversation it
-        speaks for, so the owner's reply to it finds its way back."""
+        speaks for, so the owner's reply to it finds its way back. False when
+        Telegram gave it no message id: it never reached the owner."""
         _, _, message_id = sent_message_id.partition(":")
         async with self._sessions.begin() as session:
             await session.execute(
@@ -580,24 +597,32 @@ class Store:
                 .where(Message.seq == seq)
                 .values(sent_at=now, sent_message_id=sent_message_id)
             )
-            if message_id.isdigit():
-                await session.execute(
-                    pg_insert(OwnerRelay)
-                    .values(
-                        owner_chat_id=owner_chat_id,
-                        telegram_message_id=int(message_id),
-                        conversation_id=conversation_id,
-                    )
-                    .on_conflict_do_nothing()
+            if not message_id.isdigit():
+                return False
+            await session.execute(
+                pg_insert(OwnerRelay)
+                .values(
+                    owner_chat_id=owner_chat_id,
+                    telegram_message_id=int(message_id),
+                    conversation_id=conversation_id,
                 )
+                .on_conflict_do_nothing()
+            )
+            return True
 
     async def relayed_conversation(self, owner_chat_id: int, message_id: int) -> int | None:
-        """The conversation an owner's message speaks for, if it is one of ours."""
+        """The conversation an owner's message speaks for, if it is one of ours
+        and the chat is still its business's owner: an unlinked or replaced
+        chat speaks for no one."""
         async with self._sessions() as session:
             return await session.scalar(
-                sa.select(OwnerRelay.conversation_id).where(
+                sa.select(OwnerRelay.conversation_id)
+                .join(Conversation, Conversation.id == OwnerRelay.conversation_id)
+                .join(BusinessConfig, BusinessConfig.slug == Conversation.business_slug)
+                .where(
                     OwnerRelay.owner_chat_id == owner_chat_id,
                     OwnerRelay.telegram_message_id == message_id,
+                    BusinessConfig.owner_telegram_chat_id == owner_chat_id,
                 )
             )
 

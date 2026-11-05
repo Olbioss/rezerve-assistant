@@ -25,7 +25,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from assistant.agent.agent import build_agent
 from assistant.agent.approvals import EXPIRED, ONE_AT_A_TIME, ReplyClassifier
 from assistant.agent.budget import SLOW_DOWN, Budget
-from assistant.agent.handoff import HANDED_OFF
+from assistant.agent.handoff import HANDED_OFF, booking_page, owner_unreachable
 from assistant.channels.base import ChannelName, InboundMessage, OutboundMessage
 from assistant.conversation.lease import Lease, LeaseLost
 from assistant.conversation.store import Reply, RunRecord, Store, TurnResult
@@ -659,6 +659,23 @@ async def test_while_the_owner_has_it_the_customer_is_relayed_and_no_model_asked
     assert await turn.say("ne zaman dönüş yapacaksınız?") == []
     assert turn.telegram.sent[-1] == (str(OWNER_CHAT), "Müşteri: ne zaman dönüş yapacaksınız?")
     assert await store.unprocessed_inbound(turn.conversation_id) == []
+
+
+async def test_an_owner_telegram_refuses_gives_the_customer_back_to_the_assistant(
+    store: Store,
+) -> None:
+    # Spec §7.5: never without an answer. The owner blocked the bot, or the
+    # chat id was mistyped at linking: no one would read the customer.
+    await store.link_owner("demo", OWNER_CHAT)
+    turn = Harness(
+        store, Script(calls("handoff_to_owner", {"reason": "şikayet"}), says("Buyurun?"))
+    )
+    turn.telegram.refused.add(str(OWNER_CHAT))
+    page = booking_page(turn.settings.rezerve_mcp_url, "demo")
+
+    assert await turn.say("şikayetçiyim") == [HANDED_OFF, owner_unreachable(page)]
+    assert (await store.conversation(turn.conversation_id)).state == "active"
+    assert await turn.say("merhaba?") == ["Buyurun?"]
 
 
 async def test_a_day_after_the_handoff_the_assistant_answers_again(store: Store) -> None:

@@ -20,6 +20,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 API = "https://api.telegram.org"
 # Answers that retrying will never change: the chat is gone or blocked us.
 UNREACHABLE = frozenset({400, 403})
+# Telegram refuses a text over 4096 characters, counting some characters
+# twice; a longer one is cut to arrive at all.
+MAX_TEXT = 4000
 
 
 class TelegramError(Exception):
@@ -39,6 +42,8 @@ class TelegramApi:
         self, chat_id: int, text: str, buttons: Sequence[LinkAction] = ()
     ) -> int:
         """Send `text`, with each link as an inline button; returns its message id."""
+        if len(text) > MAX_TEXT:
+            text = text[: MAX_TEXT - 1] + "…"
         payload: dict[str, Any] = {"chat_id": chat_id, "text": text}
         if buttons:
             payload["reply_markup"] = {

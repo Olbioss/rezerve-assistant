@@ -61,6 +61,16 @@ async def test_a_passing_failure_is_raised_so_the_turn_is_retried(
         await TelegramChannel(api).send("42", OutboundMessage(seq=7, text="Merhaba!"))
 
 
+async def test_a_text_too_long_for_telegram_is_cut_to_fit(
+    api: TelegramApi, telegram: FakeTelegram
+) -> None:
+    # Telegram refuses a message over 4096 characters, and a refused one is lost.
+    await api.send_message(42, "a" * 5000)
+    [payload] = telegram.sent()
+    assert len(payload["text"]) <= 4096
+    assert payload["text"].startswith("a" * 3900)
+
+
 async def test_the_bot_token_is_in_no_error_message(
     api: TelegramApi, telegram: FakeTelegram
 ) -> None:
