@@ -10,6 +10,7 @@ dependencies = [
     "fastapi>=0.143.1",
     "google-auth>=2.62.0",
     "google-cloud-tasks>=2.26.0",
+    "httpx>=0.28.1",
     "pydantic-ai-slim[google,groq,mcp]>=2.56.0",
     "pydantic-settings>=2.16.0",
     "sqlalchemy[asyncio]>=2.1.4",
