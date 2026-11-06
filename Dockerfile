@@ -18,5 +18,5 @@ COPY --from=build /app /app
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYDANTIC_AI_NO_BANNER=1
 USER assistant
 EXPOSE 8000
-# Cloud Run says which port in $PORT; locally it is 8000.
-CMD ["sh", "-c", "exec uvicorn assistant.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"]
+# uvicorn, on Cloud Run's $PORT (8000 locally), logging JSON lines.
+CMD ["python", "-m", "assistant.serve"]

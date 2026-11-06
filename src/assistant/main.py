@@ -1,4 +1,4 @@
-"""The service: `uvicorn assistant.main:create_app --factory`."""
+"""The service, which `python -m assistant.serve` runs under uvicorn."""
 
 from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack, asynccontextmanager
