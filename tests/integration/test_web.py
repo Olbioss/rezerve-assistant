@@ -1,6 +1,7 @@
 """The widget's endpoints, through the whole service in process: the app and
 its lifespan, the local queue, Postgres, the fake Rezerve, a scripted model."""
 
+import logging
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any, cast
@@ -142,6 +143,18 @@ async def test_the_widget_keeps_looking_while_the_owner_holds_the_conversation(
     handed = TurnResult(processed=[], replies=[], state="human")
     await store.commit_turn(conversation_id, handed, datetime.now(UTC))
     assert (await widget.poll())["with_owner"] is True
+
+
+async def test_the_first_post_shows_the_platforms_forwarding(
+    widget: Widget, script: Script, caplog: pytest.LogCaptureFixture
+) -> None:
+    script.add(says("Merhaba!"), says("Buyrun."))
+    with caplog.at_level(logging.INFO, logger="assistant.ratelimit"):
+        await widget.post("merhaba")
+        await widget.post("bir sorum var")
+    assert caplog.messages == [
+        "A widget post carried 0 X-Forwarded-For entries; TRUSTED_PROXY_HOPS is 1"
+    ]
 
 
 @pytest.mark.parametrize(

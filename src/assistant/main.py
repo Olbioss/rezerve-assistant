@@ -24,7 +24,7 @@ from assistant.mcp import OpenRezerve, connect
 from assistant.queue.base import TaskQueue
 from assistant.queue.cloud_tasks import CloudTasksQueue, TaskCreator
 from assistant.queue.local import LocalTaskQueue
-from assistant.ratelimit import SlidingWindow
+from assistant.ratelimit import ForwardedLayout, SlidingWindow
 from assistant.reminders import Reminders
 from assistant.services import AppServices, TokenVerifier
 
@@ -104,6 +104,7 @@ def create_app(
                 post_limit=SlidingWindow(
                     limit=config.ip_message_limit, seconds=config.sender_window_seconds
                 ),
+                forwarded=ForwardedLayout(hops=config.trusted_proxy_hops),
                 process_turn=processor.process,
                 verify_token=verify_token or internal.verify_google_token,
                 telegram=telegram,

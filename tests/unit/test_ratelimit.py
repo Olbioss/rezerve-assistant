@@ -1,6 +1,9 @@
+import logging
+
+import pytest
 from starlette.requests import Request
 
-from assistant.ratelimit import SlidingWindow, client_ip
+from assistant.ratelimit import ForwardedLayout, SlidingWindow, client_ip
 
 
 class Clock:
@@ -52,3 +55,18 @@ def test_the_client_is_counted_from_the_right_of_x_forwarded_for() -> None:
 def test_without_the_header_the_connection_is_the_client() -> None:
     assert client_ip(request(None), hops=1) == "10.0.0.9"
     assert client_ip(request("203.0.113.7"), hops=2) == "10.0.0.9"
+
+
+def test_the_first_post_logs_how_many_entries_came_and_no_address(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # No Cloud Run page says how many entries its front end appends: the
+    # first post on each instance shows it, for TRUSTED_PROXY_HOPS.
+    layout = ForwardedLayout(hops=1)
+    with caplog.at_level(logging.INFO, logger="assistant.ratelimit"):
+        layout.note(request("6.6.6.6, 203.0.113.7"))
+        layout.note(request("198.51.100.4"))
+    assert caplog.messages == [
+        "A widget post carried 2 X-Forwarded-For entries; TRUSTED_PROXY_HOPS is 1"
+    ]
+    assert "203.0.113.7" not in caplog.text

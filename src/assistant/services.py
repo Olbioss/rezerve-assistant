@@ -11,7 +11,7 @@ from assistant.channels.telegram import TelegramApi
 from assistant.config import Settings
 from assistant.conversation.store import Store
 from assistant.queue.base import TaskQueue
-from assistant.ratelimit import SlidingWindow
+from assistant.ratelimit import ForwardedLayout, SlidingWindow
 
 # Checks a bearer token for an audience and returns its claims (spec §5).
 type TokenVerifier = Callable[[str, str], Awaitable[Mapping[str, Any]]]
@@ -24,6 +24,8 @@ class AppServices:
     queue: TaskQueue
     # The widget's posts per client address.
     post_limit: SlidingWindow
+    # Logs how many X-Forwarded-For entries the instance's first post carried.
+    forwarded: ForwardedLayout
     # Answers a conversation's unprocessed messages: what a turn task runs.
     process_turn: Callable[[int], Awaitable[None]]
     verify_token: TokenVerifier

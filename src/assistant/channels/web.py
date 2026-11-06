@@ -72,6 +72,7 @@ class WebChannel:
 async def post_message(
     slug: Slug, body: PostedMessage, services: Services, request: Request
 ) -> Accepted:
+    services.forwarded.note(request)
     address = client_ip(request, hops=services.settings.trusted_proxy_hops)
     if not services.post_limit.allow(address):
         raise HTTPException(status_code=429, detail="too_many_messages")

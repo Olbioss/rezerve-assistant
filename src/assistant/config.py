@@ -91,8 +91,8 @@ class Settings(DatabaseSettings):
     # The widget's posts per client IP, in the same window.
     ip_message_limit: int = 60
     # Which X-Forwarded-For entry is the client, counted from the right: the
-    # ones the platform appends. Checked on Cloud Run before go-live.
-    trusted_proxy_hops: int = 1
+    # ones the platform appends. Each instance logs how many a post carried.
+    trusted_proxy_hops: int = Field(default=1, ge=1)
 
     # Traces over OTLP/HTTP (spec §7.10): Langfuse's traces endpoint, and its
     # headers as "Authorization=Basic <base64 of public:secret key>".

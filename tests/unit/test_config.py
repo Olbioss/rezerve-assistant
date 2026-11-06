@@ -79,6 +79,19 @@ def test_the_environment_still_overrides_the_secret(
     assert Settings(_env_file=None).daily_request_cap == 50  # pyright: ignore[reportCallIssue]
 
 
+@pytest.mark.parametrize("hops", [0, -1])
+def test_the_client_is_never_an_entry_the_client_wrote(hops: int) -> None:
+    # With 0, the address taken would be X-Forwarded-For's leftmost entry,
+    # which a client writes itself: each post could name a new one.
+    with pytest.raises(ValidationError, match="trusted_proxy_hops"):
+        Settings(
+            _env_file=None,  # pyright: ignore[reportCallIssue]
+            assistant_mcp_token="t",
+            customer_ref_secret="s",
+            trusted_proxy_hops=hops,
+        )
+
+
 def test_cloud_tasks_needs_a_project_and_an_invoker() -> None:
     with pytest.raises(ValidationError, match="GCP_PROJECT and TASKS_INVOKER_SA"):
         Settings(
