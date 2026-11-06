@@ -168,6 +168,12 @@ jobs:
             --set-env-vars=CONFIG_FILE=/secrets/config.json \
             --allow-unauthenticated --cpu-throttling --cpu=1 --memory=512Mi --concurrency=20 \
             --min-instances=0 --max-instances=2 --timeout=300 --quiet
+      # After a rollback, Cloud Run keeps traffic on the pinned revision for
+      # every later one: a push to main is a roll forward.
+      - name: Send all traffic to it
+        run: |
+          gcloud run services update-traffic assistant --to-latest --region="$REGION" \
+            --project="$PROJECT" --quiet
       - name: Ask it for /health
         run: |
           url="$(gcloud run services describe assistant --region="$REGION" --project="$PROJECT" \

@@ -28,9 +28,13 @@ VERSION="$(gcloud secrets versions describe latest --secret="$SECRET" --project=
 echo "The config is version $VERSION."
 
 # Before the first deploy there is no service yet: the deploy pins the newest.
+# After a rollback, traffic stays pinned until sent to the newest revision: a
+# config pushed is a roll forward.
 if gcloud run services describe "$SERVICE" --region="$REGION" --project="$PROJECT" >/dev/null 2>&1; then
   gcloud run services update "$SERVICE" --region="$REGION" --project="$PROJECT" \
     --update-secrets="/secrets/config.json=$SECRET:$VERSION" --quiet
+  gcloud run services update-traffic "$SERVICE" --to-latest --region="$REGION" \
+    --project="$PROJECT" --quiet
 fi
 
 # Newest first: keep two.

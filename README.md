@@ -185,14 +185,18 @@ PROJECT=<project id> deploy/push-config.sh
 
 It checks the file (`uv run assistant config check deploy/config.json`, which
 names each problem by its key, never its value), uploads it as the secret's
-new version, and moves a running service to it. The version before stays
-for a rollback.
+new version, and moves a running service to it, with all traffic on the
+newest revision. The version before stays for a rollback.
 
 From then on each push to `main` deploys, once its checks pass: the image,
 tagged with the commit; `alembic upgrade head` as a Cloud Run job; the
-service, at 0 to 2 instances billed per request; a `/health` check. Each
-revision keeps the config version it started with. The first deploy needs no
-commit: Actions > CI > Run workflow, on `main`.
+service, at 0 to 2 instances billed per request, with all traffic on it; a
+`/health` check. Each revision keeps the config version it started with. The
+first deploy needs no commit: Actions > CI > Run workflow, on `main`.
+
+A rollback (`gcloud run services update-traffic assistant
+--to-revisions=<revision>=100`) holds until the next deploy or config push:
+each sends all traffic to the newest revision again.
 
 Last, Telegram:
 

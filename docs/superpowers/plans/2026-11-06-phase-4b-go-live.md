@@ -4424,7 +4424,12 @@ gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.serv
     --region=europe-west1 --project=<project id>
   ```
 
-  Its config version is the one kept for it.
+  Its config version is the one kept for it. The rollback holds until the next push to `main` or `push-config.sh`: each sends all traffic to the newest revision again. To roll forward with neither:
+
+  ```bash
+  gcloud run services update-traffic assistant --to-latest \
+    --region=europe-west1 --project=<project id>
+  ```
 - **Dark:**
   - remove `ASSISTANT_URL` in Vercel and redeploy, and the widget is gone;
   - set the bot's webhook to nothing in @BotFather, or call `setWebhook` with an empty `url`, and Telegram stops.

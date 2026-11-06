@@ -49,10 +49,30 @@ def test_the_config_becomes_the_running_services_and_old_versions_go(
         f"secrets versions add assistant-config --data-file={path} --project={PROJECT} --quiet",
         "run services update assistant --region=europe-west1 "
         f"--project={PROJECT} --update-secrets=/secrets/config.json=assistant-config:4 --quiet",
+        "run services update-traffic assistant --to-latest --region=europe-west1 "
+        f"--project={PROJECT} --quiet",
         # Version 3 stays for a rollback.
         f"secrets versions destroy 2 --secret=assistant-config --project={PROJECT} --quiet",
         f"secrets versions destroy 1 --secret=assistant-config --project={PROJECT} --quiet",
     ]
+
+
+def test_after_a_rollback_the_config_pushed_is_the_one_served(
+    tmp_path: Path, gcloud: FakeGcloud
+) -> None:
+    # A rollback pins traffic to a revision, and Cloud Run keeps that split for
+    # every later revision. Unless traffic follows the newest again, the new
+    # config never serves, and two pushes later the pinned revision's version
+    # is destroyed under it.
+    gcloud.exists("run services describe assistant")
+    done = gcloud.run(SCRIPT, config(tmp_path), PROJECT=PROJECT)
+    assert done.returncode == 0, done.stdout + done.stderr
+    changes = gcloud.changes()
+    [update] = [i for i, c in enumerate(changes) if c.startswith("run services update ")]
+    [latest] = [i for i, c in enumerate(changes) if c.startswith("run services update-traffic")]
+    [first_destroyed] = [i for i, c in enumerate(changes) if " destroy 2 " in c]
+    assert update < latest < first_destroyed
+    assert " --to-latest " in changes[latest]
 
 
 def test_before_the_first_deploy_it_is_only_uploaded(tmp_path: Path, gcloud: FakeGcloud) -> None:
