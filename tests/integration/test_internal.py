@@ -30,11 +30,24 @@ async def verify(token: str, audience: str) -> Mapping[str, Any]:
     return {"email": TOKENS[token], "email_verified": True, "aud": audience}
 
 
+class Flushes:
+    """Stands in for sending the finished spans: counts each time it is asked."""
+
+    def __init__(self) -> None:
+        self.count = 0
+
+    async def __call__(self) -> None:
+        self.count += 1
+
+
 class Service:
-    def __init__(self, client: httpx.AsyncClient, tasks: FakeTasks, script: Script) -> None:
+    def __init__(
+        self, client: httpx.AsyncClient, tasks: FakeTasks, script: Script, flushes: Flushes
+    ) -> None:
         self.client = client
         self.tasks = tasks
         self.script = script
+        self.flushes = flushes
         self.visitor_id = str(uuid4())
 
     async def post(self, text: str) -> None:
@@ -73,17 +86,19 @@ async def service(database_url: str, store: Store) -> AsyncIterator[Service]:
         gcp_project="rezerve-assistant",
         tasks_invoker_sa=INVOKER,
     )
+    flushes = Flushes()
     app = create_app(
         settings,
         model=script.model,
         open_rezerve=lambda slug, ref: fake.session(),
         tasks_client=tasks,
         verify_token=verify,
+        flush_traces=flushes,
     )
     async with app.router.lifespan_context(app):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://assistant") as client:
-            yield Service(client, tasks, script)
+            yield Service(client, tasks, script, flushes)
 
 
 async def test_a_message_queues_a_task_whose_call_back_answers_it(service: Service) -> None:
@@ -97,6 +112,16 @@ async def test_a_message_queues_a_task_whose_call_back_answers_it(service: Servi
 
     assert response.status_code == 204
     assert await service.replies() == ["Merhaba! Size nasıl yardımcı olabilirim?"]
+
+
+async def test_a_call_back_sends_its_traces_before_it_answers(service: Service) -> None:
+    # Cloud Run gives an instance CPU only while it answers a request: spans
+    # left to the exporter's own timer would wait for the next request, or go
+    # with the instance.
+    service.script.add(says("Merhaba!"))
+    await service.post("merhaba")
+    assert (await service.call_back(service.last_task_path())).status_code == 204
+    assert service.flushes.count == 1
 
 
 @pytest.mark.parametrize(
@@ -124,6 +149,7 @@ async def test_a_turn_another_handler_holds_is_tried_again_later(
 
     # 429: Cloud Tasks retries it with backoff (spec §7.2).
     assert response.status_code == 429
+    assert service.flushes.count == 1
 
 
 async def test_a_reminder_task_calls_back_with_the_invokers_token(service: Service) -> None:
@@ -134,3 +160,5 @@ async def test_a_reminder_task_calls_back_with_the_invokers_token(service: Servi
         "/internal/reminder", json=body, headers={"Authorization": "Bearer invoker-token"}
     )
     assert response.status_code == 204
+    # The refused call never reached the endpoint: only the reminder flushed.
+    assert service.flushes.count == 1

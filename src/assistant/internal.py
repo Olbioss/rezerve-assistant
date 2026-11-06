@@ -76,6 +76,9 @@ async def turn(conversation_id: int, services: Services) -> Response:
     except LeaseBusy:
         # Another handler has the conversation: Cloud Tasks tries again later.
         raise HTTPException(status_code=429, detail="busy") from None
+    finally:
+        # While this request lasts, the instance has the CPU to send them.
+        await services.flush_traces()
     return Response(status_code=204)
 
 
@@ -86,5 +89,8 @@ class DueReminder(BaseModel):
 
 @router.post("/reminder", status_code=204, dependencies=[Depends(from_cloud_tasks)])
 async def reminder(due: DueReminder, services: Services) -> Response:
-    await services.send_reminder(due.booking_id, due.starts_at)
+    try:
+        await services.send_reminder(due.booking_id, due.starts_at)
+    finally:
+        await services.flush_traces()
     return Response(status_code=204)

@@ -37,9 +37,11 @@ def create_app(
     tasks_client: TaskCreator | None = None,
     verify_token: TokenVerifier | None = None,
     telegram_transport: httpx.AsyncBaseTransport | None = None,
+    flush_traces: observability.Flush | None = None,
 ) -> FastAPI:
-    """Tests pass a model, a Rezerve, Cloud Tasks, a token check and Telegram's
-    transport of their own; production builds each from settings."""
+    """Tests pass a model, a Rezerve, Cloud Tasks, a token check, Telegram's
+    transport and a trace flush of their own; production builds each from
+    settings."""
     config = settings or Settings()  # pyright: ignore[reportCallIssue]
 
     @asynccontextmanager
@@ -106,6 +108,7 @@ def create_app(
                 verify_token=verify_token or internal.verify_google_token,
                 telegram=telegram,
                 send_reminder=reminders.send,
+                flush_traces=flush_traces or observability.flusher(config),
             )
             yield
 

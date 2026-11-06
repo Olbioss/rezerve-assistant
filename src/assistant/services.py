@@ -31,6 +31,8 @@ class AppServices:
     telegram: TelegramApi | None
     # Sends a booking's reminder: what a reminder task runs.
     send_reminder: Callable[[str, datetime], Awaitable[None]]
+    # Sends the spans finished so far; /internal calls run it before answering.
+    flush_traces: Callable[[], Awaitable[None]]
 
 
 def app_services(request: Request) -> AppServices:

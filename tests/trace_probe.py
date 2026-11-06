@@ -14,7 +14,6 @@ from typing import Any
 from unittest.mock import patch
 
 import httpx
-import logfire
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from pydantic_ai.models.test import TestModel
@@ -47,7 +46,8 @@ class KeptExporter(SpanExporter):
 
 
 async def requests(settings: Settings) -> None:
-    """A customer's Telegram message and a widget poll, as they arrive."""
+    """A customer's Telegram message, and the widget's preflight, post and poll,
+    as they arrive."""
     app = create_app(settings, model=TestModel())
     async with app.router.lifespan_context(app):
         # Both fail at the database, once their arguments are read.
@@ -67,6 +67,18 @@ async def requests(settings: Settings) -> None:
                 json=update,
                 headers={"X-Telegram-Bot-Api-Secret-Token": "webhook-secret"},
             )
+            preflight = {
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            }
+            await client.options("/web/demo/messages", headers=preflight)
+            posted = {
+                "visitor_id": VISITOR_ID,
+                "client_message_id": "5b0a3f0e-4c4a-4d8e-9d55-2f5f4e3b1c20",
+                "text": CUSTOMER_TEXT,
+            }
+            await client.post("/web/demo/messages", json=posted)
             await client.get("/web/demo/messages", headers={"X-Visitor-Id": VISITOR_ID})
 
 
@@ -79,6 +91,11 @@ def turn() -> None:
         span.set_attribute("langfuse.session.id", CONVERSATION)
         with tracer.start_as_current_span("model call"):
             pass
+
+
+async def flush(settings: Settings) -> None:
+    """The service's own flush, as /internal calls run it before answering."""
+    await observability.flusher(settings)()
 
 
 def main() -> None:
@@ -95,7 +112,7 @@ def main() -> None:
     with patch.object(observability, "OTLPSpanExporter", KeptExporter):
         asyncio.run(requests(settings))
     turn()
-    logfire.force_flush()
+    asyncio.run(flush(settings))
     spans = [{"name": span.name, "attributes": dict(span.attributes or {})} for span in exported]
     print(json.dumps(spans, default=str, ensure_ascii=False))
 

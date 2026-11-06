@@ -6,9 +6,14 @@ the bot token. What customers wrote is left out unless TRACE_CONTENT is set,
 since it is personal data and Langfuse keeps it for 30 days. And no request
 span carries its endpoint's arguments: they hold the settings, the database
 URL among them, what a customer wrote, and the widget's visitor ids.
+
+The widget's requests are not traced at all. It polls every second while a
+reply is coming, and every ten seconds while the owner holds a conversation:
+those would spend the 50k units a month Langfuse's free plan has for turns.
 """
 
-from collections.abc import Generator
+import asyncio
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from typing import Any
 from urllib.parse import unquote
@@ -25,6 +30,11 @@ SERVICE = "rezerve-assistant"
 # What Langfuse groups traces by. Logfire's scrubber would redact the session
 # for its name, but here it names a conversation, not a login.
 LANGFUSE_KEYS = frozenset({"langfuse.session.id", "langfuse.user.id"})
+# Requests left out of traces: regular expressions, searched in each URL.
+UNTRACED = "/health,/web/"
+
+# Sends the spans finished so far, before a request answers.
+type Flush = Callable[[], Awaitable[None]]
 
 
 def otlp_headers(raw: str) -> dict[str, str]:
@@ -53,10 +63,26 @@ def configure(settings: Settings, app: FastAPI) -> bool:
         scrubbing=logfire.ScrubbingOptions(callback=_keep_langfuse_keys),
     )
     logfire.instrument_pydantic_ai(include_content=settings.trace_content)
-    logfire.instrument_fastapi(
-        app, excluded_urls="/health", request_attributes_mapper=_no_arguments
-    )
+    logfire.instrument_fastapi(app, excluded_urls=UNTRACED, request_attributes_mapper=_no_arguments)
     return True
+
+
+def flusher(settings: Settings) -> Flush:
+    """What sends a request's finished spans before it answers. Cloud Run
+    gives an instance CPU only while it answers a request: spans left to the
+    exporter's own timer wait for the next request, or go with the instance."""
+    if settings.otel_traces_endpoint is None:
+        return _nothing
+    return _flush
+
+
+async def _flush() -> None:
+    # It waits on Langfuse's answer: off the event loop.
+    await asyncio.to_thread(logfire.force_flush)
+
+
+async def _nothing() -> None:
+    return None
 
 
 def _keep_langfuse_keys(match: logfire.ScrubMatch) -> Any:

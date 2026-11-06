@@ -45,10 +45,18 @@ def test_a_request_trace_holds_no_secret_and_nothing_a_customer_wrote(
     # Logfire records each endpoint's arguments by default: the settings (the
     # database URL among them), the update a customer sent, the visitor id.
     assert any("/telegram/webhook" in span["name"] for span in exported)
-    assert any("/web/{slug}/messages" in span["name"] for span in exported)
     sent = json.dumps(exported)
     private = (trace_probe.DATABASE_PASSWORD, trace_probe.CUSTOMER_TEXT, trace_probe.VISITOR_ID)
     assert [value for value in private if value in sent] == []
+
+
+def test_the_widgets_requests_leave_no_trace(exported: list[dict[str, Any]]) -> None:
+    # The widget polls every second while a reply is coming, and every ten
+    # seconds while the owner holds the conversation. As traces, its requests
+    # would spend the 50k units a month Langfuse's free plan has for the turns.
+    names = [span["name"] for span in exported]
+    assert any("/telegram/webhook" in name for name in names)
+    assert [name for name in names if "/web/" in name] == []
 
 
 def test_the_conversation_reaches_langfuse_as_the_traces_session(

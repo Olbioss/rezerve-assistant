@@ -73,4 +73,28 @@ def test_traces_go_to_the_endpoint_and_nowhere_else(monkeypatch: pytest.MonkeyPa
     # Which arguments reach the request spans: tests/unit/test_traces_exported.py.
     (instrumented,), options = seen["instrument_fastapi"]
     assert instrumented is app
-    assert options["excluded_urls"] == "/health"
+    # The widget's polls would spend Langfuse's units: tests/unit/test_traces_exported.py.
+    assert options["excluded_urls"] == "/health,/web/"
+
+
+async def test_without_an_endpoint_a_flush_is_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    def refuse(*args: Any, **kwargs: Any) -> bool:
+        raise AssertionError("logfire was flushed")
+
+    monkeypatch.setattr(observability.logfire, "force_flush", refuse)
+    await observability.flusher(settings())()
+
+
+async def test_with_an_endpoint_a_flush_sends_the_finished_spans(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    flushed: list[str] = []
+
+    def force_flush(*args: Any, **kwargs: Any) -> bool:
+        flushed.append("now")
+        return True
+
+    monkeypatch.setattr(observability.logfire, "force_flush", force_flush)
+    endpoint = "https://cloud.langfuse.com/api/public/otel/v1/traces"
+    await observability.flusher(settings(otel_traces_endpoint=endpoint))()
+    assert flushed == ["now"]
