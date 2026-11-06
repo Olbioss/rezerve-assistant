@@ -4,12 +4,14 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from assistant.config import Settings
+from assistant.config import DatabaseSettings, Settings
 
 
 @pytest.fixture(autouse=True)
 def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in (
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_WEBHOOK_SECRET",
         "ASSISTANT_MCP_TOKEN",
         "CUSTOMER_REF_SECRET",
         "ALLOWED_WEB_ORIGINS",
@@ -53,6 +55,7 @@ def test_production_reads_every_setting_from_one_mounted_secret(
             "ASSISTANT_MCP_TOKEN": "token",
             "CUSTOMER_REF_SECRET": "ref-secret",
             "TELEGRAM_BOT_TOKEN": "123:abc",
+            "TELEGRAM_WEBHOOK_SECRET": "webhook-secret",
             "DAILY_REQUEST_CAP": 250,
         },
     )
@@ -99,4 +102,73 @@ def test_cloud_tasks_needs_a_project_and_an_invoker() -> None:
             assistant_mcp_token="t",
             customer_ref_secret="s",
             queue_backend="cloud_tasks",
+        )
+
+
+NEON = "ep-quiet-sun-a1b2c3d4.eu-central-1.aws.neon.tech"
+
+
+@pytest.mark.parametrize(
+    ("url", "problem"),
+    [
+        ("postgresql://u:p@localhost:5433/assistant", r"must start with postgresql\+asyncpg://"),
+        (
+            f"postgresql+asyncpg://u:p@{NEON}/neondb?sslmode=require&channel_binding=require",
+            "asyncpg takes ssl=require",
+        ),
+        (
+            "postgresql+asyncpg://u:p@ep-quiet-sun-a1b2c3d4-pooler.eu-central-1.aws.neon.tech/neondb?ssl=require",
+            "direct endpoint",
+        ),
+    ],
+)
+def test_the_database_url_is_one_asyncpg_opens(url: str, problem: str) -> None:
+    # Neon's console gives "postgresql://…?sslmode=require&channel_binding=require".
+    # asyncpg takes neither parameter: every connection would fail, the
+    # migration job's first.
+    with pytest.raises(ValidationError, match=problem):
+        DatabaseSettings(_env_file=None, database_url=url)  # pyright: ignore[reportCallIssue]
+
+
+def test_neons_direct_endpoint_over_tls_is_accepted() -> None:
+    url = f"postgresql+asyncpg://u:p@{NEON}/neondb?ssl=require"
+    settings = DatabaseSettings(_env_file=None, database_url=url)  # pyright: ignore[reportCallIssue]
+    assert settings.database_url == url
+
+
+def test_a_bot_needs_the_secret_its_webhook_checks() -> None:
+    # Without it the webhook refuses every update: no customer or owner on
+    # Telegram would get an answer.
+    with pytest.raises(ValidationError, match="TELEGRAM_BOT_TOKEN needs TELEGRAM_WEBHOOK_SECRET"):
+        Settings(
+            _env_file=None,  # pyright: ignore[reportCallIssue]
+            assistant_mcp_token="t",
+            customer_ref_secret="s",
+            telegram_bot_token="123:abc",
+        )
+
+
+@pytest.mark.parametrize("secret", ["has a space", "x" * 257, "şifre", ""])
+def test_the_webhook_secret_is_one_telegram_accepts(secret: str) -> None:
+    with pytest.raises(ValidationError, match="Telegram accepts 1 to 256"):
+        Settings(
+            _env_file=None,  # pyright: ignore[reportCallIssue]
+            assistant_mcp_token="t",
+            customer_ref_secret="s",
+            telegram_bot_token="123:abc",
+            telegram_webhook_secret=secret,
+        )
+
+
+def test_cloud_tasks_calls_back_over_https() -> None:
+    # Its OIDC token goes with each call: never over plain HTTP.
+    with pytest.raises(ValidationError, match="needs an https PUBLIC_BASE_URL"):
+        Settings(
+            _env_file=None,  # pyright: ignore[reportCallIssue]
+            assistant_mcp_token="t",
+            customer_ref_secret="s",
+            queue_backend="cloud_tasks",
+            gcp_project="p",
+            tasks_invoker_sa="assistant-tasks@p.iam.gserviceaccount.com",
+            public_base_url="http://assistant-1.europe-west1.run.app",
         )

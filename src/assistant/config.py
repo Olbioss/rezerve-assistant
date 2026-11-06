@@ -7,7 +7,10 @@ Secret Manager secret (JSON), mounted as a file named by CONFIG_FILE (spec
 """
 
 import os
+import re
+from pathlib import Path
 from typing import Annotated, Literal, Self
+from urllib.parse import parse_qs, urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
@@ -25,6 +28,21 @@ class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/assistant"
+
+    @field_validator("database_url")
+    @classmethod
+    def _asyncpg_opens(cls, url: str) -> str:
+        """Neon's console gives "postgresql://…?sslmode=require&channel_binding=require":
+        asyncpg takes neither parameter, so every connection would fail. Its
+        direct endpoint is the one used: two instances need no pooler."""
+        parts = urlsplit(url)
+        if parts.scheme != "postgresql+asyncpg":
+            raise ValueError("must start with postgresql+asyncpg://")
+        if {"sslmode", "channel_binding"} & parse_qs(parts.query).keys():
+            raise ValueError("asyncpg takes ssl=require, not sslmode or channel_binding")
+        if "-pooler." in (parts.hostname or ""):
+            raise ValueError("use Neon's direct endpoint: the host without -pooler")
+        return url
 
     @classmethod
     def settings_customise_sources(
@@ -108,8 +126,43 @@ class Settings(DatabaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
+    @field_validator("telegram_webhook_secret")
+    @classmethod
+    def _telegram_accepts(cls, secret: SecretStr | None) -> SecretStr | None:
+        if secret is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]{1,256}", secret.get_secret_value()
+        ):
+            raise ValueError("Telegram accepts 1 to 256 letters, digits, _ and -")
+        return secret
+
     @model_validator(mode="after")
-    def _cloud_tasks_is_complete(self) -> Self:
-        if self.queue_backend == "cloud_tasks" and not (self.gcp_project and self.tasks_invoker_sa):
-            raise ValueError("QUEUE_BACKEND=cloud_tasks needs GCP_PROJECT and TASKS_INVOKER_SA")
+    def _settings_agree(self) -> Self:
+        if self.queue_backend == "cloud_tasks":
+            if not (self.gcp_project and self.tasks_invoker_sa):
+                raise ValueError("QUEUE_BACKEND=cloud_tasks needs GCP_PROJECT and TASKS_INVOKER_SA")
+            if not self.public_base_url.startswith("https://"):
+                raise ValueError("QUEUE_BACKEND=cloud_tasks needs an https PUBLIC_BASE_URL")
+        if self.telegram_bot_token is not None and self.telegram_webhook_secret is None:
+            # The webhook would refuse every update.
+            raise ValueError("TELEGRAM_BOT_TOKEN needs TELEGRAM_WEBHOOK_SECRET")
         return self
+
+
+def from_file(path: Path) -> Settings:
+    """Every setting from this JSON file alone: the operator's commands read
+    the production config this way, so neither their shell's variables nor a
+    .env beside them fills a gap the file has."""
+
+    class FileOnly(Settings):
+        @classmethod
+        def settings_customise_sources(
+            cls,
+            settings_cls: type[BaseSettings],
+            init_settings: PydanticBaseSettingsSource,
+            env_settings: PydanticBaseSettingsSource,
+            dotenv_settings: PydanticBaseSettingsSource,
+            file_secret_settings: PydanticBaseSettingsSource,
+        ) -> tuple[PydanticBaseSettingsSource, ...]:
+            return (JsonConfigSettingsSource(settings_cls, json_file=path),)
+
+    return FileOnly()  # pyright: ignore[reportCallIssue]

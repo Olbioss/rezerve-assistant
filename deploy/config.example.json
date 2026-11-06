@@ -1,0 +1,18 @@
+{
+  "DATABASE_URL": "postgresql+asyncpg://neondb_owner:REPLACE_ME@REPLACE_ME.eu-central-1.aws.neon.tech/neondb?ssl=require",
+  "ASSISTANT_MCP_TOKEN": "REPLACE_ME",
+  "CUSTOMER_REF_SECRET": "REPLACE_ME",
+  "ASSISTANT_EVENT_SECRET": "REPLACE_ME",
+  "GEMINI_API_KEY": "REPLACE_ME",
+  "GROQ_API_KEY": "REPLACE_ME",
+  "TELEGRAM_BOT_TOKEN": "REPLACE_ME",
+  "TELEGRAM_WEBHOOK_SECRET": "REPLACE_ME",
+  "ALLOWED_WEB_ORIGINS": "https://rezerve-iota.vercel.app",
+  "REZERVE_MCP_URL": "https://rezerve-iota.vercel.app/api/mcp",
+  "PUBLIC_BASE_URL": "https://assistant-REPLACE_ME.europe-west1.run.app",
+  "QUEUE_BACKEND": "cloud_tasks",
+  "GCP_PROJECT": "REPLACE_ME",
+  "TASKS_INVOKER_SA": "assistant-tasks@REPLACE_ME.iam.gserviceaccount.com",
+  "OTEL_TRACES_ENDPOINT": "https://cloud.langfuse.com/api/public/otel/v1/traces",
+  "OTEL_HEADERS": "Authorization=Basic REPLACE_ME,x-langfuse-ingestion-version=4"
+}
