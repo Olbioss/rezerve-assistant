@@ -1,5 +1,6 @@
 # Every push and pull request: lint, types, the test suite against Postgres,
-# and the image. The evals stay out: they spend free-tier model quota.
+# the image as the deploy runs it, and the workflows themselves. The evals
+# stay out: they spend free-tier model quota.
 name: CI
 
 on:
@@ -45,13 +46,55 @@ jobs:
 
   image:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d assistant"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/assistant
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - uses: docker/build-push-action@v7
         with:
           context: .
-          push: false
+          load: true
           tags: rezerve-assistant:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # What the deploy runs: the migration job's command on a new database,
+      # then the service, on the port Cloud Run gives it.
+      - name: Migrate an empty database with the image
+        run: docker run --rm --network host -e DATABASE_URL rezerve-assistant:ci alembic upgrade head
+      - name: Start the image and ask for /health
+        run: |
+          docker run -d --name assistant --network host -e PORT=8080 -e DATABASE_URL \
+            -e ASSISTANT_MCP_TOKEN=ci -e CUSTOMER_REF_SECRET=ci -e GEMINI_API_KEY=ci \
+            rezerve-assistant:ci
+          for _ in $(seq 30); do
+            if curl -fsS localhost:8080/health; then break; fi
+            sleep 1
+          done
+          curl -fsS localhost:8080/health
+      - name: Its log lines are JSON, for Cloud Logging
+        if: always()
+        run: |
+          docker logs assistant 2>&1 | tee assistant.log
+          python3 -c 'import json, sys; [json.loads(line) for line in open(sys.argv[1])]' assistant.log
+
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # With shellcheck on each step's script.
+      - run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
