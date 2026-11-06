@@ -1,9 +1,10 @@
 """Admin commands.
 
-`uv run assistant owners link <slug> <telegram_chat_id>`: a business owner
-learns their chat's id by sending /id to the bot. Linking it sends that
-business's handoffs to the owner (spec §7.6); a self-service pairing in the
-Rezerve panel is v2.
+`uv run assistant owners link <slug> <telegram_chat_id> [--config <file>]`: a
+business owner learns their chat's id by sending /id to the bot. Linking it
+sends that business's handoffs to the owner (spec §7.6); a self-service
+pairing in the Rezerve panel is v2. With --config, the database is the one
+that production file names, and nothing else.
 
 `uv run assistant config check <file>`: the production config, before it is
 uploaded (assistant.config_check).
@@ -36,6 +37,10 @@ def parse(argv: Sequence[str] | None) -> argparse.Namespace:
     link.add_argument("chat_id", type=int)
     unlink = actions.add_parser("unlink", help="stop; handoffs give the business's phone again")
     unlink.add_argument("slug")
+    for action in (link, unlink):
+        action.add_argument(
+            "--config", type=Path, metavar="FILE", help="the database this config file names"
+        )
     config = groups.add_parser("config", help="the production config file")
     checks = config.add_subparsers(dest="action", required=True)
     check = checks.add_parser("check", help="find its problems, naming keys, never values")
@@ -54,8 +59,8 @@ def parse(argv: Sequence[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-async def run(args: argparse.Namespace) -> str:
-    engine = create_engine(DatabaseSettings().database_url)
+async def run(args: argparse.Namespace, database_url: str) -> str:
+    engine = create_engine(database_url)
     try:
         store = Store(session_factory(engine))
         if args.action == "link":
@@ -107,5 +112,13 @@ def main(
         found = config_check.problems(args.path, expected)
         print("\n".join(found) if found else "No problems.")
         return 1 if found else 0
-    print(asyncio.run(run(args)))
+    if args.config is None:
+        database_url = DatabaseSettings().database_url
+    elif found := config_check.problems(args.config, {}):
+        print("\n".join(found))
+        return 1
+    else:
+        # The file alone: neither the shell nor a .env may name another database.
+        database_url = from_file(args.config).database_url
+    print(asyncio.run(run(args, database_url)))
     return 0

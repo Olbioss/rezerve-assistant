@@ -129,6 +129,8 @@ The same service, with what a public demo needs:
   the owner, who answers by replying to them, and `/bitir`, or 24 hours,
   hands the conversation back. With no owner chat, a handoff gives the
   business's phone number.
+  In production, add `--config deploy/config.json`: the database is then the
+  one the file names, whatever the shell or `.env` say.
 - **Reminders.** A booking made or moved on Telegram is reminded 24 hours
   before it starts, by a Cloud Task. When it fires, it reads the booking from
   Rezerve, and sends nothing if the booking was moved, cancelled or never

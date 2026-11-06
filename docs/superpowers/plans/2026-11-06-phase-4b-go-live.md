@@ -4326,12 +4326,12 @@ Write down each value as you make it. Each goes into `deploy/config.json` and no
 - [ ] **The owner's chat.** Send `/id` to the bot, then:
 
   ```bash
-  env -u DATABASE_URL CONFIG_FILE=deploy/config.json uv run assistant owners link demo <chat id>
+  uv run assistant owners link demo <chat id> --config deploy/config.json
   ```
 
   Expected: `demo: handoffs go to Telegram chat <chat id>`.
 
-  `env -u` keeps a `DATABASE_URL` in your shell from winning over the file.
+  `--config` takes the database from the file alone: a `DATABASE_URL` in your shell or in `.env` cannot send the link elsewhere.
 
 ### G6. The live checks
 
