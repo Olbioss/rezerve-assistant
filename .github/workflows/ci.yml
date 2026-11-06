@@ -7,6 +7,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # "Run workflow" on main deploys it again, with no new commit: the first
+  # deploy, once the project is set up, and a redeploy after a config change.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -99,3 +102,74 @@ jobs:
       # With shellcheck on each step's script.
       - run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - run: shellcheck deploy/*.sh
+
+  # Each push to main, and each run started by hand on main, once
+  # deploy/setup-gcp.sh has set the project up and its two variables are in
+  # the repository's settings.
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT != ''
+    needs: [test, image, workflows]
+    runs-on: ubuntu-latest
+    # One at a time, in push order.
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT: ${{ vars.GCP_PROJECT }}
+      REGION: europe-west1
+      IMAGE: europe-west1-docker.pkg.dev/${{ vars.GCP_PROJECT }}/assistant/assistant:${{ github.sha }}
+      RUNTIME: assistant-runtime@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+    steps:
+      - uses: actions/checkout@v7
+      # GitHub's OIDC token, exchanged for the deployer's: no key is stored.
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: assistant-deployer@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+          token_format: access_token
+      - uses: google-github-actions/setup-gcloud@v3
+      - uses: docker/login-action@v4
+        with:
+          registry: europe-west1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+      # A revision keeps the config version it started with; a newer one
+      # arrives with deploy/push-config.sh or the next deploy.
+      - name: Pin the config's newest version
+        run: |
+          version="$(gcloud secrets versions describe latest --secret=assistant-config \
+            --project="$PROJECT" --format='value(name.basename())')"
+          echo "CONFIG=assistant-config:$version" >> "$GITHUB_ENV"
+      - name: Migrate the database
+        run: |
+          gcloud run jobs deploy assistant-migrate --image="$IMAGE" --region="$REGION" \
+            --project="$PROJECT" --service-account="$RUNTIME" \
+            --set-secrets="/secrets/config.json=$CONFIG" \
+            --set-env-vars=CONFIG_FILE=/secrets/config.json \
+            --command=alembic --args=upgrade,head --max-retries=0 --task-timeout=300s \
+            --execute-now --wait --quiet
+      # Spec §9: billed per request, 0 to 2 instances, 20 requests each.
+      - name: Deploy the service
+        run: |
+          gcloud run deploy assistant --image="$IMAGE" --region="$REGION" --project="$PROJECT" \
+            --service-account="$RUNTIME" \
+            --set-secrets="/secrets/config.json=$CONFIG" \
+            --set-env-vars=CONFIG_FILE=/secrets/config.json \
+            --allow-unauthenticated --cpu-throttling --cpu=1 --memory=512Mi --concurrency=20 \
+            --min-instances=0 --max-instances=2 --timeout=300 --quiet
+      - name: Ask it for /health
+        run: |
+          url="$(gcloud run services describe assistant --region="$REGION" --project="$PROJECT" \
+            --format='value(status.url)')"
+          curl -fsS --retry 5 --retry-all-errors "$url/health"

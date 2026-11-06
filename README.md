@@ -97,7 +97,9 @@ uv run ruff check && uv run ruff format --check && uv run pyright
 
 The agent tests use scripted models and an in-process fake Rezerve: no
 network, no quota. CI (`.github/workflows/ci.yml`) runs the same checks
-against a Postgres service container, and builds the image.
+against a Postgres service container. It also builds the image, migrates an
+empty database with it and asks it for `/health`, and lints the workflows and
+the deploy scripts. A push to `main` deploys.
 
 ## In production
 
@@ -141,7 +143,65 @@ The same service, with what a public demo needs:
   as its user, the model, tokens and outcome. Its id is kept on `agent_runs`,
   past Langfuse's 30 days. What customers wrote stays out unless
   `TRACE_CONTENT=true`, and httpx is not traced: Telegram's URLs hold the
-  bot token.
+  bot token. The widget's requests are not traced at all, and each call back
+  from Cloud Tasks sends its spans before it answers: Cloud Run gives an
+  instance CPU only while it answers.
+- **Logs.** One JSON object a line, which Cloud Logging reads with its
+  severity. Each instance logs once how many `X-Forwarded-For` entries a
+  widget post carried, never the addresses: what `TRUSTED_PROXY_HOPS` should
+  be.
+
+### Deploying
+
+On Google Cloud, in europe-west1 (spec §9). Once, with
+[gcloud](https://cloud.google.com/sdk/docs/install) signed in
+(`gcloud auth login`, and `gcloud components install beta`):
+
+```bash
+PROJECT=<project id> BILLING_ACCOUNT=<from gcloud billing accounts list> deploy/setup-gcp.sh
+```
+
+It creates the project if it has to, then everything around the service:
+- Artifact Registry, keeping the last three images;
+- the `turns` and `reminders` queues;
+- three service accounts: the service, Cloud Tasks' calls back, GitHub's deploys;
+- the config secret;
+- keyless access for GitHub Actions, from `main` only;
+- a budget alert at one unit of the billing account's currency.
+
+`DRY_RUN=1` shows each change and makes none. Running it again changes only
+what drifted. It ends with the two repository variables GitHub needs
+(`GCP_PROJECT`, `GCP_WIF_PROVIDER`) and three values for the config.
+
+The config is `deploy/config.json`, git-ignored: copy
+`deploy/config.example.json` and replace each `REPLACE_ME`. `DATABASE_URL` is
+Neon's direct endpoint, not its `-pooler` one, written
+`postgresql+asyncpg://…?ssl=require`: asyncpg takes neither `sslmode` nor
+`channel_binding`. Then:
+
+```bash
+PROJECT=<project id> deploy/push-config.sh
+```
+
+It checks the file (`uv run assistant config check deploy/config.json`, which
+names each problem by its key, never its value), uploads it as the secret's
+new version, and moves a running service to it. The version before stays
+for a rollback.
+
+From then on each push to `main` deploys, once its checks pass: the image,
+tagged with the commit; `alembic upgrade head` as a Cloud Run job; the
+service, at 0 to 2 instances billed per request; a `/health` check. Each
+revision keeps the config version it started with. The first deploy needs no
+commit: Actions > CI > Run workflow, on `main`.
+
+Last, Telegram:
+
+```bash
+uv run assistant telegram webhook deploy/config.json
+```
+
+It points the bot at the service, with the webhook's secret, and prints
+Telegram's view: how many updates wait, and its last delivery error.
 
 ## Evals
 
