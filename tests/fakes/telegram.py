@@ -15,6 +15,8 @@ class FakeTelegram:
         self._next_id = 100
         # An error Telegram returns to every call from now on, as (status, description).
         self.fail_with: tuple[int, str] | None = None
+        # What getWebhookInfo answers; setWebhook sets its url.
+        self.webhook: dict[str, Any] = {"url": "", "pending_update_count": 0}
 
     @property
     def transport(self) -> httpx.MockTransport:
@@ -29,6 +31,11 @@ class FakeTelegram:
             return httpx.Response(
                 status, json={"ok": False, "error_code": status, "description": description}
             )
+        if method == "setWebhook":
+            self.webhook["url"] = payload["url"]
+            return httpx.Response(200, json={"ok": True, "result": True})
+        if method == "getWebhookInfo":
+            return httpx.Response(200, json={"ok": True, "result": self.webhook})
         self._next_id += 1
         self.delivered.append((int(payload.get("chat_id", 0)), self._next_id))
         return httpx.Response(200, json={"ok": True, "result": {"message_id": self._next_id}})

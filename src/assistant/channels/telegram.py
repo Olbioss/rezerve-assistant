@@ -53,7 +53,16 @@ class TelegramApi:
             }
         return int((await self._call("sendMessage", payload))["message_id"])
 
-    async def _call(self, method: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def set_webhook(self, url: str, secret: str) -> None:
+        """Telegram posts the bot's messages to `url`, `secret` in a header."""
+        payload = {"url": url, "secret_token": secret, "allowed_updates": ["message"]}
+        await self._call("setWebhook", payload)
+
+    async def webhook_info(self) -> dict[str, Any]:
+        """Where Telegram posts updates, how many wait, and its last failure."""
+        return await self._call("getWebhookInfo", {})
+
+    async def _call(self, method: str, payload: dict[str, Any]) -> Any:
         try:
             response = await self._client.post(f"{self._base}/{method}", json=payload)
         except httpx.HTTPError as error:
@@ -63,8 +72,7 @@ class TelegramApi:
         if not body.get("ok"):
             status = int(body.get("error_code") or response.status_code)
             raise TelegramError(status, str(body.get("description", "")))
-        result: dict[str, Any] = body["result"]
-        return result
+        return body["result"]
 
 
 class TelegramChannel:

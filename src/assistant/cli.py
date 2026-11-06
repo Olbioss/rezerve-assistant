@@ -7,6 +7,9 @@ Rezerve panel is v2.
 
 `uv run assistant config check <file>`: the production config, before it is
 uploaded (assistant.config_check).
+
+`uv run assistant telegram webhook <file>`: Telegram told to post the bot's
+messages to the service that config describes.
 """
 
 import argparse
@@ -14,8 +17,11 @@ import asyncio
 from collections.abc import Sequence
 from pathlib import Path
 
+import httpx
+
 from assistant import config_check
-from assistant.config import DatabaseSettings
+from assistant.channels.telegram import TelegramApi, TelegramError
+from assistant.config import DatabaseSettings, from_file
 from assistant.conversation.store import Store
 from assistant.db.session import create_engine, session_factory
 
@@ -41,6 +47,10 @@ def parse(argv: Sequence[str] | None) -> argparse.Namespace:
         metavar="KEY=VALUE",
         help="a value the deploy set up, such as PUBLIC_BASE_URL",
     )
+    telegram = groups.add_parser("telegram", help="the Telegram bot")
+    bot = telegram.add_subparsers(dest="action", required=True)
+    webhook = bot.add_parser("webhook", help="send the bot's messages to the configured service")
+    webhook.add_argument("path", type=Path)
     return parser.parse_args(argv)
 
 
@@ -57,8 +67,41 @@ async def run(args: argparse.Namespace) -> str:
         await engine.dispose()
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+async def set_webhook(path: Path, transport: httpx.AsyncBaseTransport | None) -> int:
+    if found := config_check.problems(path, {}):
+        print("\n".join(found))
+        return 1
+    settings = from_file(path)
+    token, secret = settings.telegram_bot_token, settings.telegram_webhook_secret
+    if token is None or secret is None:
+        print("TELEGRAM_BOT_TOKEN: not in the file")
+        return 1
+    if not settings.public_base_url.startswith("https://"):
+        print("PUBLIC_BASE_URL: Telegram calls only https URLs")
+        return 1
+    url = f"{settings.public_base_url.rstrip('/')}/telegram/webhook"
+    async with httpx.AsyncClient(transport=transport, timeout=15) as client:
+        api = TelegramApi(token.get_secret_value(), client)
+        try:
+            await api.set_webhook(url, secret.get_secret_value())
+            info = await api.webhook_info()
+        except TelegramError as error:
+            # Its message has Telegram's answer, never the URL with the token.
+            print(error)
+            return 1
+    print(f"Webhook: {info.get('url')}")
+    print(f"Pending updates: {info.get('pending_update_count', 0)}")
+    print(f"Last error: {info.get('last_error_message') or 'none'}")
+    return 0
+
+
+def main(
+    argv: Sequence[str] | None = None, *, telegram: httpx.AsyncBaseTransport | None = None
+) -> int:
+    """`telegram` stands in for Telegram's API in tests."""
     args = parse(argv)
+    if args.group == "telegram":
+        return asyncio.run(set_webhook(args.path, telegram))
     if args.group == "config":
         expected = dict(item.partition("=")[::2] for item in args.expect)
         found = config_check.problems(args.path, expected)
