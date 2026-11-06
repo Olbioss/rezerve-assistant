@@ -151,6 +151,9 @@ class MessagesPage:
     messages: list[PageMessage]
     # True while something is still to come: a message not yet answered.
     pending: bool
+    # True while the business owner holds the conversation (spec §7.6): their
+    # replies come when they come, so the widget keeps looking.
+    with_owner: bool
 
 
 class Store:
@@ -769,18 +772,19 @@ class Store:
     ) -> MessagesPage:
         """The open conversation's messages after `after`, as its customer sees them."""
         async with self._sessions() as session:
-            conversation_id = (
+            found = (
                 await session.execute(
-                    sa.select(Conversation.id).where(
+                    sa.select(Conversation.id, Conversation.state).where(
                         Conversation.business_slug == business_slug,
                         Conversation.channel == channel,
                         Conversation.channel_user_id == channel_user_id,
                         Conversation.state != "closed",
                     )
                 )
-            ).scalar_one_or_none()
-            if conversation_id is None:
-                return MessagesPage(messages=[], pending=False)
+            ).one_or_none()
+            if found is None:
+                return MessagesPage(messages=[], pending=False, with_owner=False)
+            conversation_id, state = found
             # The page stops short of the first reply not yet sent: a reader's
             # cursor that moved past it would never see it once it was.
             # min() over no rows is NULL, which the typed select cannot say.
@@ -834,6 +838,7 @@ class Store:
                     for row in rows.scalars()
                 ],
                 pending=pending,
+                with_owner=state == "human",
             )
 
 

@@ -4,7 +4,8 @@ The widget keeps a random UUID in localStorage as its visitor id. That
 unguessable id is the credential — the same model as a booking's id on its
 page — so these endpoints take no other, and it never travels in a URL: URLs
 end up in access logs. The widget posts a message (the id in the body), then
-polls for the answer while `pending` is true (the id in `X-Visitor-Id`).
+polls for the answer while `pending` is true (the id in `X-Visitor-Id`), and
+slowly while `with_owner` is: the business owner answers when they can.
 """
 
 from datetime import UTC, datetime
@@ -55,6 +56,8 @@ class MessageOut(BaseModel):
 class MessagesOut(BaseModel):
     messages: list[MessageOut]
     pending: bool
+    # The owner holds the conversation: their reply may come at any time.
+    with_owner: bool
 
 
 class WebChannel:
@@ -108,4 +111,5 @@ async def get_messages(
             for message in page.messages
         ],
         pending=page.pending,
+        with_owner=page.with_owner,
     )

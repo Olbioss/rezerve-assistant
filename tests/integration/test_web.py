@@ -2,6 +2,7 @@
 its lifespan, the local queue, Postgres, the fake Rezerve, a scripted model."""
 
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import uuid4
 
@@ -10,7 +11,8 @@ import pytest
 from fastapi import FastAPI
 
 from assistant.config import Settings
-from assistant.conversation.store import Store
+from assistant.conversation.store import Store, TurnResult
+from assistant.identity import customer_ref
 from assistant.main import create_app
 from assistant.queue.local import LocalTaskQueue
 from assistant.services import AppServices
@@ -101,6 +103,7 @@ async def test_a_message_is_answered_and_polled_back(widget: Widget, script: Scr
     assert await widget.poll(after=page["messages"][-1]["seq"]) == {
         "messages": [],
         "pending": False,
+        "with_owner": False,
     }
 
 
@@ -120,7 +123,25 @@ async def test_a_visitor_sees_only_their_own_conversation(widget: Widget, script
     await widget.post("merhaba")
     await widget.settle()
     widget.visitor_id = str(uuid4())
-    assert await widget.poll() == {"messages": [], "pending": False}
+    assert await widget.poll() == {"messages": [], "pending": False, "with_owner": False}
+
+
+async def test_the_widget_keeps_looking_while_the_owner_holds_the_conversation(
+    widget: Widget, script: Script, store: Store
+) -> None:
+    # The owner's reply can come long after the widget's 60 s of waiting for
+    # one (spec §7.6); with_owner tells it to keep polling, slowly.
+    script.add(says("Merhaba!"))
+    await widget.post("merhaba")
+    await widget.settle()
+    assert (await widget.poll())["with_owner"] is False
+
+    ref = customer_ref("s", "web", widget.visitor_id)
+    conversation_id = await store.latest_conversation("demo", ref)
+    assert conversation_id is not None
+    handed = TurnResult(processed=[], replies=[], state="human")
+    await store.commit_turn(conversation_id, handed, datetime.now(UTC))
+    assert (await widget.poll())["with_owner"] is True
 
 
 @pytest.mark.parametrize(

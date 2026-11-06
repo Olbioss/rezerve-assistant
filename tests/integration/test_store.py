@@ -110,6 +110,22 @@ async def test_the_page_shows_a_reply_once_it_is_sent(store: Store) -> None:
     assert after.messages == []
 
 
+async def test_the_page_says_while_the_owner_holds_the_conversation(store: Store) -> None:
+    # Spec §7.6: the owner answers when they can, long after the widget has
+    # stopped waiting for a reply. The page tells it to keep looking.
+    recorded = await store.record_inbound(inbound(), REF, NOW)
+    assert recorded.seq is not None
+    handed = TurnResult(processed=[recorded.seq], replies=[], state="human")
+    await store.commit_turn(recorded.conversation_id, handed, NOW)
+    page = await store.messages_after("demo", "web", "visitor-1", 0)
+    assert page.with_owner
+    assert not page.pending
+
+    await store.hand_back(recorded.conversation_id, "Asistan yeniden sizinle.")
+    page = await store.messages_after("demo", "web", "visitor-1", 0)
+    assert not page.with_owner
+
+
 async def test_a_turn_commits_history_approval_and_run_together(store: Store) -> None:
     recorded = await store.record_inbound(inbound("randevu"), REF, NOW)
     assert recorded.seq is not None
